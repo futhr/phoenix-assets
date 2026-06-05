@@ -59,6 +59,7 @@ defmodule PhoenixAssets do
     * `:ctx` -- a prebuilt `PhoenixAssets.Context` (defaults to one derived from
       the config and the configured preset).
   """
+  @spec child_specs() :: [Supervisor.child_spec() | {module(), term()}]
   @spec child_specs(keyword()) :: [Supervisor.child_spec() | {module(), term()}]
   def child_specs(opts \\ []) do
     config = opts[:config] || Config.load!()
