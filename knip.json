@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "npm/vite": { "project": "src/**/*.ts" },
+    "npm/svelte": { "project": "src/**/*.ts" },
+    "npm/lint": { "project": "*.ts" }
+  }
+}
