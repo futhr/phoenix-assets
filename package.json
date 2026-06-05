@@ -1,0 +1,29 @@
+{
+  "name": "@phoenix-assets/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Monorepo for the phoenix_assets npm packages.",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check --error-on-warnings .",
+    "format": "biome check --write --unsafe .",
+    "knip": "knip",
+    "check:exports": "pnpm -r build && pnpm -r run check:publish",
+    "audit": "pnpm audit --prod"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.3",
+    "@biomejs/biome": "^2.4.15",
+    "knip": "^6.15.0",
+    "publint": "^0.3.21",
+    "typescript": "^6.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
