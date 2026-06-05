@@ -1,0 +1,33 @@
+{
+  "name": "@phoenix-assets/lint",
+  "version": "0.1.0",
+  "description": "Shared Biome config + Tailwind v4 arbitrary-value linter for phoenix_assets host apps (Svelte 5).",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/futhr/phoenix_assets",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "directory": "npm/lint"
+  },
+  "files": [
+    "biome.base.json",
+    "lint-tailwind.ts",
+    "README.md"
+  ],
+  "exports": {
+    "./biome.base.json": "./biome.base.json",
+    "./lint-tailwind.ts": "./lint-tailwind.ts"
+  },
+  "scripts": {
+    "check:publish": "publint"
+  },
+  "peerDependencies": {
+    "@biomejs/biome": ">=2.4.0",
+    "svelte": "^5.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
