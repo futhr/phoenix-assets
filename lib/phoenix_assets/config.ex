@@ -49,7 +49,14 @@ defmodule PhoenixAssets.Config do
     package_manager: [type: {:in, [:pnpm, :npm, :bun]}, default: :pnpm],
     js_runtime: [type: {:in, [:node, :bun]}, default: :node],
     ssr_runtime: [type: {:in, [:node, :bun]}, default: :node],
-    preset: [type: :atom, doc: "a module that `use PhoenixAssets.Preset`"]
+    preset: [type: :atom, doc: "a module that `use PhoenixAssets.Preset`"],
+    serve_mode: [
+      type: {:in, [:ssr, :spa]},
+      default: :ssr,
+      doc:
+        "`:ssr` (default) renders HTML from the Vite manifest; `:spa` is an adapter-static " <>
+          "SvelteKit/SPA build that serves its own index.html and needs no server-rendered manifest"
+    ]
   ]
 
   @sub_keys [:dev, :build, :env, :dev_intelligence, :stack]
@@ -66,6 +73,7 @@ defmodule PhoenixAssets.Config do
           js_runtime: :node | :bun,
           ssr_runtime: :node | :bun,
           preset: module() | nil,
+          serve_mode: :ssr | :spa,
           dev: keyword(),
           build: keyword(),
           env_expose: keyword(),
@@ -85,6 +93,7 @@ defmodule PhoenixAssets.Config do
             js_runtime: :node,
             ssr_runtime: :node,
             preset: nil,
+            serve_mode: :ssr,
             dev: [],
             build: [],
             env_expose: [],

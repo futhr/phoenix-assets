@@ -99,6 +99,10 @@ defmodule PhoenixAssets.Doctor do
     end
   end
 
+  defp manifest_check(%Context{config: %{serve_mode: :spa}}) do
+    Check.ok("SPA build serves its own index.html; no server-rendered Vite manifest required")
+  end
+
   defp manifest_check(ctx) do
     path = Context.manifest_path(ctx)
 

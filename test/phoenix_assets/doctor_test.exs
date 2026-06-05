@@ -95,6 +95,12 @@ defmodule PhoenixAssets.DoctorTest do
     assert result_for(results, :manifest_present).status == :ok
   end
 
+  test "in :spa serve_mode the manifest check passes without a server-rendered manifest" do
+    config = Config.load!(otp_app: :my_app, asset_root: System.tmp_dir!(), serve_mode: :spa)
+    {_status, results} = Doctor.run(Context.new(config, env: :test), production: true)
+    assert result_for(results, :manifest_present).status == :ok
+  end
+
   test "errors in production when generated contracts are stale" do
     {_status, results} = Doctor.run(ctx([{StalePlugin, []}]), production: true)
     assert result_for(results, :generated_fresh).status == :error
