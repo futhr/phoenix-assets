@@ -32,15 +32,19 @@ defmodule PhoenixAssets.Graph.Compiled do
       @external_resource unquote(path)
 
       @doc "The compiled asset graph."
+      @spec graph() :: map()
       def graph, do: unquote(Macro.escape(graph))
 
       @doc "Fetches a manifest entry by key, raising if absent."
+      @spec entry!(String.t()) :: map()
       def entry!(key), do: unquote(__MODULE__).fetch!(graph(), "entries", key)
 
       @doc "Fetches a page by name, raising if absent."
+      @spec page!(String.t()) :: map()
       def page!(name), do: unquote(__MODULE__).fetch!(graph(), "pages", name)
 
       @doc "Fetches a route by name, raising if absent."
+      @spec route!(String.t()) :: map()
       def route!(name), do: unquote(__MODULE__).fetch!(graph(), "routes", name)
     end
   end

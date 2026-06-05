@@ -34,6 +34,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
     attr(:entry, :string, required: true)
     attr(:nonce, :string, default: nil)
 
+    @spec vite_assets(map()) :: Phoenix.LiveView.Rendered.t()
     def vite_assets(assigns) do
       assigns = assign(assigns, :resolved, PhoenixAssets.entry!(assigns.entry))
       render_vite_assets(assigns)
@@ -78,6 +79,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
     attr(:props, :map, default: %{})
     attr(:id, :string, default: nil)
 
+    @spec svelte_page(map()) :: Phoenix.LiveView.Rendered.t()
     def svelte_page(assigns) do
       assigns = assign_new(assigns, :id, fn -> "svelte-" <> assigns.name end)
 
