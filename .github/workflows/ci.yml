@@ -36,6 +36,11 @@ jobs:
       - run: mix deps.get
       - run: pnpm install --frozen-lockfile
 
+      # The phoenix_assets.install test scaffolds a throwaway app via
+      # Igniter's phx_test_project/1, which shells out to the Phoenix
+      # project generator. Install the archive so that test can run.
+      - run: mix archive.install hex phx_new --force
+
       # One gate: compile (warnings as errors), format, credo, dialyzer,
       # mix_audit, ExUnit+coverage, biome, typecheck, vitest+coverage, knip,
       # and package-export correctness (publint + arethetypeswrong).
