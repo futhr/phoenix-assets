@@ -65,7 +65,7 @@ defmodule PhoenixAssets.MixProject do
       {:ash, "~> 3.0", optional: true},
       {:ash_typescript, "~> 0.17", optional: true},
       {:phoenix_sync, "~> 0.6", optional: true},
-      {:gettext, "~> 0.20", optional: true},
+      {:gettext, "~> 1.0", optional: true},
       {:tidewave, "~> 0.5", optional: true},
 
       # Installer -- powers `mix igniter.install phoenix_assets`. Optional: hosts
