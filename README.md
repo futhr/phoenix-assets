@@ -1,6 +1,6 @@
 # Phoenix Assets
 
-> A modern JavaScript frontend, first-class inside Phoenix — without turning Phoenix into a bundler or living in HEEx.
+> A supervised, type-safe SvelteKit frontend, first-class inside Phoenix.
 
 [![Hex.pm](https://img.shields.io/hexpm/v/phoenix_assets.svg)](https://hex.pm/packages/phoenix_assets) [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/phoenix_assets) [![CI](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml/badge.svg)](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/futhr/phoenix_assets/branch/main/graph/badge.svg)](https://codecov.io/gh/futhr/phoenix_assets) [![License: MIT](https://img.shields.io/github/license/futhr/phoenix_assets)](https://opensource.org/licenses/MIT)
 

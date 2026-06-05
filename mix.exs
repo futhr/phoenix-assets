@@ -1,4 +1,6 @@
 defmodule PhoenixAssets.MixProject do
+  @moduledoc false
+
   use Mix.Project
 
   @version "0.1.0"
@@ -7,6 +9,9 @@ defmodule PhoenixAssets.MixProject do
   def project do
     [
       app: :phoenix_assets,
+      name: "PhoenixAssets",
+      description: description(),
+      source_url: @source_url,
       version: @version,
       elixir: "~> 1.16",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -15,15 +20,12 @@ defmodule PhoenixAssets.MixProject do
       deps: deps(),
       dialyzer: dialyzer(),
       package: package(),
-      description:
-        "Phoenix-native asset runtime with a batteries-included SvelteKit stack: generated " <>
-          "frontend contracts, supervised Vite/Storybook, Tailwind, ElectricSQL, Phoenix " <>
-          "PubSub, localization, Ash-to-TypeScript types, an asset graph, and production " <>
-          "validation.",
-      name: "PhoenixAssets",
-      source_url: @source_url,
       docs: docs()
     ]
+  end
+
+  def description do
+    "A supervised, type-safe SvelteKit frontend, first-class inside Phoenix."
   end
 
   def cli do
