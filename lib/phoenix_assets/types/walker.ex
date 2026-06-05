@@ -13,7 +13,7 @@ defmodule PhoenixAssets.Types.Walker do
 
     * `uuid`, `ci_string`, datetimes, `decimal`, `binary` -> `string`
     * `integer`, `float` -> `number`
-    * `atom` with `one_of` -> a string-literal union
+    * `atom` with `one_of`, or an `Ash.Type.Enum` module -> a string-literal union
     * `{:array, t}` -> `Array<t>`; `map` with `:fields` -> a typed object
     * nullable attributes gain `| null`
 
@@ -125,6 +125,7 @@ defmodule PhoenixAssets.Types.Walker do
     cond do
       type == Type.Union -> union_type(constraints)
       short = short_name(type) -> map_short(short, constraints)
+      values = enum_values(type) -> TS.string_union(values)
       NewType.new_type?(type) -> map_type(NewType.subtype_of(type), constraints)
       Info.resource?(type) -> embedded_type(type)
       true -> "unknown"
@@ -132,6 +133,16 @@ defmodule PhoenixAssets.Types.Walker do
   end
 
   defp map_type(_, _), do: "unknown"
+
+  # `Ash.Type.Enum` modules carry their members in `values/0`; render them as a
+  # string-literal union ("active" | "inactive") instead of falling through to
+  # `unknown`. Inline `:atom` attributes with `one_of` go through `atom_type/1`.
+  defp enum_values(type) do
+    if Code.ensure_loaded?(type) and function_exported?(type, :values, 0) and
+         Ash.Type.ash_type?(type) do
+      type.values()
+    end
+  end
 
   defp union_type(constraints) do
     case Keyword.get(constraints, :types) do

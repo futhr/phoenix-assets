@@ -59,11 +59,16 @@ defmodule PhoenixAssets.Types.WalkerTest do
     assert render_edge(only: :public) =~ "kind: string"
   end
 
+  test "an Ash.Type.Enum module renders as a string-literal union of its values" do
+    assert render_edge(only: :public) =~ ~s(state: "open" | "closed")
+  end
+
   test "calculations are resolved through their declared type" do
     assert render_edge(only: :public, calculations: [:label]) =~ "label: string"
   end
 
   test "an unknown calculation name degrades to unknown rather than crashing" do
-    assert render_edge(only: :public, calculations: [:does_not_exist]) =~ "does_not_exist: unknown"
+    assert render_edge(only: :public, calculations: [:does_not_exist]) =~
+             "does_not_exist: unknown"
   end
 end
