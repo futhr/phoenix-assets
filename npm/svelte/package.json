@@ -27,7 +27,7 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
-    "check:publish": "publint && attw --pack . --profile esm-only"
+    "check:publish": "publint && attw --pack . --profile esm-only -q"
   },
   "peerDependencies": {
     "@electric-sql/client": "^1.0.0",
