@@ -67,7 +67,9 @@ const importTailwind = async (): Promise<TailwindModule> => {
   let mod: Partial<TailwindModule>
 
   try {
-    mod = (await import("tailwindcss")) as Partial<TailwindModule>
+    // `tailwindcss` does not type its `__unstable__loadDesignSystem` internal,
+    // so assert through `unknown` onto our hand-rolled shim (guarded below).
+    mod = (await import("tailwindcss")) as unknown as Partial<TailwindModule>
   } catch {
     throw new Error(
       "lint-tailwind: cannot import `tailwindcss` — install Tailwind v4 (peer range ^4.0.0) in the host app.",
@@ -188,7 +190,8 @@ const createChecker = (ds: DesignSystem) => {
     const cssResults = ds.candidatesToCss(names)
     for (let i = 0; i < names.length; i++) {
       const css = cssResults[i]
-      if (css) map.set(extractDeclarations(css), names[i])
+      const name = names[i]
+      if (css && name) map.set(extractDeclarations(css), name)
     }
     return map
   }
@@ -198,6 +201,7 @@ const createChecker = (ds: DesignSystem) => {
     const pxMatch = cls.match(arbitraryPxRe)
     if (pxMatch) {
       const [, prefix, pxStr] = pxMatch
+      if (prefix === undefined || pxStr === undefined) return null
       if (!spacingProps.has(prefix)) return null
 
       const px = parseFloat(pxStr)
@@ -397,14 +401,17 @@ const extractClassesRegex = (source: string): ClassRegion[] => {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
+    if (line === undefined) continue
     for (const re of [classAttrRe, utilityCallRe, stringInObjRe]) {
       re.lastIndex = 0
       let m: RegExpExecArray | null = null
       while ((m = re.exec(line)) !== null) {
+        const [full, text] = m
+        if (full === undefined || text === undefined) continue
         regions.push({
-          text: m[1],
+          text,
           line: i + 1,
-          col: m.index + m[0].length - m[1].length + 1,
+          col: m.index + full.length - text.length + 1,
         })
       }
     }

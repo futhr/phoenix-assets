@@ -20,12 +20,19 @@
     "./lint-tailwind.ts": "./lint-tailwind.ts"
   },
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "check:publish": "publint"
   },
   "peerDependencies": {
     "@biomejs/biome": ">=2.4.0",
     "svelte": "^5.0.0",
     "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "svelte": "^5.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
