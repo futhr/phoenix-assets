@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: quality (mix check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28.4"
+          elixir-version: "1.19.4"
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - run: mix deps.get
+      - run: pnpm install --frozen-lockfile
+
+      # One gate: compile (warnings as errors), format, credo, dialyzer,
+      # mix_audit, ExUnit+coverage, biome, typecheck, vitest+coverage, knip,
+      # and package-export correctness (publint + arethetypeswrong).
+      - run: mix check
+
+      - name: Audit JS dependencies (advisory)
+        run: pnpm audit --prod
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: >-
+            cover/lcov.info,
+            npm/vite/coverage/lcov.info,
+            npm/svelte/coverage/lcov.info
+          flags: elixir,vite,svelte
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
