@@ -1,0 +1,19 @@
+# Elixir build artifacts
+/_build/
+/deps/
+/.elixir_ls/
+/cover/
+/doc/
+*.beam
+*.ez
+erl_crash.dump
+
+# JavaScript
+node_modules/
+/npm/*/dist/
+/npm/*/coverage/
+*.tsbuildinfo
+
+# Editors / OS
+.DS_Store
+*.iml
