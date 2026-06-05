@@ -1,0 +1,45 @@
+{
+  "name": "@phoenix-assets/vite",
+  "version": "0.1.0",
+  "description": "Vite plugin for phoenix_assets: $phoenix/* virtual modules, the generated-contracts HMR bridge, a PO loader, and the asset-graph emitter.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/futhr/phoenix_assets",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "directory": "npm/vite"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "check:publish": "publint && attw --pack . --profile esm-only"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.1.7",
+    "tsup": "^8.3.5",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
