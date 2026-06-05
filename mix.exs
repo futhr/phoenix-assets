@@ -53,29 +53,20 @@ defmodule PhoenixAssets.MixProject do
 
   defp deps do
     [
-      # Core runtime (required).
       {:phoenix, "~> 1.7"},
-      {:phoenix_live_view, "~> 1.0", optional: true},
       {:plug, "~> 1.14"},
       {:jason, "~> 1.4"},
       {:telemetry, "~> 1.1"},
       {:file_system, "~> 1.0"},
       {:muontrap, "~> 1.5"},
       {:nimble_options, "~> 1.1"},
-
-      # Stack integrations (optional -- a host opts in by adding the ones it uses).
+      {:phoenix_live_view, "~> 1.0", optional: true},
       {:ash, "~> 3.0", optional: true},
       {:ash_typescript, "~> 0.17", optional: true},
       {:phoenix_sync, "~> 0.6", optional: true},
-      {:gettext, "~> 0.20", optional: true},
+      {:gettext, "~> 1.0", optional: true},
       {:tidewave, "~> 0.5", optional: true},
-
-      # Installer -- powers `mix igniter.install phoenix_assets`. Optional: hosts
-      # that scaffold by hand never load it; it is present for this library's own
-      # dev/test so the installer compiles and is covered by `Igniter.Test`.
       {:igniter, "~> 0.5", optional: true},
-
-      # Tooling / release.
       {:git_ops, "~> 2.6", only: [:dev], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
@@ -83,6 +74,7 @@ defmodule PhoenixAssets.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test, runtime: false},
+      {:simple_sat, "~> 0.1", only: :test},
       {:doctor, "~> 0.22", only: :dev, runtime: false}
     ]
   end
