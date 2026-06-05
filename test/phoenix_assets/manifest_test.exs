@@ -75,4 +75,32 @@ defmodule PhoenixAssets.ManifestTest do
   test "load/1 errors for a missing file" do
     assert {:error, _} = Manifest.load("/nonexistent/manifest.json")
   end
+
+  test "css/2 de-duplicates a diamond import graph without looping" do
+    diamond = %{
+      "src/app.ts" => %{
+        "file" => "assets/app.js",
+        "css" => ["assets/app.css"],
+        "imports" => ["_a.js", "_b.js"]
+      },
+      "_a.js" => %{"file" => "assets/a.js", "css" => ["assets/shared.css"], "imports" => ["_shared.js"]},
+      "_b.js" => %{"file" => "assets/b.js", "imports" => ["_shared.js"]},
+      "_shared.js" => %{"file" => "assets/shared.js", "css" => ["assets/shared.css"]}
+    }
+
+    assert Manifest.css(diamond, "src/app.ts") == ["/assets/app.css", "/assets/shared.css"]
+    assert Manifest.imports(diamond, "src/app.ts") == ["/assets/a.js", "/assets/shared.js", "/assets/b.js"]
+  end
+
+  test "file/2 leaves already-absolute and CDN URLs unprefixed" do
+    manifest = %{
+      "root" => %{"file" => "/already/absolute.js"},
+      "http" => %{"file" => "http://cdn.example/app.js"},
+      "https" => %{"file" => "https://cdn.example/app.js"}
+    }
+
+    assert Manifest.file(manifest, "root") == "/already/absolute.js"
+    assert Manifest.file(manifest, "http") == "http://cdn.example/app.js"
+    assert Manifest.file(manifest, "https") == "https://cdn.example/app.js"
+  end
 end

@@ -33,4 +33,38 @@ defmodule PhoenixAssets.DevServerTest do
   test "status/1 is :unknown when the supervisor is absent" do
     assert DevServer.status(:vite) == :unknown
   end
+
+  describe "status/restart/stop against a supervised child" do
+    setup do
+      # DevServer talks to the process registered as PhoenixAssets.DevSupervisor;
+      # stand in a bare supervisor with a known child id so the operator surface
+      # can be exercised without spawning real OS daemons.
+      child = Supervisor.child_spec({Agent, fn -> :ok end}, id: :dummy)
+
+      start_supervised!(%{
+        id: :devsup_standin,
+        start:
+          {Supervisor, :start_link,
+           [[child], [strategy: :one_for_one, name: PhoenixAssets.DevSupervisor]]}
+      })
+
+      :ok
+    end
+
+    test "status/1 reports a running child" do
+      assert DevServer.status(:dummy) == :running
+      assert DevServer.status(:missing) == :unknown
+    end
+
+    test "restart/1 terminates then restarts the child" do
+      assert {:ok, pid} = DevServer.restart(:dummy)
+      assert is_pid(pid)
+      assert DevServer.status(:dummy) == :running
+    end
+
+    test "stop/1 terminates the child and status becomes :down" do
+      assert DevServer.stop(:dummy) == :ok
+      assert DevServer.status(:dummy) == :down
+    end
+  end
 end

@@ -3,7 +3,16 @@ defmodule PhoenixAssetsTest do
 
   use ExUnit.Case, async: false
 
-  alias PhoenixAssets.{Config, ManifestServer}
+  alias PhoenixAssets.{Config, Context, Graph, ManifestServer}
+
+  defmodule GraphPagePlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def graph_entries(_, _) do
+      [Graph.Entry.new(kind: :page, key: "Home", data: %{"route" => "/"})]
+    end
+  end
 
   setup do
     saved = Application.get_all_env(:phoenix_assets)
@@ -73,5 +82,23 @@ defmodule PhoenixAssetsTest do
   test "page!/1 and route!/1 raise KeyError when the graph lacks the key" do
     assert_raise KeyError, fn -> PhoenixAssets.page!("Nope") end
     assert_raise KeyError, fn -> PhoenixAssets.route!("nope") end
+  end
+
+  test "graph/0 loads a built graph.json and page!/1 returns the found entry" do
+    tmp = Path.join(System.tmp_dir!(), "pg_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(tmp)
+    on_exit(fn -> File.rm_rf!(tmp) end)
+    Application.put_env(:phoenix_assets, :static_root, tmp)
+
+    ctx =
+      Context.new(Config.load!(otp_app: :phoenix_assets, static_root: tmp),
+        env: :test,
+        plugins: [{GraphPagePlugin, []}]
+      )
+
+    assert {:ok, _path} = Graph.write(ctx)
+
+    assert PhoenixAssets.graph()["pages"]["Home"] == %{"route" => "/"}
+    assert PhoenixAssets.page!("Home") == %{"route" => "/"}
   end
 end

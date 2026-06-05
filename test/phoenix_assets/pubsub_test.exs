@@ -13,6 +13,13 @@ defmodule PhoenixAssets.PubSubTest do
     topic(:global, pattern: "global", events: [])
   end
 
+  defmodule EventlessTopics do
+    @moduledoc false
+    use PhoenixAssets.PubSub.Topics
+
+    topic(:presence, pattern: "presence:{room}", events: [])
+  end
+
   defp render do
     ctx = Context.new(Config.load!(otp_app: :my_app), env: :test)
     {:ok, state} = PubSub.init([topics: Topics], ctx)
@@ -32,5 +39,16 @@ defmodule PhoenixAssets.PubSubTest do
     assert out =~ ~s|import type { Device } from "$phoenix/types"|
     assert out =~ ~s|{ type: "device:updated"; payload: Device }|
     assert out =~ ~s|{ type: "device:deleted"; payload: { id: string } }|
+  end
+
+  test "topics without events omit the type import and yield a never event union" do
+    ctx = Context.new(Config.load!(otp_app: :my_app), env: :test)
+    {:ok, state} = PubSub.init([topics: EventlessTopics], ctx)
+    [file] = PubSub.generated_files(ctx, state)
+    out = IO.iodata_to_binary(file.contents)
+
+    refute out =~ "$phoenix/types"
+    assert out =~ "export type PubSubEvent = never"
+    assert out =~ "presence: (room: string | number) => `presence:${room}`"
   end
 end

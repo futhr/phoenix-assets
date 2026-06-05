@@ -17,4 +17,12 @@ defmodule PhoenixAssets.LocalizeTest do
     assert out =~ "export type Locale = (typeof locales)[number]"
     assert out =~ ~s|export const defaultLocale: Locale = "en"|
   end
+
+  test "contributes one sorted, de-duplicated graph entry per locale" do
+    {:ok, state} = Localize.init([locales: ~w(sv en en)], ctx())
+    entries = Localize.graph_entries(ctx(), state)
+
+    assert Enum.map(entries, & &1.key) == ["en", "sv"]
+    assert Enum.all?(entries, &(&1.kind == :locale))
+  end
 end

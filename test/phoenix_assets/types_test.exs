@@ -12,6 +12,13 @@ defmodule PhoenixAssets.TypesTest do
     type("PortfolioRow", resource: PhoenixAssets.TestSupport.Portfolio, only: :public)
   end
 
+  defmodule GatedSchema do
+    @moduledoc false
+    use PhoenixAssets.Types.Schema
+
+    type("GatedRow", resource: PhoenixAssets.TestSupport.Gated, only: :public)
+  end
+
   defp ctx, do: Context.new(Config.load!(otp_app: :my_app), env: :test)
 
   test "generates types.ts from declarations" do
@@ -27,5 +34,19 @@ defmodule PhoenixAssets.TypesTest do
     [check] = Types.doctor_checks(ctx(), state)
 
     assert check.run.(ctx()).status == :ok
+  end
+
+  test "field-policy doctor check warns when an exposed field is policy-gated" do
+    {:ok, state} = Types.init([types: GatedSchema], ctx())
+    [check] = Types.doctor_checks(ctx(), state)
+    result = check.run.(ctx())
+
+    assert result.status == :warn
+    assert result.message =~ "email"
+    assert result.hint =~ ":omit"
+  end
+
+  test "a nil types module generates nothing" do
+    assert Types.generated_files(ctx(), %{module: nil}) == []
   end
 end

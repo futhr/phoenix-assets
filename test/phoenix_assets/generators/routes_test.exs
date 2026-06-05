@@ -28,8 +28,27 @@ defmodule PhoenixAssets.Generators.RoutesTest do
     end
   end
 
-  defp generate do
-    ctx = Context.new(Config.load!(otp_app: :my_app, router: Router), env: :test)
+  defmodule EdgeRouter do
+    @moduledoc false
+    use Phoenix.Router
+
+    alias PhoenixAssets.Generators.RoutesTest.Stub
+
+    get("/api/ping", Stub, nil)
+    forward("/api/hook", Stub)
+    get("/api/health", Stub, :health)
+    get("/shapes/health", Stub, :health)
+  end
+
+  defmodule EmptyRouter do
+    @moduledoc false
+    use Phoenix.Router
+
+    get("/", PhoenixAssets.Generators.RoutesTest.Stub, :index)
+  end
+
+  defp generate(router \\ Router) do
+    ctx = Context.new(Config.load!(otp_app: :my_app, router: router), env: :test)
     ctx |> Routes.generate() |> Map.fetch!(:contents) |> IO.iodata_to_binary()
   end
 
@@ -60,5 +79,26 @@ defmodule PhoenixAssets.Generators.RoutesTest do
   test "returns nil when no router is configured" do
     ctx = Context.new(Config.load!(otp_app: :my_app), env: :test)
     assert Routes.generate(ctx) == nil
+  end
+
+  test "names routes by helper (no action) and by path slug (forward)" do
+    ts = generate(EdgeRouter)
+
+    assert ts =~ "stub: () =>"
+    assert ts =~ "apiHook: () =>"
+  end
+
+  test "disambiguates duplicate route names with a numeric suffix" do
+    ts = generate(EdgeRouter)
+
+    assert ts =~ "health: () =>"
+    assert ts =~ "health2: () =>"
+  end
+
+  test "emits an empty map and a never RouteName union with no endpoint routes" do
+    ts = generate(EmptyRouter)
+
+    assert ts =~ "export const routes = {\n} as const"
+    assert ts =~ "export type RouteName =\n  never"
   end
 end

@@ -45,4 +45,12 @@ defmodule PhoenixAssets.ConfigTest do
       end
     end
   end
+
+  test "schema/0 exposes the scalar option schema" do
+    schema = Config.schema()
+
+    assert Keyword.get(schema, :otp_app)[:required] == true
+    assert Keyword.get(schema, :asset_root)[:default] == "assets"
+    assert Keyword.get(schema, :package_manager)[:type] == {:in, [:pnpm, :npm, :bun]}
+  end
 end

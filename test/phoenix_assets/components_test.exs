@@ -60,4 +60,16 @@ defmodule PhoenixAssets.ComponentsTest do
     assert html =~ ~s(integrity="sha384-APP")
     assert html =~ ~s(crossorigin="anonymous")
   end
+
+  test "vite_assets points at the dev server and HMR client in development" do
+    Application.put_env(:phoenix_assets, :dev, enabled: true)
+    on_exit(fn -> Application.delete_env(:phoenix_assets, :dev) end)
+
+    html = render_component(&Components.vite_assets/1, entry: "src/app.ts")
+
+    assert html =~ ~s(src="http://127.0.0.1:5173/@vite/client")
+    assert html =~ ~s(src="http://127.0.0.1:5173/src/app.ts")
+    assert html =~ ~s(type="module")
+    refute html =~ "/assets/app-AAA.js"
+  end
 end

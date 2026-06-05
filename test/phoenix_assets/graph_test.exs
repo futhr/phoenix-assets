@@ -3,8 +3,17 @@ defmodule PhoenixAssets.GraphTest do
 
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog
+
   alias PhoenixAssets.{Config, Context, Graph}
   alias PhoenixAssets.Graph.Entry
+
+  defmodule FailPlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def init(_, _), do: {:error, :boom}
+  end
 
   defmodule FakePlugin do
     @moduledoc false
@@ -59,5 +68,26 @@ defmodule PhoenixAssets.GraphTest do
     assert File.exists?(path)
     assert {:ok, loaded} = Graph.load(context)
     assert loaded["pages"]["Home"]["route"] == "/"
+  end
+
+  test "build/2 loads the manifest from disk when none is passed" do
+    tmp = Path.join(System.tmp_dir!(), "gm_#{System.unique_integer([:positive])}")
+    path = Path.join([tmp, "assets", ".vite", "manifest.json"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, Jason.encode!(@manifest))
+    on_exit(fn -> File.rm_rf!(tmp) end)
+
+    graph = Graph.build(ctx(static_root: tmp))
+    assert graph["entries"]["src/app.ts"]["file"] == "/assets/app-AAA.js"
+  end
+
+  test "build/2 logs and yields empty groups when a plugin fails to initialise" do
+    context = Context.new(Config.load!(otp_app: :my_app), env: :test, plugins: [{FailPlugin, []}])
+
+    {graph, log} = with_log(fn -> Graph.build(context, manifest: @manifest) end)
+
+    assert graph["pages"] == %{}
+    assert graph["routes"] == %{}
+    assert log =~ "failed to initialise"
   end
 end
