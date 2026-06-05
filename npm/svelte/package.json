@@ -1,0 +1,61 @@
+{
+  "name": "@phoenix-assets/svelte",
+  "version": "0.1.0",
+  "description": "Typed Electric, PubSub, and localization runtime helpers for phoenix_assets on Svelte 5.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/futhr/phoenix_assets",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "directory": "npm/svelte"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "check:publish": "publint && attw --pack . --profile esm-only"
+  },
+  "peerDependencies": {
+    "@electric-sql/client": "^1.0.0",
+    "@tanstack/electric-db-collection": "^0.3.0",
+    "@tanstack/svelte-db": "^0.1.0",
+    "svelte": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/electric-db-collection": {
+      "optional": true
+    },
+    "@tanstack/svelte-db": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@electric-sql/client": "^1.5.18",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "@tanstack/electric-db-collection": "^0.3.4",
+    "@tanstack/svelte-db": "^0.1.83",
+    "@vitest/coverage-v8": "^4.1.7",
+    "happy-dom": "^20.10.1",
+    "svelte": "^5.55.9",
+    "tsup": "^8.3.5",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
