@@ -1,2 +1,7 @@
 packages:
   - "npm/*"
+
+# pnpm 10's home for the build-script allowlist (moved out of package.json's
+# "pnpm" field). Only these packages may run install/build scripts.
+onlyBuiltDependencies:
+  - esbuild
