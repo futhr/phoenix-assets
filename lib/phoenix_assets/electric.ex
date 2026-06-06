@@ -4,15 +4,19 @@ defmodule PhoenixAssets.Electric do
 
   Reads the shapes declared in the module passed as `shapes:` (see
   `PhoenixAssets.Electric.Shapes`) and emits `electric.ts` -- a `ShapeStream`
-  factory per shape, typed by the shape's row type and keyed by its parameters,
-  with the URL built from the declared route. Also contributes graph entries and
-  a doctor check per shape that the route exists in the router.
+  factory per shape, typed by the shape's row type. Each factory takes a params
+  map (path placeholders are substituted, the rest become query params) and is
+  built through `@phoenix-assets/svelte`: the URL via `createShapeUrl/2` and,
+  critically, the request's auth headers via `authHeaders/0`. Also contributes
+  graph entries and a doctor check per shape that the route exists in the router.
 
   ## Why
 
   This is where shape declarations become the client contract the frontend
   imports (`import { shapes } from "$phoenix/electric"`), generated from one
-  source so URLs and row types cannot drift from the backend.
+  source so URLs and row types cannot drift from the backend. Auth headers are
+  baked into every factory so a tenant-scoped shape can never be requested
+  unauthenticated by accident -- the secure default a shared client must enforce.
   """
 
   use PhoenixAssets.Plugin
@@ -79,6 +83,7 @@ defmodule PhoenixAssets.Electric do
     [
       TS.header(),
       ~s|\nimport { ShapeStream } from "@electric-sql/client"\n|,
+      ~s|import { authHeaders, createShapeUrl } from "@phoenix-assets/svelte"\n|,
       import_types(types),
       "\nexport const shapes = {\n",
       Enum.map(sorted, &render_shape/1),
@@ -92,20 +97,18 @@ defmodule PhoenixAssets.Electric do
   defp import_types(types),
     do: ~s|import type { #{Enum.join(types, ", ")} } from "$phoenix/types"\n|
 
+  # One uniform factory shape: a params map feeds `createShapeUrl/2` (which
+  # substitutes `:placeholders` and appends the rest as query params), and every
+  # stream carries `authHeaders()` so tenant-scoped shapes are never requested
+  # unauthenticated.
   defp render_shape({name, opts}) do
     route = opts[:route]
     type = TS.type_name(opts[:type])
     fname = TS.camelize(name)
 
-    case TS.path_params(route) do
-      [] ->
-        "  #{fname}: () => new ShapeStream<#{type}>({ url: #{Jason.encode!(route)} }),\n"
-
-      params ->
-        args = Enum.map_join(params, ", ", &"#{TS.camelize(&1)}: string | number")
-
-        "  #{fname}: (#{args}) => new ShapeStream<#{type}>({ url: `#{TS.url_template(route)}` }),\n"
-    end
+    "  #{fname}: (params: Record<string, string | number> = {}) => " <>
+      "new ShapeStream<#{type}>({ url: createShapeUrl(#{Jason.encode!(route)}, params), " <>
+      "headers: authHeaders() }),\n"
   end
 
   defp route_check(_, name, nil), do: Check.error("electric shape #{name} has no :route")

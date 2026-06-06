@@ -53,20 +53,24 @@ defmodule PhoenixAssets.ElectricTest do
     IO.iodata_to_binary(file.contents)
   end
 
-  test "imports the Electric client and the row types" do
+  test "imports the Electric client, the svelte auth/url helpers, and the row types" do
     out = render()
     assert out =~ ~s|import { ShapeStream } from "@electric-sql/client"|
+    assert out =~ ~s|import { authHeaders, createShapeUrl } from "@phoenix-assets/svelte"|
     assert out =~ ~s|import type { PortfolioRow } from "$phoenix/types"|
   end
 
-  test "generates a typed factory per shape, with URL params" do
+  test "generates a typed, auth-bearing factory per shape" do
     out = render()
 
-    assert out =~
-             ~s|publicPortfolios: () => new ShapeStream<PortfolioRow>({ url: "/shapes/portfolios" })|
+    assert out =~ "publicPortfolios: (params: Record<string, string | number> = {}) =>"
+    assert out =~ ~s|createShapeUrl("/shapes/portfolios", params)|
+    assert out =~ ~s|createShapeUrl("/shapes/users/:user_id/portfolios", params)|
 
-    assert out =~ "userPortfolios: (userId: string | number) =>"
-    assert out =~ "encodeURIComponent(String(userId))"
+    # Every factory must carry auth so a tenant-scoped shape can never be
+    # requested anonymously -- the security guarantee of the generated client.
+    assert out =~ "headers: authHeaders()"
+    refute out =~ ~s|{ url: "/shapes/portfolios" }|
   end
 
   test "a nil shapes module contributes no files, entries, or checks" do
