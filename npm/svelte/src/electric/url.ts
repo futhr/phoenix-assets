@@ -8,17 +8,31 @@ export interface AuthConfig {
 
 const DEFAULT_STORAGE_KEY = "auth_token"
 
+let defaultAuthConfig: AuthConfig = {}
+
+/**
+ * Sets the process-wide default token source for shape requests.
+ *
+ * Generated `$phoenix/electric` clients call `authHeaders()` with no argument,
+ * so an app whose token key isn't the default `"auth_token"` configures it once
+ * at boot (e.g. `configureShapeAuth({ localStorageKey: "my_app_token" })`).
+ */
+export function configureShapeAuth(config: AuthConfig): void {
+  defaultAuthConfig = { ...defaultAuthConfig, ...config }
+}
+
 /** Reads the auth token from localStorage, then (optionally) a cookie. */
 export function getAuthToken(config: AuthConfig = {}): string | undefined {
-  const storageKey = config.localStorageKey ?? DEFAULT_STORAGE_KEY
+  const merged = { ...defaultAuthConfig, ...config }
+  const storageKey = merged.localStorageKey ?? DEFAULT_STORAGE_KEY
 
   if (typeof localStorage !== "undefined") {
     const token = localStorage.getItem(storageKey)
     if (token) return token
   }
 
-  if (config.cookieName && typeof document !== "undefined") {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${config.cookieName}=([^;]*)`))
+  if (merged.cookieName && typeof document !== "undefined") {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${merged.cookieName}=([^;]*)`))
     if (match?.[1]) return decodeURIComponent(match[1])
   }
 

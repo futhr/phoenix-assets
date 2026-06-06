@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { createShapeUrl, getAuthToken } from "../src/electric/url"
+import { configureShapeAuth, createShapeUrl, getAuthToken } from "../src/electric/url"
 
 describe("createShapeUrl", () => {
   it("substitutes and URL-encodes path params", () => {
@@ -30,5 +30,20 @@ describe("getAuthToken", () => {
   it("returns undefined when no storage is available", () => {
     vi.stubGlobal("localStorage", undefined)
     expect(getAuthToken()).toBeUndefined()
+  })
+})
+
+describe("configureShapeAuth", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    configureShapeAuth({ localStorageKey: "auth_token" })
+  })
+
+  it("makes getAuthToken read from the app-configured localStorage key", () => {
+    configureShapeAuth({ localStorageKey: "refpath_cloud_token" })
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => (key === "refpath_cloud_token" ? "tok2" : null),
+    })
+    expect(getAuthToken()).toBe("tok2")
   })
 })

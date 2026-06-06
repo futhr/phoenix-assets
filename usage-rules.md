@@ -84,7 +84,11 @@ Rules to rely on:
 - `@phoenix-assets/vite` — the Vite plugin (`phoenixAssets`), `$phoenix/*` virtual
   modules, HMR bridge, PO loader, graph emitter. Add it to `vite.config.js`.
 - `@phoenix-assets/svelte` — typed runtime helpers: `createShapeStore`,
-  `createShapeCollection`, `matchEvent`, `resolveLocale`, `createShapeUrl`.
+  `authHeaders`/`createShapeUrl` (used by the generated `$phoenix/electric`
+  client), `matchEvent`, `resolveLocale`, and `configureShapeAuth` to point the
+  shape clients at your app's token key. `createShapeCollection` (TanStack DB)
+  lives behind the `@phoenix-assets/svelte/collection` subpath so the main
+  barrel stays free of the optional `@tanstack/*` peers.
 
 ## Linting & formatting (host apps)
 
