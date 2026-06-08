@@ -48,16 +48,16 @@
     }
   },
   "devDependencies": {
-    "@electric-sql/client": "^1.5.18",
+    "@electric-sql/client": "^1.5.20",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
-    "@tanstack/electric-db-collection": "^0.3.4",
-    "@tanstack/svelte-db": "^0.1.83",
-    "@vitest/coverage-v8": "^4.1.7",
-    "happy-dom": "^20.10.1",
-    "svelte": "^5.55.9",
-    "tsup": "^8.3.5",
+    "@tanstack/electric-db-collection": "^0.3.6",
+    "@tanstack/svelte-db": "^0.1.85",
+    "@vitest/coverage-v8": "^4.1.8",
+    "happy-dom": "^20.10.2",
+    "svelte": "^5.56.3",
+    "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
