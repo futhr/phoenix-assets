@@ -30,4 +30,9 @@ describe("parsePo", () => {
     const po = ['msgid "q"', 'msgstr "a \\"b\\" c\\nd"'].join("\n")
     expect(parsePo(po).q).toBe('a "b" c\nd')
   })
+
+  it("unescapes tabs", () => {
+    const po = ['msgid "t"', 'msgstr "a\\tb"'].join("\n")
+    expect(parsePo(po).t).toBe("a\tb")
+  })
 })

@@ -57,5 +57,9 @@ export function parsePo(content: string): Record<string, string> {
 function unquote(value: string): string {
   const match = value.match(/^"([\s\S]*)"$/)
   if (!match) return value
-  return (match[1] ?? "").replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\")
+  return (match[1] ?? "")
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "\t")
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, "\\")
 }
