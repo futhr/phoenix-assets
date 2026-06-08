@@ -79,14 +79,25 @@ defmodule PhoenixAssets.Generators.Routes do
 
   defp dedupe_names(entries) do
     {result, _} =
-      Enum.map_reduce(entries, %{}, fn entry, seen ->
-        case Map.get(seen, entry.name, 0) do
-          0 -> {entry, Map.put(seen, entry.name, 1)}
-          n -> {%{entry | name: "#{entry.name}#{n + 1}"}, Map.put(seen, entry.name, n + 1)}
-        end
+      Enum.map_reduce(entries, MapSet.new(), fn entry, taken ->
+        name = unique_name(entry.name, taken)
+        {%{entry | name: name}, MapSet.put(taken, name)}
       end)
 
     result
+  end
+
+  # Resolves a route name unique among those already emitted, appending a numeric
+  # suffix until the candidate is free. A rename can never collide with an existing
+  # or earlier-renamed name (e.g. `a`, `a`, `a2` -> `a`, `a2`, `a22`).
+  defp unique_name(base, taken) do
+    if MapSet.member?(taken, base) do
+      Stream.iterate(2, &(&1 + 1))
+      |> Stream.map(&"#{base}#{&1}")
+      |> Enum.find(&(not MapSet.member?(taken, &1)))
+    else
+      base
+    end
   end
 
   defp render(routes) do

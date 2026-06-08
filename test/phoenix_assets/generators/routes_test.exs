@@ -47,6 +47,17 @@ defmodule PhoenixAssets.Generators.RoutesTest do
     get("/", PhoenixAssets.Generators.RoutesTest.Stub, :index)
   end
 
+  defmodule CollisionRouter do
+    @moduledoc false
+    use Phoenix.Router
+
+    alias PhoenixAssets.Generators.RoutesTest.Stub
+
+    get("/api/thing", Stub, :thing)
+    get("/shapes/thing", Stub, :thing)
+    get("/shapes/thing2", Stub, :thing2)
+  end
+
   defp generate(router \\ Router) do
     ctx = Context.new(Config.load!(otp_app: :my_app, router: router), env: :test)
     ctx |> Routes.generate() |> Map.fetch!(:contents) |> IO.iodata_to_binary()
@@ -93,6 +104,14 @@ defmodule PhoenixAssets.Generators.RoutesTest do
 
     assert ts =~ "health: () =>"
     assert ts =~ "health2: () =>"
+  end
+
+  test "a renamed duplicate never collides with an existing route name" do
+    ts = generate(CollisionRouter)
+
+    assert ts =~ "thing: () =>"
+    assert ts =~ "thing2: () =>"
+    assert ts =~ "thing22: () =>"
   end
 
   test "emits an empty map and a never RouteName union with no endpoint routes" do
