@@ -91,23 +91,23 @@ defmodule PhoenixAssets.DoctorTest do
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, ~s({"src/app.ts":{"file":"assets/app.js"}}))
 
-    {_status, results} = Doctor.run(context, production: true)
+    {_, results} = Doctor.run(context, production: true)
     assert result_for(results, :manifest_present).status == :ok
   end
 
   test "in :spa serve_mode the manifest check passes without a server-rendered manifest" do
     config = Config.load!(otp_app: :my_app, asset_root: System.tmp_dir!(), serve_mode: :spa)
-    {_status, results} = Doctor.run(Context.new(config, env: :test), production: true)
+    {_, results} = Doctor.run(Context.new(config, env: :test), production: true)
     assert result_for(results, :manifest_present).status == :ok
   end
 
   test "errors in production when generated contracts are stale" do
-    {_status, results} = Doctor.run(ctx([{StalePlugin, []}]), production: true)
+    {_, results} = Doctor.run(ctx([{StalePlugin, []}]), production: true)
     assert result_for(results, :generated_fresh).status == :error
   end
 
   test "skips plugin checks when a plugin fails to initialise" do
-    {_status, results} = Doctor.run(ctx([{FailPlugin, []}]))
+    {_, results} = Doctor.run(ctx([{FailPlugin, []}]))
     ids = Enum.map(results, fn {check, _} -> check.id end)
 
     assert :asset_root in ids

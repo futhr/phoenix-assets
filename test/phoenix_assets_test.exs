@@ -96,7 +96,7 @@ defmodule PhoenixAssetsTest do
         plugins: [{GraphPagePlugin, []}]
       )
 
-    assert {:ok, _path} = Graph.write(ctx)
+    assert {:ok, _} = Graph.write(ctx)
 
     assert PhoenixAssets.graph()["pages"]["Home"] == %{"route" => "/"}
     assert PhoenixAssets.page!("Home") == %{"route" => "/"}

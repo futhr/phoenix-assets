@@ -12,7 +12,7 @@ defmodule PhoenixAssets.Generated.WatcherTest do
     @moduledoc false
     use PhoenixAssets.Plugin
 
-    def generated_files(_ctx, _) do
+    def generated_files(_, _) do
       [
         GeneratedFile.new(
           path: "phoenix/probe.ts",

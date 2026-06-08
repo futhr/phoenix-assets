@@ -83,13 +83,22 @@ defmodule PhoenixAssets.ManifestTest do
         "css" => ["assets/app.css"],
         "imports" => ["_a.js", "_b.js"]
       },
-      "_a.js" => %{"file" => "assets/a.js", "css" => ["assets/shared.css"], "imports" => ["_shared.js"]},
+      "_a.js" => %{
+        "file" => "assets/a.js",
+        "css" => ["assets/shared.css"],
+        "imports" => ["_shared.js"]
+      },
       "_b.js" => %{"file" => "assets/b.js", "imports" => ["_shared.js"]},
       "_shared.js" => %{"file" => "assets/shared.js", "css" => ["assets/shared.css"]}
     }
 
     assert Manifest.css(diamond, "src/app.ts") == ["/assets/app.css", "/assets/shared.css"]
-    assert Manifest.imports(diamond, "src/app.ts") == ["/assets/a.js", "/assets/shared.js", "/assets/b.js"]
+
+    assert Manifest.imports(diamond, "src/app.ts") == [
+             "/assets/a.js",
+             "/assets/shared.js",
+             "/assets/b.js"
+           ]
   end
 
   test "file/2 leaves already-absolute and CDN URLs unprefixed" do

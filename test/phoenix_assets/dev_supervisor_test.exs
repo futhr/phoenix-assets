@@ -36,7 +36,7 @@ defmodule PhoenixAssets.DevSupervisorTest do
   end
 
   test "init/1 builds a daemon child spec for each enabled dev process" do
-    {:ok, {_flags, specs}} =
+    {:ok, {_, specs}} =
       DevSupervisor.init(ctx: ctx([{VitePlugin, []}]), watch_dirs: [])
 
     ids = Enum.map(specs, & &1.id)
@@ -45,7 +45,7 @@ defmodule PhoenixAssets.DevSupervisorTest do
   end
 
   test "init/1 logs and starts no daemons when a plugin fails to initialise" do
-    {{:ok, {_flags, specs}}, log} =
+    {{:ok, {_, specs}}, log} =
       with_log(fn -> DevSupervisor.init(ctx: ctx([{FailPlugin, []}]), watch_dirs: []) end)
 
     refute :fake_vite in Enum.map(specs, & &1.id)

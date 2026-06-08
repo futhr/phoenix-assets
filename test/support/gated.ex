@@ -12,7 +12,7 @@ defmodule PhoenixAssets.TestSupport.Gated do
     authorizers: [Ash.Policy.Authorizer]
 
   actions do
-    defaults [:read]
+    defaults([:read])
   end
 
   attributes do
@@ -28,11 +28,11 @@ defmodule PhoenixAssets.TestSupport.Gated do
 
   field_policies do
     field_policy :email do
-      authorize_if always()
+      authorize_if(always())
     end
 
     field_policy :* do
-      authorize_if always()
+      authorize_if(always())
     end
   end
 end

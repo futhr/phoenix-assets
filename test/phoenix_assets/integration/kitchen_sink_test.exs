@@ -108,8 +108,9 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
 
     electric = File.read!(Path.join(gen, "electric.ts"))
     assert electric =~ ~s|import { ShapeStream } from "@electric-sql/client"|
-    assert electric =~ "userPortfolios:"
+    assert electric =~ "userPortfolios: (params: Record<string, string | number> = {})"
     assert electric =~ ~s|createShapeUrl("/shapes/users/:user_id/portfolios", params)|
+    assert electric =~ "headers: authHeaders()"
 
     pubsub = File.read!(Path.join(gen, "pubsub.ts"))
     assert pubsub =~ "export const topics"
