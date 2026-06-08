@@ -4,7 +4,8 @@ defmodule PhoenixAssets.Localize do
 
   Emits `locales.ts` -- the `Locale` union, the `locales` tuple, and
   `defaultLocale` -- from either an explicit `locales:` list or, by default, the
-  subdirectories of `priv/gettext`. This subsumes the common bespoke
+  subdirectories of `priv/gettext` (override the scan root with `gettext_dir:`
+  for umbrella or non-standard layouts). This subsumes the common bespoke
   "scan gettext, write locales.json" build script.
 
   ## Why
@@ -47,18 +48,18 @@ defmodule PhoenixAssets.Localize do
 
   defp locales(state) do
     case Map.get(state, :locales) do
-      nil -> scan_gettext()
+      nil -> scan_gettext(Map.get(state, :gettext_dir, @gettext_dir))
       list -> Enum.map(list, &to_string/1)
     end
     |> Enum.uniq()
     |> Enum.sort()
   end
 
-  defp scan_gettext do
-    if File.dir?(@gettext_dir) do
-      @gettext_dir
+  defp scan_gettext(dir) do
+    if File.dir?(dir) do
+      dir
       |> File.ls!()
-      |> Enum.filter(&File.dir?(Path.join(@gettext_dir, &1)))
+      |> Enum.filter(&File.dir?(Path.join(dir, &1)))
     else
       []
     end

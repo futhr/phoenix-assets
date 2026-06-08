@@ -25,4 +25,28 @@ defmodule PhoenixAssets.LocalizeTest do
     assert Enum.map(entries, & &1.key) == ["en", "sv"]
     assert Enum.all?(entries, &(&1.kind == :locale))
   end
+
+  test "scans a gettext directory for locale subdirectories, ignoring stray files" do
+    dir = Path.join(System.tmp_dir!(), "gx_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(Path.join(dir, "en/LC_MESSAGES"))
+    File.mkdir_p!(Path.join(dir, "sv/LC_MESSAGES"))
+    File.write!(Path.join(dir, "default.pot"), "")
+    on_exit(fn -> File.rm_rf!(dir) end)
+
+    {:ok, state} = Localize.init([gettext_dir: dir], ctx())
+    [file] = Localize.generated_files(ctx(), state)
+    out = IO.iodata_to_binary(file.contents)
+
+    assert out =~ ~s|export const locales = ["en","sv"] as const|
+    assert out =~ ~s|export const defaultLocale: Locale = "en"|
+  end
+
+  test "yields no locales when the scan root does not exist" do
+    {:ok, state} =
+      Localize.init([gettext_dir: "/no/such/gettext-#{System.unique_integer()}"], ctx())
+
+    out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
+
+    assert out =~ ~s|export const locales = [] as const|
+  end
 end
