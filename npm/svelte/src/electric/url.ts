@@ -21,6 +21,11 @@ export function configureShapeAuth(config: AuthConfig): void {
   defaultAuthConfig = { ...defaultAuthConfig, ...config }
 }
 
+/** Escapes regex metacharacters so a cookie name is matched literally. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 /** Reads the auth token from localStorage, then (optionally) a cookie. */
 export function getAuthToken(config: AuthConfig = {}): string | undefined {
   const merged = { ...defaultAuthConfig, ...config }
@@ -32,7 +37,9 @@ export function getAuthToken(config: AuthConfig = {}): string | undefined {
   }
 
   if (merged.cookieName && typeof document !== "undefined") {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${merged.cookieName}=([^;]*)`))
+    const match = document.cookie.match(
+      new RegExp(`(?:^|; )${escapeRegExp(merged.cookieName)}=([^;]*)`),
+    )
     if (match?.[1]) return decodeURIComponent(match[1])
   }
 

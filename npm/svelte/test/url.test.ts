@@ -31,6 +31,12 @@ describe("getAuthToken", () => {
     vi.stubGlobal("localStorage", undefined)
     expect(getAuthToken()).toBeUndefined()
   })
+
+  it("falls back to a cookie, matching the cookie name literally", () => {
+    vi.stubGlobal("localStorage", { getItem: () => null })
+    vi.stubGlobal("document", { cookie: "myXtoken=wrong; my.token=right" })
+    expect(getAuthToken({ cookieName: "my.token" })).toBe("right")
+  })
 })
 
 describe("configureShapeAuth", () => {
