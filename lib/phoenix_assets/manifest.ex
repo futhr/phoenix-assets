@@ -41,9 +41,16 @@ defmodule PhoenixAssets.Manifest do
   @spec file(t(), String.t()) :: String.t()
   def file(manifest, key), do: manifest |> entry!(key) |> Map.fetch!("file") |> prefix()
 
-  @doc "All stylesheet hrefs for `key`, including those of its transitive imports."
+  @doc """
+  All stylesheet hrefs for `key`, including those of its transitive imports.
+
+  Raises `KeyError` when `key` itself is absent (like `file/2` and
+  `imports/2`); transitive imports that are missing from the manifest are
+  skipped.
+  """
   @spec css(t(), String.t()) :: [String.t()]
   def css(manifest, key) do
+    _ = entry!(manifest, key)
     {_, _, css} = gather(manifest, key, MapSet.new())
     css |> Enum.uniq() |> Enum.map(&prefix/1)
   end

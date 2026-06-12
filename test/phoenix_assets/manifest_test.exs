@@ -63,6 +63,12 @@ defmodule PhoenixAssets.ManifestTest do
     assert_raise KeyError, fn -> Manifest.entry!(@manifest, "nope") end
   end
 
+  test "css/2 raises for an unknown root key, like file/2 and imports/2" do
+    assert_raise KeyError, fn -> Manifest.css(@manifest, "nope") end
+    assert_raise KeyError, fn -> Manifest.file(@manifest, "nope") end
+    assert_raise KeyError, fn -> Manifest.imports(@manifest, "nope") end
+  end
+
   test "load/1 decodes a manifest file" do
     path = Path.join(System.tmp_dir!(), "m_#{System.unique_integer([:positive])}.json")
     File.write!(path, JSON.encode!(@manifest))

@@ -5,6 +5,11 @@ defmodule PhoenixAssets.LocalizeTest do
 
   alias PhoenixAssets.{Config, Context, Localize}
 
+  defmodule Backend do
+    @moduledoc false
+    use Gettext.Backend, otp_app: :phoenix_assets, default_locale: "en"
+  end
+
   defp ctx, do: Context.new(Config.load!(otp_app: :my_app), env: :test)
 
   test "generates the locale union from an explicit list" do
@@ -48,5 +53,45 @@ defmodule PhoenixAssets.LocalizeTest do
     out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
 
     assert out =~ ~s|export const locales = [] as const|
+  end
+
+  test "ignores dot-directories when scanning gettext" do
+    dir = Path.join(System.tmp_dir!(), "gd_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(Path.join(dir, "en/LC_MESSAGES"))
+    File.mkdir_p!(Path.join(dir, ".cache"))
+    on_exit(fn -> File.rm_rf!(dir) end)
+
+    {:ok, state} = Localize.init([gettext_dir: dir], ctx())
+    out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
+
+    assert out =~ ~s|export const locales = ["en"] as const|
+  end
+
+  test "defaultLocale prefers the Gettext backend's configured default" do
+    {:ok, state} =
+      Localize.init(
+        [locales: ~w(de en sv), gettext_backend: PhoenixAssets.LocalizeTest.Backend],
+        ctx()
+      )
+
+    out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
+
+    # Alphabetical fallback would pick "de"; the backend says "en".
+    assert out =~ ~s|export const defaultLocale: Locale = "en"|
+  end
+
+  test "an explicit default_locale overrides the backend" do
+    {:ok, state} =
+      Localize.init(
+        [
+          locales: ~w(de en sv),
+          default_locale: "sv",
+          gettext_backend: PhoenixAssets.LocalizeTest.Backend
+        ],
+        ctx()
+      )
+
+    out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
+    assert out =~ ~s|export const defaultLocale: Locale = "sv"|
   end
 end
