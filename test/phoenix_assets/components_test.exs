@@ -72,4 +72,44 @@ defmodule PhoenixAssets.ComponentsTest do
     assert html =~ ~s(type="module")
     refute html =~ "/assets/app-AAA.js"
   end
+
+  test "production tags carry phx-track-static and the nonce reaches preloads" do
+    manifest = %{
+      "src/app.ts" => %{
+        "file" => "assets/app-AAA.js",
+        "css" => ["assets/app-CSS.css"],
+        "imports" => ["_vendor-BBB.js"]
+      },
+      "_vendor-BBB.js" => %{"file" => "assets/vendor-BBB.js"}
+    }
+
+    :persistent_term.put({ManifestServer, :manifest}, manifest)
+    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+
+    html = render_component(&Components.vite_assets/1, entry: "src/app.ts", nonce: "n0nce")
+
+    assert html =~ "phx-track-static"
+
+    preload_line =
+      html |> String.split("\n") |> Enum.find(&String.contains?(&1, "modulepreload"))
+
+    assert preload_line =~ ~s(nonce="n0nce")
+  end
+
+  test "speculation_rules emits a prefetch block from the given routes" do
+    html =
+      render_component(&Components.speculation_rules/1,
+        routes: ["/", "/users/:id"],
+        nonce: "n0nce"
+      )
+
+    assert html =~ ~s(type="speculationrules")
+    assert html =~ ~s(nonce="n0nce")
+    assert html =~ ~s("href_matches":"/users/:id")
+    assert html =~ ~s("eagerness":"moderate")
+  end
+
+  test "speculation_rules renders nothing without routes" do
+    assert render_component(&Components.speculation_rules/1, routes: []) |> String.trim() == ""
+  end
 end

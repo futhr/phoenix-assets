@@ -52,15 +52,19 @@ if Code.ensure_loaded?(Phoenix.Component) do
       """
     end
 
+    # `phx-track-static` lets LiveView detect stale clients after a deploy;
+    # the nonce goes on the modulepreload links too -- under a nonce-based
+    # script-src policy the preload fetches are otherwise blocked.
     defp render_vite_assets(%{resolved: %{file: _}} = assigns) do
       ~H"""
-      <link :for={href <- @resolved.css} rel="stylesheet" href={href} nonce={@nonce} />
+      <link :for={href <- @resolved.css} rel="stylesheet" href={href} nonce={@nonce} phx-track-static />
       <link
         :for={href <- @resolved.imports}
         rel="modulepreload"
         href={href}
         integrity={@resolved.integrity[href]}
         crossorigin={@resolved.integrity[href] && "anonymous"}
+        nonce={@nonce}
       />
       <script
         type="module"
@@ -68,6 +72,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
         integrity={@resolved.integrity[@resolved.file]}
         crossorigin={@resolved.integrity[@resolved.file] && "anonymous"}
         nonce={@nonce}
+        phx-track-static
       ></script>
       """
     end
@@ -90,6 +95,56 @@ if Code.ensure_loaded?(Phoenix.Component) do
       ~H"""
       <div id={@id} data-svelte-page={@name} data-props={JSON.encode!(@props)}></div>
       """
+    end
+
+    @doc """
+    Emits a Speculation Rules prefetch block for the app's page routes.
+
+    Reads the page routes from the asset graph (or takes them via `:routes`,
+    e.g. from a `PhoenixAssets.Graph.Compiled` module, to avoid a graph read
+    per render) and emits a `<script type="speculationrules">` document-rules
+    block. Progressive enhancement: browsers without the Speculation Rules API
+    ignore the tag. Renders nothing when no routes are known.
+    """
+    attr(:routes, :list, default: nil)
+    attr(:eagerness, :string, default: "moderate", values: ~w(conservative moderate eager))
+    attr(:nonce, :string, default: nil)
+
+    @spec speculation_rules(map()) :: Phoenix.LiveView.Rendered.t()
+    def speculation_rules(assigns) do
+      routes = assigns.routes || graph_page_routes()
+      assigns = assign(assigns, :json, speculation_json(routes, assigns.eagerness))
+
+      ~H"""
+      <script :if={@json} type="speculationrules" nonce={@nonce}>
+        <%= Phoenix.HTML.raw(@json) %>
+      </script>
+      """
+    end
+
+    defp graph_page_routes do
+      PhoenixAssets.graph()
+      |> Map.get("pages", %{})
+      |> Enum.map(fn {_key, data} -> data["route"] end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sort()
+    end
+
+    defp speculation_json([], _), do: nil
+
+    defp speculation_json(routes, eagerness) do
+      %{
+        "prefetch" => [
+          %{
+            "where" => %{"or" => Enum.map(routes, &%{"href_matches" => &1})},
+            "eagerness" => eagerness
+          }
+        ]
+      }
+      # `<` must not appear raw inside a script element ("</script>" would end
+      # it); JSON-escape it instead.
+      |> JSON.encode!()
+      |> String.replace("<", "\\u003c")
     end
   end
 end

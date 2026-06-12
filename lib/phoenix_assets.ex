@@ -31,18 +31,6 @@ defmodule PhoenixAssets do
   alias PhoenixAssets.{Config, Context, DevSupervisor, Graph, Manifest, ManifestServer}
 
   @doc """
-  The OTP children assembled for the host application's supervision tree.
-
-  Always includes the manifest server. The development supervisor (Vite,
-  Storybook, the generated-file watcher) is added only when dev mode is enabled
-  via `config :phoenix_assets, :dev, enabled: true`.
-
-  Returns an empty list until those subsystems are wired in.
-  """
-  @spec children() :: [Supervisor.child_spec() | {module(), term()} | module()]
-  def children, do: []
-
-  @doc """
   The supervised children a host application adds to its own tree.
 
   Always includes `PhoenixAssets.ManifestServer`; in development also includes
@@ -102,8 +90,11 @@ defmodule PhoenixAssets do
 
   In production returns `%{file:, css:, imports:, integrity:}` from the Vite
   manifest (`integrity` is a possibly-empty `href => hash` map, populated only
-  when the manifest carries SRI metadata). In development returns `:dev` so
-  callers emit dev-server URLs. Raises if a manifest is expected but unavailable.
+  when the manifest carries SRI metadata). When
+  `config :phoenix_assets, :build, asset_url: "https://cdn.example.com"` is
+  set, every href (including the integrity keys) is prefixed with it. In
+  development returns `:dev` so callers emit dev-server URLs. Raises if a
+  manifest is expected but unavailable.
   """
   @spec entry!(String.t()) ::
           %{
@@ -122,36 +113,90 @@ defmodule PhoenixAssets do
         raise "phoenix_assets: Vite manifest unavailable (#{inspect(reason)}). Run `mix assets.build`."
 
       manifest ->
-        %{
+        apply_asset_url(%{
           file: Manifest.file(manifest, key),
           css: Manifest.css(manifest, key),
           imports: Manifest.imports(manifest, key),
           integrity: Manifest.subresource_integrity(manifest, key)
-        }
+        })
     end
   end
 
   @doc """
   Returns the served path for an asset key.
 
-  In production resolves to the hashed file from the manifest; otherwise returns
-  the key as a root-relative path (the Vite dev server serves it).
+  In production resolves to the hashed file from the manifest (prefixed with
+  the configured `:asset_url`, if any); otherwise returns the key as a
+  root-relative path (the Vite dev server serves it).
   """
   @spec asset_path(String.t()) :: String.t()
   def asset_path(key) do
     case ManifestServer.manifest() do
-      manifest when is_map(manifest) -> Manifest.file(manifest, key)
+      manifest when is_map(manifest) -> prefix_asset_url(Manifest.file(manifest, key))
       _ -> "/" <> String.trim_leading(key, "/")
     end
   end
 
-  @doc "Builds a Vite dev-server URL for `path` from the configured dev host/port."
+  @doc """
+  Builds a Vite dev-server URL for `path`.
+
+  Prefers the hot file the Vite plugin writes (`.phoenix-assets/hot` under the
+  asset root, carrying the server's actual resolved URL -- scheme, host, and
+  port included, so HTTPS dev servers work); falls back to the configured
+  `dev: [vite: [host:, port:]]`.
+  """
   @spec vite_dev_url(String.t()) :: String.t()
   def vite_dev_url(path) do
+    base = hot_url() || configured_dev_url()
+    base <> "/" <> String.trim_leading(path, "/")
+  end
+
+  defp hot_url do
+    root = Application.get_env(:phoenix_assets, :asset_root, "assets")
+
+    with {:ok, contents} <- File.read(Path.join(root, ".phoenix-assets/hot")),
+         url = String.trim(contents),
+         true <- String.starts_with?(url, ["http://", "https://"]) do
+      String.trim_trailing(url, "/")
+    else
+      _ -> nil
+    end
+  end
+
+  defp configured_dev_url do
     vite = Application.get_env(:phoenix_assets, :dev, [])[:vite] || []
     host = Keyword.get(vite, :host, "127.0.0.1")
     port = Keyword.get(vite, :port, 5173)
-    "http://#{host}:#{port}/#{String.trim_leading(path, "/")}"
+    "http://#{host}:#{port}"
+  end
+
+  defp apply_asset_url(resolved) do
+    case asset_url() do
+      nil ->
+        resolved
+
+      base ->
+        %{
+          file: base <> resolved.file,
+          css: Enum.map(resolved.css, &(base <> &1)),
+          imports: Enum.map(resolved.imports, &(base <> &1)),
+          integrity: Map.new(resolved.integrity, fn {href, hash} -> {base <> href, hash} end)
+        }
+    end
+  end
+
+  defp prefix_asset_url(href) do
+    case asset_url() do
+      nil -> href
+      base -> base <> href
+    end
+  end
+
+  defp asset_url do
+    case Application.get_env(:phoenix_assets, :build, [])[:asset_url] do
+      nil -> nil
+      base -> String.trim_trailing(base, "/")
+    end
   end
 
   @doc """

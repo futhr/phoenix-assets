@@ -29,10 +29,6 @@ defmodule PhoenixAssetsTest do
     :ok
   end
 
-  test "children/0 is empty; the host adds child_specs/1 instead" do
-    assert PhoenixAssets.children() == []
-  end
-
   test "version/0 returns the installed semantic version" do
     assert PhoenixAssets.version() =~ ~r/^\d+\.\d+\.\d+/
   end
@@ -47,6 +43,45 @@ defmodule PhoenixAssetsTest do
     assert PhoenixAssets.vite_dev_url("x.js") == "http://127.0.0.1:5173/x.js"
     Application.put_env(:phoenix_assets, :dev, vite: [host: "0.0.0.0", port: 4000])
     assert PhoenixAssets.vite_dev_url("/app.js") == "http://0.0.0.0:4000/app.js"
+  end
+
+  test "vite_dev_url/1 prefers the hot file the Vite plugin writes" do
+    root = Path.join(System.tmp_dir!(), "hot_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(Path.join(root, ".phoenix-assets"))
+    File.write!(Path.join(root, ".phoenix-assets/hot"), "https://localhost:5174/\n")
+    on_exit(fn -> File.rm_rf!(root) end)
+
+    Application.put_env(:phoenix_assets, :asset_root, root)
+    assert PhoenixAssets.vite_dev_url("app.js") == "https://localhost:5174/app.js"
+
+    # Garbage in the hot file falls back to the configured URL.
+    File.write!(Path.join(root, ".phoenix-assets/hot"), "not a url")
+    assert PhoenixAssets.vite_dev_url("app.js") == "http://127.0.0.1:5173/app.js"
+  end
+
+  test "entry!/1 and asset_path/1 apply the configured :asset_url prefix" do
+    :persistent_term.put(
+      {ManifestServer, :manifest},
+      %{
+        "src/app.ts" => %{
+          "file" => "assets/app-AAA.js",
+          "isEntry" => true,
+          "css" => ["assets/app.css"],
+          "imports" => [],
+          "integrity" => "sha384-APP"
+        }
+      }
+    )
+
+    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+    Application.put_env(:phoenix_assets, :build, asset_url: "https://cdn.example.com/")
+
+    resolved = PhoenixAssets.entry!("src/app.ts")
+    assert resolved.file == "https://cdn.example.com/assets/app-AAA.js"
+    assert resolved.css == ["https://cdn.example.com/assets/app.css"]
+    assert resolved.integrity == %{"https://cdn.example.com/assets/app-AAA.js" => "sha384-APP"}
+
+    assert PhoenixAssets.asset_path("src/app.ts") == "https://cdn.example.com/assets/app-AAA.js"
   end
 
   test "asset_path/1 falls back to a root-relative path in dev" do
