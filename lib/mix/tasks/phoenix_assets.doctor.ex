@@ -14,7 +14,7 @@ defmodule Mix.Tasks.PhoenixAssets.Doctor do
   @impl Mix.Task
   def run(args) do
     Mix.Task.run("compile")
-    {opts, _, _} = OptionParser.parse(args, switches: [production: :boolean])
+    {opts, _} = OptionParser.parse!(args, strict: [production: :boolean])
     ctx = PhoenixAssets.MixHelpers.context!(env: Mix.env())
 
     {status, results} = PhoenixAssets.Doctor.run(ctx, production: opts[:production] || false)

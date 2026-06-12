@@ -17,10 +17,27 @@ defmodule PhoenixAssets.DevIntelligence.TidewaveTools do
 
   alias PhoenixAssets.{Config, Context, DevServer, Doctor}
 
-  @doc "A snapshot of each supervised dev process's status."
-  @spec status() :: %{vite: atom(), storybook: atom()}
+  @infra_children [PhoenixAssets.DevServer, PhoenixAssets.Generated.Watcher]
+
+  @doc """
+  A snapshot of each supervised dev process's status, keyed by process id.
+
+  Enumerates whatever the dev supervisor actually runs (so custom presets and
+  disabled processes are reflected), excluding the supervisor's own
+  infrastructure children. Empty when the dev supervisor is not running.
+  """
+  @spec status() :: %{atom() => :running | :restarting | :down | :unknown}
   def status do
-    %{vite: DevServer.status(:vite), storybook: DevServer.status(:storybook)}
+    Map.new(daemon_ids(), fn id -> {id, DevServer.status(id)} end)
+  end
+
+  defp daemon_ids do
+    PhoenixAssets.DevSupervisor
+    |> Supervisor.which_children()
+    |> Enum.map(fn {id, _, _, _} -> id end)
+    |> Enum.reject(&(&1 in @infra_children))
+  catch
+    :exit, _ -> []
   end
 
   @doc "Recent output lines for a dev process (`:vite` or `:storybook`)."

@@ -17,7 +17,9 @@ defmodule Mix.Tasks.PhoenixAssets.Gen do
   @impl Mix.Task
   def run(args) do
     Mix.Task.run("compile")
-    {opts, _, _} = OptionParser.parse(args, switches: [check: :boolean, only: :string])
+    # Strict parsing: a typo'd --check must fail loudly, not silently turn the
+    # CI drift gate into a full write.
+    {opts, _} = OptionParser.parse!(args, strict: [check: :boolean, only: :string])
     ctx = PhoenixAssets.MixHelpers.context!(env: Mix.env())
 
     case PhoenixAssets.Generated.generate(ctx, generate_opts(opts)) do
@@ -40,5 +42,23 @@ defmodule Mix.Tasks.PhoenixAssets.Gen do
   defp generate_opts(opts), do: [check: opts[:check] || false] ++ only(opts[:only])
 
   defp only(nil), do: []
-  defp only(value), do: [only: value |> String.split(",") |> Enum.map(&String.to_existing_atom/1)]
+
+  defp only(value) do
+    kinds =
+      for kind <- String.split(value, ","), kind = String.trim(kind), kind != "" do
+        to_kind!(kind)
+      end
+
+    [only: kinds]
+  end
+
+  defp to_kind!(kind) do
+    String.to_existing_atom(kind)
+  rescue
+    ArgumentError ->
+      Mix.raise(
+        "phoenix_assets: unknown generator kind #{inspect(kind)} " <>
+          "(built-in kinds: routes, env, types, electric, pubsub, locales)"
+      )
+  end
 end

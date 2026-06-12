@@ -34,6 +34,15 @@ defmodule PhoenixAssets.DevServerTest do
     assert DevServer.status(:vite) == :unknown
   end
 
+  test "restart/1, stop/1, and logs/2 degrade when nothing is running" do
+    refute Process.whereis(DevServer)
+    refute Process.whereis(PhoenixAssets.DevSupervisor)
+
+    assert DevServer.restart(:vite) == {:error, :not_running}
+    assert DevServer.stop(:vite) == {:error, :not_running}
+    assert DevServer.logs(:vite) == []
+  end
+
   describe "status/restart/stop against a supervised child" do
     setup do
       # DevServer talks to the process registered as PhoenixAssets.DevSupervisor;

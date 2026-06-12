@@ -35,7 +35,13 @@ defmodule PhoenixAssets.DevServer do
     :exit, _ -> :unknown
   end
 
-  @doc "Restarts the dev process with the given id."
+  @doc """
+  Restarts the dev process with the given id.
+
+  Returns `{:error, :not_running}` when the dev supervisor itself is down
+  (production, or dev mode disabled) -- this surface is called from Tidewave
+  and must degrade instead of crashing the caller.
+  """
   @spec restart(atom()) :: {:ok, pid()} | {:error, term()}
   def restart(id) do
     _ = Supervisor.terminate_child(@supervisor, id)
@@ -45,16 +51,32 @@ defmodule PhoenixAssets.DevServer do
       {:ok, pid, _} -> {:ok, pid}
       error -> error
     end
+  catch
+    :exit, _ -> {:error, :not_running}
   end
 
-  @doc "Stops the dev process with the given id."
-  @spec stop(atom()) :: :ok | {:error, term()}
-  def stop(id), do: Supervisor.terminate_child(@supervisor, id)
+  @doc """
+  Stops the dev process with the given id.
 
-  @doc "Returns the most recent output lines for `id` (oldest first)."
+  Returns `{:error, :not_running}` when the dev supervisor itself is down.
+  """
+  @spec stop(atom()) :: :ok | {:error, term()}
+  def stop(id) do
+    Supervisor.terminate_child(@supervisor, id)
+  catch
+    :exit, _ -> {:error, :not_running}
+  end
+
+  @doc """
+  Returns the most recent output lines for `id` (oldest first).
+
+  Returns `[]` when the tracker is not running.
+  """
   @spec logs(atom(), keyword()) :: [String.t()]
   def logs(id, opts \\ []) do
     GenServer.call(__MODULE__, {:logs, id, Keyword.get(opts, :limit, 50)})
+  catch
+    :exit, _ -> []
   end
 
   @doc "Appends an output `line` for dev process `id`. A no-op if the server is down."
@@ -85,4 +107,5 @@ defmodule PhoenixAssets.DevServer do
   defp child_status({_, pid, _, _}) when is_pid(pid), do: :running
   defp child_status({_, :restarting, _, _}), do: :restarting
   defp child_status({_, :undefined, _, _}), do: :down
+  defp child_status(_), do: :unknown
 end

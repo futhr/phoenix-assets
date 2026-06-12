@@ -25,12 +25,21 @@ defmodule PhoenixAssets.DevIntelligence.TidewaveToolsTest do
     :ok
   end
 
-  test "status/0 reports the state of each supervised dev process" do
-    start_supervised!(DevServer)
-    status = TidewaveTools.status()
+  test "status/0 is empty when the dev supervisor is not running" do
+    assert TidewaveTools.status() == %{}
+  end
 
-    assert is_atom(status.vite)
-    assert is_atom(status.storybook)
+  test "status/0 enumerates the dev supervisor's actual daemons" do
+    child = Supervisor.child_spec({Agent, fn -> :ok end}, id: :vite)
+
+    start_supervised!(%{
+      id: :devsup_standin,
+      start:
+        {Supervisor, :start_link,
+         [[child], [strategy: :one_for_one, name: PhoenixAssets.DevSupervisor]]}
+    })
+
+    assert TidewaveTools.status() == %{vite: :running}
   end
 
   test "logs/2 returns the recent output lines for a process" do
