@@ -107,7 +107,7 @@ defmodule PhoenixAssets.Electric do
     fname = TS.camelize(name)
 
     "  #{fname}: (params: Record<string, string | number> = {}) => " <>
-      "new ShapeStream<#{type}>({ url: createShapeUrl(#{Jason.encode!(route)}, params), " <>
+      "new ShapeStream<#{type}>({ url: createShapeUrl(#{JSON.encode!(route)}, params), " <>
       "headers: authHeaders() }),\n"
   end
 

@@ -14,7 +14,7 @@ defmodule PhoenixAssets.PlugManifestStatusTest do
 
   defp manifest_status(opts) do
     conn = :get |> conn("/__assets/status") |> AssetsPlug.call(AssetsPlug.init(opts))
-    Jason.decode!(conn.resp_body)["manifest"]
+    JSON.decode!(conn.resp_body)["manifest"]
   end
 
   test ~s|reports "loaded" when a manifest map is cached| do

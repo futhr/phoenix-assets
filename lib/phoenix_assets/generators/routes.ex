@@ -113,7 +113,7 @@ defmodule PhoenixAssets.Generators.Routes do
   end
 
   defp render_route(%{name: name, path: path, params: []}) do
-    "  #{name}: () => #{Jason.encode!(path)},\n"
+    "  #{name}: () => #{JSON.encode!(path)},\n"
   end
 
   defp render_route(%{name: name, path: path, params: params}) do
@@ -124,6 +124,6 @@ defmodule PhoenixAssets.Generators.Routes do
   defp render_names([]), do: "  never"
 
   defp render_names(routes) do
-    Enum.map_join(routes, "\n", fn %{name: name} -> "  | #{Jason.encode!(name)}" end)
+    Enum.map_join(routes, "\n", fn %{name: name} -> "  | #{JSON.encode!(name)}" end)
   end
 end

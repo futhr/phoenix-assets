@@ -26,7 +26,7 @@ defmodule PhoenixAssets.Graph.Compiled do
   @doc false
   defmacro __using__(opts) do
     path = Keyword.fetch!(opts, :graph)
-    graph = path |> File.read!() |> Jason.decode!()
+    graph = path |> File.read!() |> JSON.decode!()
 
     quote do
       @external_resource unquote(path)

@@ -51,7 +51,7 @@ defmodule PhoenixAssets.Generators.TS do
   """
   @spec string_union([atom() | String.t()]) :: String.t()
   def string_union([]), do: "never"
-  def string_union(values), do: Enum.map_join(values, " | ", &Jason.encode!(to_string(&1)))
+  def string_union(values), do: Enum.map_join(values, " | ", &JSON.encode!(to_string(&1)))
 
   @doc ~S"""
   Returns the path-parameter names (without the leading colon) in a route path.

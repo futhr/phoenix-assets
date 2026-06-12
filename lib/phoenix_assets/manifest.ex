@@ -24,7 +24,7 @@ defmodule PhoenixAssets.Manifest do
   @spec load(Path.t()) :: {:ok, t()} | {:error, term()}
   def load(path) do
     with {:ok, raw} <- File.read(path) do
-      Jason.decode(raw)
+      JSON.decode(raw)
     end
   end
 

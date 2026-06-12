@@ -93,7 +93,7 @@ defmodule PhoenixAssets.PubSub do
 
     case placeholder_params(pattern) do
       [] ->
-        "  #{fname}: () => #{Jason.encode!(pattern)},\n"
+        "  #{fname}: () => #{JSON.encode!(pattern)},\n"
 
       params ->
         args = Enum.map_join(params, ", ", &"#{TS.camelize(&1)}: string | number")
@@ -104,7 +104,7 @@ defmodule PhoenixAssets.PubSub do
   defp render_event_union(topics) do
     members =
       for {name, opts} <- topics, {event, payload} <- Keyword.get(opts, :events, []) do
-        "  | { type: #{Jason.encode!("#{name}:#{event}")}; payload: #{payload_type(payload)} }"
+        "  | { type: #{JSON.encode!("#{name}:#{event}")}; payload: #{payload_type(payload)} }"
       end
 
     case members do

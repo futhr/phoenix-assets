@@ -9,7 +9,7 @@ defmodule PhoenixAssets.ManifestServerTest do
 
   defp start_with_manifest do
     path = Path.join(System.tmp_dir!(), "ms_#{System.unique_integer([:positive])}.json")
-    File.write!(path, Jason.encode!(@manifest))
+    File.write!(path, JSON.encode!(@manifest))
     on_exit(fn -> File.rm_rf!(path) end)
     start_supervised!({ManifestServer, path: path})
   end
@@ -47,7 +47,7 @@ defmodule PhoenixAssets.ManifestServerTest do
 
   test "reload/0 keeps the last-good manifest when the file becomes unreadable" do
     path = Path.join(System.tmp_dir!(), "ms_#{System.unique_integer([:positive])}.json")
-    File.write!(path, Jason.encode!(@manifest))
+    File.write!(path, JSON.encode!(@manifest))
     on_exit(fn -> File.rm_rf!(path) end)
     start_supervised!({ManifestServer, path: path})
 

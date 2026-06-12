@@ -17,7 +17,7 @@ defmodule PhoenixAssets.ComponentsTest do
 
   setup do
     path = Path.join(System.tmp_dir!(), "c_#{System.unique_integer([:positive])}.json")
-    File.write!(path, Jason.encode!(@manifest))
+    File.write!(path, JSON.encode!(@manifest))
     on_exit(fn -> File.rm_rf!(path) end)
     start_supervised!({ManifestServer, path: path})
     :ok

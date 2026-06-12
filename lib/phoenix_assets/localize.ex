@@ -68,9 +68,9 @@ defmodule PhoenixAssets.Localize do
   defp render(locales, default) do
     [
       TS.header(),
-      "\nexport const locales = #{Jason.encode!(locales)} as const\n",
+      "\nexport const locales = #{JSON.encode!(locales)} as const\n",
       "export type Locale = (typeof locales)[number]\n",
-      "export const defaultLocale: Locale = #{Jason.encode!(default)}\n"
+      "export const defaultLocale: Locale = #{JSON.encode!(default)}\n"
     ]
     |> IO.iodata_to_binary()
   end

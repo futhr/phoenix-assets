@@ -53,7 +53,7 @@ defmodule PhoenixAssets.Generators.Env do
       TS.header(),
       "\nexport const env = {\n",
       Enum.map(exposed, fn {key, value} ->
-        "  #{TS.camelize(key)}: #{Jason.encode!(value)},\n"
+        "  #{TS.camelize(key)}: #{JSON.encode!(value)},\n"
       end),
       "} as const\n"
     ]

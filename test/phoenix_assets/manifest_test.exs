@@ -65,7 +65,7 @@ defmodule PhoenixAssets.ManifestTest do
 
   test "load/1 decodes a manifest file" do
     path = Path.join(System.tmp_dir!(), "m_#{System.unique_integer([:positive])}.json")
-    File.write!(path, Jason.encode!(@manifest))
+    File.write!(path, JSON.encode!(@manifest))
     on_exit(fn -> File.rm_rf!(path) end)
 
     assert {:ok, loaded} = Manifest.load(path)

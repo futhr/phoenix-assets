@@ -11,7 +11,7 @@ defmodule PhoenixAssets.Graph.CompiledTest do
     }
 
     path = Path.join(System.tmp_dir!(), "cg_#{System.unique_integer([:positive])}.json")
-    File.write!(path, Jason.encode!(graph))
+    File.write!(path, JSON.encode!(graph))
     on_exit(fn -> File.rm_rf!(path) end)
 
     Code.eval_string("""

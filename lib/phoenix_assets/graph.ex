@@ -22,7 +22,7 @@ defmodule PhoenixAssets.Graph do
     * `PhoenixAssets.Graph.Compiled` -- compiles it into a zero-cost lookup module.
   """
 
-  alias PhoenixAssets.Context
+  alias PhoenixAssets.{CanonicalJSON, Context}
   alias PhoenixAssets.Graph.Builder
 
   @default_path "assets/.phoenix-assets/graph.json"
@@ -31,12 +31,20 @@ defmodule PhoenixAssets.Graph do
   @spec build(Context.t(), keyword()) :: map()
   def build(%Context{} = ctx, opts \\ []), do: Builder.build(ctx, opts)
 
-  @doc "Builds and writes the asset graph to its JSON file, returning the path."
+  @doc """
+  Builds and writes the asset graph to its JSON file, returning the path.
+
+  Output is canonical (`PhoenixAssets.CanonicalJSON`) and the write is atomic
+  (temp file + rename), so a concurrent reader never observes a partial graph
+  and identical input always produces identical bytes.
+  """
   @spec write(Context.t(), keyword()) :: {:ok, Path.t()}
   def write(%Context{} = ctx, opts \\ []) do
     path = graph_path(ctx)
     File.mkdir_p!(Path.dirname(path))
-    File.write!(path, Jason.encode!(build(ctx, opts), pretty: true))
+    tmp = "#{path}.tmp.#{System.unique_integer([:positive])}"
+    File.write!(tmp, CanonicalJSON.encode!(build(ctx, opts)))
+    File.rename!(tmp, path)
     {:ok, path}
   end
 
@@ -44,7 +52,7 @@ defmodule PhoenixAssets.Graph do
   @spec load(Context.t()) :: {:ok, map()} | {:error, term()}
   def load(%Context{} = ctx) do
     with {:ok, raw} <- File.read(graph_path(ctx)) do
-      Jason.decode(raw)
+      JSON.decode(raw)
     end
   end
 

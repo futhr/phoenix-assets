@@ -74,6 +74,10 @@ if Code.ensure_loaded?(Phoenix.Component) do
 
     @doc """
     Renders the mount point for a Svelte page, serialising `props` for hydration.
+
+    Props are encoded with the stdlib `JSON` module: plain maps, lists, and
+    scalars work as-is; structs must derive or implement the `JSON.Encoder`
+    protocol.
     """
     attr(:name, :string, required: true)
     attr(:props, :map, default: %{})
@@ -84,7 +88,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
       assigns = assign_new(assigns, :id, fn -> "svelte-" <> assigns.name end)
 
       ~H"""
-      <div id={@id} data-svelte-page={@name} data-props={Jason.encode!(@props)}></div>
+      <div id={@id} data-svelte-page={@name} data-props={JSON.encode!(@props)}></div>
       """
     end
   end

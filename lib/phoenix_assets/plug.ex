@@ -30,7 +30,7 @@ defmodule PhoenixAssets.Plug do
     if Keyword.get(opts, :enabled, false) do
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(status()))
+      |> send_resp(200, JSON.encode!(status()))
       |> halt()
     else
       conn

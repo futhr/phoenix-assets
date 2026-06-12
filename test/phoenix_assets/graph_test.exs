@@ -74,7 +74,7 @@ defmodule PhoenixAssets.GraphTest do
     tmp = Path.join(System.tmp_dir!(), "gm_#{System.unique_integer([:positive])}")
     path = Path.join([tmp, "assets", ".vite", "manifest.json"])
     File.mkdir_p!(Path.dirname(path))
-    File.write!(path, Jason.encode!(@manifest))
+    File.write!(path, JSON.encode!(@manifest))
     on_exit(fn -> File.rm_rf!(tmp) end)
 
     graph = Graph.build(ctx(static_root: tmp))

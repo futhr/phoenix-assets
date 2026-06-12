@@ -15,7 +15,7 @@ defmodule PhoenixAssets.PlugTest do
 
     assert conn.status == 200
     assert conn.halted
-    assert {:ok, body} = Jason.decode(conn.resp_body)
+    assert {:ok, body} = JSON.decode(conn.resp_body)
     assert Map.has_key?(body, "dev")
     assert Map.has_key?(body, "manifest")
     assert Map.has_key?(body, "version")
