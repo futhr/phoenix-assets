@@ -99,4 +99,18 @@ defmodule PhoenixAssets.Context do
   def manifest_path(%__MODULE__{static_root: root, config: config}) do
     Keyword.get(config.build, :vite_manifest, Path.join(root, "assets/.vite/manifest.json"))
   end
+
+  @doc """
+  The absolute path of a frontend tool's executable under the asset root.
+
+  Dev processes exec `node_modules/.bin/<tool>` directly rather than through a
+  package-manager wrapper: under MuonTrap the wrapper process exits and orphans
+  the node child, which keeps holding the dev-server port and breaks teardown.
+  The doctor's binary checks use the same resolution, so what it validates is
+  exactly what the supervisor execs.
+  """
+  @spec bin_path(t(), String.t()) :: Path.t()
+  def bin_path(%__MODULE__{asset_root: root}, tool) do
+    Path.expand(Path.join([root, "node_modules", ".bin", tool]))
+  end
 end

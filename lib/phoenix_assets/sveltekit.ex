@@ -39,7 +39,7 @@ defmodule PhoenixAssets.SvelteKit do
       [
         DevProcess.new(
           id: :vite,
-          command: Keyword.get(vite, :command, default_vite_command(ctx)),
+          command: Keyword.get(vite, :command, default_vite_command(ctx, vite)),
           cd: ctx.asset_root,
           port: Keyword.get(vite, :port, @default_vite_port)
         )
@@ -49,14 +49,14 @@ defmodule PhoenixAssets.SvelteKit do
     end
   end
 
-  # Exec the Vite binary directly rather than through a package-manager wrapper
-  # (`pnpm vite`): under MuonTrap the wrapper process exits and orphans the node
-  # child, which keeps holding the dev-server port and breaks teardown. The
-  # binary lives at `node_modules/.bin/vite` under the asset root for npm, pnpm,
-  # and bun alike.
-  defp default_vite_command(ctx) do
-    bin = Path.expand(Path.join([ctx.asset_root, "node_modules", ".bin", "vite"]))
-    [bin, "--host", "127.0.0.1", "--port", to_string(@default_vite_port), "--strictPort"]
+  # Exec the Vite binary directly (see `Context.bin_path/2` for why a
+  # package-manager wrapper would orphan the dev server). The command is built
+  # from the same configured host/port that `PhoenixAssets.vite_dev_url/1`
+  # reads, so the URLs the components emit always match the running server.
+  defp default_vite_command(ctx, vite) do
+    host = Keyword.get(vite, :host, "127.0.0.1")
+    port = Keyword.get(vite, :port, @default_vite_port)
+    [Context.bin_path(ctx, "vite"), "--host", host, "--port", to_string(port), "--strictPort"]
   end
 
   @impl PhoenixAssets.Plugin

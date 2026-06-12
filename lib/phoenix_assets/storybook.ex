@@ -8,6 +8,13 @@ defmodule PhoenixAssets.Storybook do
   drifts from the app -- now `mix phx.server` brings it up and tears it down with
   everything else.
 
+  Configure (or disable) it without writing a preset:
+
+      config :phoenix_assets, :dev,
+        storybook: [enabled: false]          # or: [port: 6007, command: [...]]
+
+  Preset `integration/2` options provide the defaults; the `:dev` config wins.
+
   ## Why
 
   A component workshop that isn't part of the supervised dev lifecycle gets
@@ -19,7 +26,7 @@ defmodule PhoenixAssets.Storybook do
   depends_on(PhoenixAssets.SvelteKit)
   after_plugin(PhoenixAssets.Tailwind)
 
-  alias PhoenixAssets.DevProcess
+  alias PhoenixAssets.{Context, DevProcess}
 
   @default_port 6006
 
@@ -28,13 +35,15 @@ defmodule PhoenixAssets.Storybook do
 
   @impl PhoenixAssets.Plugin
   def dev_processes(ctx, state) do
-    if Map.get(state, :enabled, true) do
-      port = Map.get(state, :port, @default_port)
+    opts = storybook_opts(ctx, state)
+
+    if Keyword.get(opts, :enabled, true) do
+      port = Keyword.get(opts, :port, @default_port)
 
       [
         DevProcess.new(
           id: :storybook,
-          command: ["pnpm", "storybook", "dev", "-p", to_string(port)],
+          command: Keyword.get(opts, :command, default_command(ctx, port)),
           cd: ctx.asset_root,
           port: port
         )
@@ -42,5 +51,19 @@ defmodule PhoenixAssets.Storybook do
     else
       []
     end
+  end
+
+  # Host config (`config :phoenix_assets, :dev, storybook: [...]`) overrides
+  # preset opts, mirroring how the SvelteKit plugin reads `dev: [vite: [...]]`.
+  defp storybook_opts(ctx, state) do
+    Keyword.merge(Map.to_list(state), ctx.config.dev[:storybook] || [])
+  end
+
+  # Exec the Storybook binary directly (see `Context.bin_path/2` -- a
+  # package-manager wrapper would orphan the node child under MuonTrap and
+  # leak the port). `--no-open` keeps a supervised restart from popping a
+  # browser window.
+  defp default_command(ctx, port) do
+    [Context.bin_path(ctx, "storybook"), "dev", "-p", to_string(port), "--no-open"]
   end
 end

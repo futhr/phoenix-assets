@@ -12,6 +12,17 @@ defmodule PhoenixAssets.SvelteKitTest do
     assert [%{id: :vite}] = SvelteKit.dev_processes(ctx(), state)
   end
 
+  test "the default vite command carries the configured host and port" do
+    config = Config.load!(otp_app: :my_app, dev: [vite: [host: "0.0.0.0", port: 5180]])
+    context = Context.new(config, env: :test)
+
+    {:ok, state} = SvelteKit.init([], context)
+    [%{port: 5180, command: command}] = SvelteKit.dev_processes(context, state)
+
+    assert hd(command) =~ "node_modules/.bin/vite"
+    assert ["--host", "0.0.0.0", "--port", "5180", "--strictPort"] = tl(command)
+  end
+
   test "generates the env contract" do
     {:ok, state} = SvelteKit.init([], ctx())
     kinds = ctx() |> SvelteKit.generated_files(state) |> Enum.map(& &1.kind)
