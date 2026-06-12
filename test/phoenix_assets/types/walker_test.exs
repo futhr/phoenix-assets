@@ -67,8 +67,15 @@ defmodule PhoenixAssets.Types.WalkerTest do
     assert render_edge(only: :public, calculations: [:label]) =~ "label: string"
   end
 
-  test "an unknown calculation name degrades to unknown rather than crashing" do
-    assert render_edge(only: :public, calculations: [:does_not_exist]) =~
-             "does_not_exist: unknown"
+  test "an unknown calculation name raises a clear error" do
+    assert_raise ArgumentError, ~r/unknown calculation :does_not_exist in :calculations/, fn ->
+      render_edge(only: :public, calculations: [:does_not_exist])
+    end
+  end
+
+  test "an unknown expose name raises a clear error" do
+    assert_raise ArgumentError, ~r/unknown attribute :ghost in :expose/, fn ->
+      render_edge(only: :public, expose: [:ghost])
+    end
   end
 end

@@ -80,16 +80,26 @@ defmodule PhoenixAssets.Types do
   defp field_policy_check(name, opts) do
     resource = Keyword.fetch!(opts, :resource)
     exposed = resource |> Walker.fields(opts) |> Enum.map(fn {field, _} -> field end)
-    policy_fields = field_policy_fields(resource)
 
-    case Enum.filter(exposed, &(&1 in policy_fields)) do
-      [] ->
-        Check.ok("type #{name}: no exposed field has a field policy")
+    case field_policy_fields(resource) do
+      {:ok, policy_fields} ->
+        case Enum.filter(exposed, &(&1 in policy_fields)) do
+          [] ->
+            Check.ok("type #{name}: no exposed field has a field policy")
 
-      fields ->
+          fields ->
+            Check.warn(
+              "type #{name} exposes field-policy-gated fields: #{Enum.join(fields, ", ")}",
+              "confirm these should be public, or add them to :omit"
+            )
+        end
+
+      {:error, message} ->
+        # The cross-check is a data-leak safety net; an introspection failure
+        # must surface as a warning, not silently pass as "no policies".
         Check.warn(
-          "type #{name} exposes field-policy-gated fields: #{Enum.join(fields, ", ")}",
-          "confirm these should be public, or add them to :omit"
+          "type #{name}: could not inspect field policies (#{message})",
+          "verify #{inspect(resource)}'s policies compile; the cross-check was skipped"
         )
     end
   end
@@ -97,14 +107,17 @@ defmodule PhoenixAssets.Types do
   defp field_policy_fields(resource) do
     if Code.ensure_loaded?(Ash.Policy.Info) and
          function_exported?(Ash.Policy.Info, :field_policies, 1) do
-      resource
-      |> Ash.Policy.Info.field_policies()
-      |> Enum.flat_map(fn policy -> List.wrap(policy.fields) end)
-      |> Enum.uniq()
+      fields =
+        resource
+        |> Ash.Policy.Info.field_policies()
+        |> Enum.flat_map(fn policy -> List.wrap(policy.fields) end)
+        |> Enum.uniq()
+
+      {:ok, fields}
     else
-      []
+      {:ok, []}
     end
   rescue
-    _ -> []
+    exception -> {:error, Exception.message(exception)}
   end
 end

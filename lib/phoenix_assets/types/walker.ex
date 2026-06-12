@@ -16,6 +16,13 @@ defmodule PhoenixAssets.Types.Walker do
     * `atom` with `one_of`, or an `Ash.Type.Enum` module -> a string-literal union
     * `{:array, t}` -> `Array<t>`; `map` with `:fields` -> a typed object
     * nullable attributes gain `| null`
+    * embedded resources are inlined structurally; a cyclic embedding renders
+      as `unknown` at the point of recursion (defense in depth -- current Ash
+      rejects declared type cycles at compile time)
+
+  Unknown names in `:expose` or `:calculations` raise an `ArgumentError`
+  naming the resource and the field, rather than emitting a silently wrong
+  contract.
 
   ## Why
 
@@ -69,23 +76,43 @@ defmodule PhoenixAssets.Types.Walker do
   """
   @spec fields(module(), keyword()) :: [{atom(), String.t()}]
   def fields(resource, opts) do
+    ancestors = MapSet.new([resource])
+
     base =
-      resource |> select_attributes(opts) |> Enum.map(fn attr -> {attr.name, attr_ts(attr)} end)
+      resource
+      |> select_attributes(opts)
+      |> Enum.map(fn attr -> {attr.name, attr_ts(attr, ancestors)} end)
 
     exposed =
       opts
       |> Keyword.get(:expose, [])
-      |> Enum.map(fn name -> {name, attr_ts(Info.attribute(resource, name))} end)
+      |> Enum.map(fn name ->
+        attr = Info.attribute(resource, name) || unknown_field!(resource, :expose, name)
+        {name, attr_ts(attr, ancestors)}
+      end)
 
     calcs =
       opts
       |> Keyword.get(:calculations, [])
-      |> Enum.map(fn name -> {name, calc_ts(Info.calculation(resource, name))} end)
+      |> Enum.map(fn name ->
+        calc = Info.calculation(resource, name) || unknown_field!(resource, :calculations, name)
+        {name, calc_ts(calc, ancestors)}
+      end)
 
     (base ++ exposed ++ calcs)
     |> Enum.uniq_by(fn {name, _} -> name end)
     |> Enum.sort_by(fn {name, _} -> to_string(name) end)
   end
+
+  @spec unknown_field!(module(), atom(), atom()) :: no_return()
+  defp unknown_field!(resource, option, name) do
+    raise ArgumentError,
+          "phoenix_assets: unknown #{option_noun(option)} #{inspect(name)} in " <>
+            "#{inspect(option)} for #{inspect(resource)}"
+  end
+
+  defp option_noun(:expose), do: "attribute"
+  defp option_noun(:calculations), do: "calculation"
 
   defp render_type({name, opts}) do
     resource = Keyword.fetch!(opts, :resource)
@@ -109,30 +136,33 @@ defmodule PhoenixAssets.Types.Walker do
   defp attributes(resource, :all), do: Info.attributes(resource)
   defp attributes(resource, _), do: Info.public_attributes(resource)
 
-  defp attr_ts(%{type: type, allow_nil?: nilable, constraints: constraints}) do
-    base = map_type(type, constraints || [])
+  defp attr_ts(%{type: type, allow_nil?: nilable, constraints: constraints}, ancestors) do
+    base = map_type(type, constraints || [], ancestors)
     if nilable, do: base <> " | null", else: base
   end
 
-  defp calc_ts(%{type: type} = calc), do: map_type(type, Map.get(calc, :constraints) || [])
-  defp calc_ts(_), do: "unknown"
-
-  defp map_type({:array, inner}, constraints) do
-    "Array<#{map_type(inner, Keyword.get(constraints, :items, []))}>"
+  defp calc_ts(%{type: type} = calc, ancestors) do
+    map_type(type, Map.get(calc, :constraints) || [], ancestors)
   end
 
-  defp map_type(type, constraints) when is_atom(type) do
+  defp calc_ts(_, _), do: "unknown"
+
+  defp map_type({:array, inner}, constraints, ancestors) do
+    "Array<#{map_type(inner, Keyword.get(constraints, :items, []), ancestors)}>"
+  end
+
+  defp map_type(type, constraints, ancestors) when is_atom(type) do
     cond do
-      type == Type.Union -> union_type(constraints)
-      short = short_name(type) -> map_short(short, constraints)
+      type == Type.Union -> union_type(constraints, ancestors)
+      short = short_name(type) -> map_short(short, constraints, ancestors)
       values = enum_values(type) -> TS.string_union(values)
-      NewType.new_type?(type) -> map_type(NewType.subtype_of(type), constraints)
-      Info.resource?(type) -> embedded_type(type)
+      NewType.new_type?(type) -> map_type(NewType.subtype_of(type), constraints, ancestors)
+      Info.resource?(type) -> embedded_type(type, ancestors)
       true -> "unknown"
     end
   end
 
-  defp map_type(_, _), do: "unknown"
+  defp map_type(_, _, _), do: "unknown"
 
   # `Ash.Type.Enum` modules carry their members in `values/0`; render them as a
   # string-literal union ("active" | "inactive") instead of falling through to
@@ -144,33 +174,44 @@ defmodule PhoenixAssets.Types.Walker do
     end
   end
 
-  defp union_type(constraints) do
+  defp union_type(constraints, ancestors) do
     case Keyword.get(constraints, :types) do
       nil ->
         "unknown"
 
       types ->
         types
-        |> Enum.map(fn {_, config} -> map_type(config[:type], config[:constraints] || []) end)
+        |> Enum.map(fn {_, config} ->
+          map_type(config[:type], config[:constraints] || [], ancestors)
+        end)
         |> Enum.uniq()
         |> Enum.join(" | ")
     end
   end
 
-  defp embedded_type(resource) do
-    body =
-      resource
-      |> Info.public_attributes()
-      |> Enum.reject(& &1.sensitive?)
-      |> Enum.sort_by(& &1.name)
-      |> Enum.map_join("; ", fn attr -> "#{attr.name}: #{attr_ts(attr)}" end)
+  # `ancestors` is the chain of resources currently being inlined; meeting one
+  # again is a cycle, which renders as `unknown` instead of recursing forever.
+  # Re-use of the same embedded resource on sibling branches stays inlined.
+  defp embedded_type(resource, ancestors) do
+    if MapSet.member?(ancestors, resource) do
+      "unknown"
+    else
+      ancestors = MapSet.put(ancestors, resource)
 
-    "{ " <> body <> " }"
+      body =
+        resource
+        |> Info.public_attributes()
+        |> Enum.reject(& &1.sensitive?)
+        |> Enum.sort_by(& &1.name)
+        |> Enum.map_join("; ", fn attr -> "#{attr.name}: #{attr_ts(attr, ancestors)}" end)
+
+      "{ " <> body <> " }"
+    end
   end
 
-  defp map_short(:atom, constraints), do: atom_type(constraints)
-  defp map_short(:map, constraints), do: map_object(constraints)
-  defp map_short(short, _), do: Map.get(@scalar, short, "unknown")
+  defp map_short(:atom, constraints, _), do: atom_type(constraints)
+  defp map_short(:map, constraints, ancestors), do: map_object(constraints, ancestors)
+  defp map_short(short, _, _), do: Map.get(@scalar, short, "unknown")
 
   defp atom_type(constraints) do
     case Keyword.get(constraints, :one_of) do
@@ -179,7 +220,7 @@ defmodule PhoenixAssets.Types.Walker do
     end
   end
 
-  defp map_object(constraints) do
+  defp map_object(constraints, ancestors) do
     case Keyword.get(constraints, :fields) do
       nil ->
         "Record<string, unknown>"
@@ -187,7 +228,7 @@ defmodule PhoenixAssets.Types.Walker do
       fields ->
         body =
           Enum.map_join(fields, "; ", fn {name, field_opts} ->
-            "#{name}: #{map_type(field_opts[:type], field_opts[:constraints] || [])}"
+            "#{name}: #{map_type(field_opts[:type], field_opts[:constraints] || [], ancestors)}"
           end)
 
         "{ " <> body <> " }"
