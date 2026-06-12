@@ -38,6 +38,11 @@ defmodule PhoenixAssets.Config do
     otp_app: [type: :atom, required: true],
     endpoint: [type: :atom, doc: "the Phoenix endpoint module"],
     router: [type: :atom, doc: "the Phoenix router module (source for endpoint route helpers)"],
+    endpoint_prefixes: [
+      type: {:list, :string},
+      default: ["/shapes", "/api"],
+      doc: "router path prefixes whose routes become generated endpoint helpers"
+    ],
     asset_root: [type: :string, default: "assets"],
     static_root: [type: :string, default: "priv/static"],
     static_assets_path: [type: :string, default: "/assets"],
@@ -65,6 +70,7 @@ defmodule PhoenixAssets.Config do
           otp_app: atom(),
           endpoint: module() | nil,
           router: module() | nil,
+          endpoint_prefixes: [String.t()],
           asset_root: String.t(),
           static_root: String.t(),
           static_assets_path: String.t(),
@@ -85,6 +91,7 @@ defmodule PhoenixAssets.Config do
   defstruct otp_app: nil,
             endpoint: nil,
             router: nil,
+            endpoint_prefixes: ["/shapes", "/api"],
             asset_root: "assets",
             static_root: "priv/static",
             static_assets_path: "/assets",

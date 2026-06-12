@@ -57,11 +57,13 @@ defmodule PhoenixAssets.Generators.RoutesTest do
 
     get("/api/thing", Stub, :thing)
     get("/shapes/thing", Stub, :thing)
+    get("/api/v2/thing", Stub, :thing)
     get("/shapes/thing2", Stub, :thing2)
   end
 
-  defp generate(router \\ Router) do
-    ctx = Context.new(Config.load!(otp_app: :my_app, router: router), env: :test)
+  defp generate(router \\ Router, config_overrides \\ []) do
+    config = Config.load!([otp_app: :my_app, router: router] ++ config_overrides)
+    ctx = Context.new(config, env: :test)
     ctx |> Routes.generate() |> Map.fetch!(:contents) |> IO.iodata_to_binary()
   end
 
@@ -118,19 +120,31 @@ defmodule PhoenixAssets.Generators.RoutesTest do
     assert ts =~ "apiHook: () =>"
   end
 
-  test "disambiguates duplicate route names with a numeric suffix" do
+  test "disambiguates duplicate route names with the controller name" do
     ts = generate(EdgeRouter)
 
     assert ts =~ "health: () =>"
-    assert ts =~ "health2: () =>"
+    assert ts =~ "stubHealth: () =>"
+    refute ts =~ "health2"
   end
 
   test "a renamed duplicate never collides with an existing route name" do
     ts = generate(CollisionRouter)
 
-    assert ts =~ "thing: () =>"
-    assert ts =~ "thing2: () =>"
-    assert ts =~ "thing22: () =>"
+    # First :thing keeps the plain name, the second is controller-qualified,
+    # the third falls back to a numeric suffix on the qualified name -- and
+    # none of them step on the genuine :thing2 route.
+    assert ts =~ ~s|thing: () => "/api/thing"|
+    assert ts =~ ~s|stubThing: () => "/shapes/thing"|
+    assert ts =~ ~s|stubThing2: () => "/api/v2/thing"|
+    assert ts =~ ~s|thing2: () => "/shapes/thing2"|
+  end
+
+  test "endpoint prefixes are configurable" do
+    ts = generate(Router, endpoint_prefixes: ["/api"])
+
+    assert ts =~ "health: () =>"
+    refute ts =~ "publicPortfolios"
   end
 
   test "emits an empty map and a never RouteName union with no endpoint routes" do
