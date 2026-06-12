@@ -108,9 +108,18 @@ defmodule PhoenixAssets.Generated do
 
       _ ->
         File.mkdir_p!(Path.dirname(abs))
-        File.write!(abs, contents)
+        atomic_write!(abs, contents)
         {:written, file.path}
     end
+  end
+
+  # Temp-file-plus-rename in the same directory: the rename is atomic on the
+  # same filesystem, so the Vite watcher can never observe a half-written
+  # contract mid-HMR.
+  defp atomic_write!(abs, contents) do
+    tmp = "#{abs}.tmp.#{System.unique_integer([:positive])}"
+    File.write!(tmp, contents)
+    File.rename!(tmp, abs)
   end
 
   defp check(files, ctx) do

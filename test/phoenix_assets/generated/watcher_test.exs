@@ -33,7 +33,7 @@ defmodule PhoenixAssets.Generated.WatcherTest do
 
   defp state do
     ctx = Context.new(Config.load!(otp_app: :my_app), env: :test, plugins: [])
-    %{ctx: ctx, debounce: 5, timer: nil, watcher: nil}
+    %{ctx: ctx, debounce: 5, reload_fun: fn _ -> :ok end, timer: nil, watcher: nil}
   end
 
   defp tmp_dir do
@@ -90,11 +90,43 @@ defmodule PhoenixAssets.Generated.WatcherTest do
     log =
       capture_log(fn ->
         assert {:noreply, %{timer: nil}} =
-                 Watcher.handle_info(:regenerate, %{ctx: ctx, debounce: 5, timer: make_ref()})
+                 Watcher.handle_info(:regenerate, %{
+                   ctx: ctx,
+                   debounce: 5,
+                   reload_fun: fn _ -> :ok end,
+                   timer: make_ref()
+                 })
       end)
 
     assert log =~ "regenerated"
     assert log =~ "phoenix/probe.ts"
+  end
+
+  test ":regenerate reloads code before generating" do
+    parent = self()
+
+    reload_fun = fn _ctx ->
+      send(parent, :reloaded)
+      :ok
+    end
+
+    s = %{state() | reload_fun: reload_fun, timer: make_ref()}
+    assert {:noreply, %{timer: nil}} = Watcher.handle_info(:regenerate, s)
+    assert_received :reloaded
+  end
+
+  test "reload_code/1 is a safe no-op without an endpoint or reloader" do
+    no_endpoint = Context.new(Config.load!(otp_app: :my_app), env: :test)
+    assert Watcher.reload_code(no_endpoint) == :ok
+
+    # An endpoint whose code-reloader process is not running must not crash
+    # the watcher either.
+    dead_endpoint =
+      Context.new(Config.load!(otp_app: :my_app, endpoint: __MODULE__.NoSuchEndpoint),
+        env: :test
+      )
+
+    assert Watcher.reload_code(dead_endpoint) == :ok
   end
 
   test ":regenerate logs a warning when generation fails" do
@@ -104,7 +136,12 @@ defmodule PhoenixAssets.Generated.WatcherTest do
     log =
       capture_log(fn ->
         assert {:noreply, %{timer: nil}} =
-                 Watcher.handle_info(:regenerate, %{ctx: ctx, debounce: 5, timer: make_ref()})
+                 Watcher.handle_info(:regenerate, %{
+                   ctx: ctx,
+                   debounce: 5,
+                   reload_fun: fn _ -> :ok end,
+                   timer: make_ref()
+                 })
       end)
 
     assert log =~ "generation failed"

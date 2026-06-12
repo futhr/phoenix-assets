@@ -21,12 +21,11 @@ defmodule PhoenixAssets.GeneratedFile do
           path: Path.t(),
           contents: iodata(),
           plugin: atom() | nil,
-          kind: kind() | nil,
-          mode: non_neg_integer()
+          kind: kind() | nil
         }
 
   @enforce_keys [:path, :contents]
-  defstruct [:path, :contents, :plugin, :kind, mode: 0o644]
+  defstruct [:path, :contents, :plugin, :kind]
 
   @doc "Builds a generated file from a keyword list or map of attributes."
   @spec new(Enumerable.t()) :: t()
