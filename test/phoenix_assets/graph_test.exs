@@ -63,11 +63,31 @@ defmodule PhoenixAssets.GraphTest do
     File.mkdir_p!(tmp)
     on_exit(fn -> File.rm_rf!(tmp) end)
 
-    context = ctx(static_root: tmp)
+    context = ctx(build: [asset_graph: Path.join(tmp, "graph.json")])
     assert {:ok, path} = Graph.write(context, manifest: @manifest)
     assert File.exists?(path)
     assert {:ok, loaded} = Graph.load(context)
     assert loaded["pages"]["Home"]["route"] == "/"
+  end
+
+  test "write/2 emits canonical, byte-stable JSON" do
+    tmp = Path.join(System.tmp_dir!(), "gc_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(tmp)
+    on_exit(fn -> File.rm_rf!(tmp) end)
+
+    context = ctx(build: [asset_graph: Path.join(tmp, "graph.json")])
+    {:ok, path} = Graph.write(context, manifest: @manifest)
+    first = File.read!(path)
+    {:ok, ^path} = Graph.write(context, manifest: @manifest)
+
+    assert File.read!(path) == first
+    assert first =~ ~s("version": 1)
+    assert String.ends_with?(first, "\n")
+  end
+
+  test "graph_path/1 defaults outside the publicly served static root" do
+    assert Graph.graph_path(ctx()) == "priv/phoenix_assets/graph.json"
+    refute Graph.graph_path(ctx()) =~ "priv/static"
   end
 
   test "build/2 loads the manifest from disk when none is passed" do

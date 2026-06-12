@@ -25,7 +25,11 @@ defmodule PhoenixAssets.Graph do
   alias PhoenixAssets.{CanonicalJSON, Context}
   alias PhoenixAssets.Graph.Builder
 
-  @default_path "assets/.phoenix-assets/graph.json"
+  # Deliberately OUTSIDE priv/static: the graph names every route, shape, and
+  # topic the app has, and anything under priv/static/assets is publicly served
+  # by the default Plug.Static `:only` list. priv/ still ships with releases, so
+  # runtime lookups keep working.
+  @default_path "priv/phoenix_assets/graph.json"
 
   @doc "Builds the asset-graph map. See `PhoenixAssets.Graph.Builder.build/2` for options."
   @spec build(Context.t(), keyword()) :: map()
@@ -56,9 +60,16 @@ defmodule PhoenixAssets.Graph do
     end
   end
 
-  @doc "The on-disk path of the asset graph for this context."
+  @doc """
+  The on-disk path of the asset graph for this context.
+
+  Defaults to `priv/phoenix_assets/graph.json` (relative to the project root);
+  override with `config :phoenix_assets, :build, asset_graph: path`. The
+  default lives outside `priv/static` so the graph is packaged with releases
+  without being publicly served.
+  """
   @spec graph_path(Context.t()) :: Path.t()
   def graph_path(%Context{} = ctx) do
-    Keyword.get(ctx.config.build, :asset_graph, Path.join(ctx.static_root, @default_path))
+    Keyword.get(ctx.config.build, :asset_graph, @default_path)
   end
 end

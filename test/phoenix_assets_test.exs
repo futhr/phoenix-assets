@@ -88,10 +88,11 @@ defmodule PhoenixAssetsTest do
     tmp = Path.join(System.tmp_dir!(), "pg_#{System.unique_integer([:positive])}")
     File.mkdir_p!(tmp)
     on_exit(fn -> File.rm_rf!(tmp) end)
-    Application.put_env(:phoenix_assets, :static_root, tmp)
+    graph_path = Path.join(tmp, "graph.json")
+    Application.put_env(:phoenix_assets, :build, asset_graph: graph_path)
 
     ctx =
-      Context.new(Config.load!(otp_app: :phoenix_assets, static_root: tmp),
+      Context.new(Config.load!(otp_app: :phoenix_assets, build: [asset_graph: graph_path]),
         env: :test,
         plugins: [{GraphPagePlugin, []}]
       )

@@ -13,7 +13,7 @@ export function resolveOptions(
     generatedDir: opts.generatedDir ?? "src/generated",
     localesDir: opts.localesDir ?? "src/lib/generated",
     gettextDir: opts.gettextDir ?? "../priv/gettext",
-    graphOut: opts.graphOut ?? "../priv/static/assets/.phoenix-assets/graph.json",
+    graphOut: opts.graphOut ?? "../priv/phoenix_assets/graph.json",
     emitGraph: opts.emitGraph ?? false,
     devClient: opts.devClient ?? config.command === "serve",
     virtualPrefix: opts.virtualPrefix ?? "$phoenix",

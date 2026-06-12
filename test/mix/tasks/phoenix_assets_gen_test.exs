@@ -40,6 +40,7 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
     Application.put_env(:phoenix_assets, :otp_app, :phoenix_assets)
     Application.put_env(:phoenix_assets, :asset_root, root)
     Application.put_env(:phoenix_assets, :static_root, Path.join(root, "static"))
+    Application.put_env(:phoenix_assets, :build, asset_graph: Path.join(root, "graph.json"))
     Application.put_env(:phoenix_assets, :stack, shapes: Shapes, types: Types)
 
     %{root: root}
@@ -85,6 +86,6 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
     out = capture_io(fn -> Mix.Task.rerun("phoenix_assets.graph", []) end)
 
     assert out =~ "asset graph"
-    assert File.exists?(Path.join(root, "static/assets/.phoenix-assets/graph.json"))
+    assert File.exists?(Path.join(root, "graph.json"))
   end
 end

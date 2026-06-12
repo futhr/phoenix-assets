@@ -15,6 +15,7 @@ describe("resolveOptions", () => {
     expect(o.generatedDir).toBe("src/generated")
     expect(o.localesDir).toBe("src/lib/generated")
     expect(o.gettextDir).toBe("../priv/gettext")
+    expect(o.graphOut).toBe("../priv/phoenix_assets/graph.json")
     expect(o.emitGraph).toBe(false)
     expect(o.devClient).toBe(true)
     expect(o.virtualPrefix).toBe("$phoenix")

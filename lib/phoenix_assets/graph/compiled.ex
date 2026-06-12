@@ -11,7 +11,7 @@ defmodule PhoenixAssets.Graph.Compiled do
 
       defmodule MyAppWeb.Generated.Assets do
         use PhoenixAssets.Graph.Compiled,
-          graph: "priv/static/assets/.phoenix-assets/graph.json"
+          graph: "priv/phoenix_assets/graph.json"
       end
 
       MyAppWeb.Generated.Assets.route!("device_show")
