@@ -120,7 +120,7 @@ defmodule PhoenixAssets.Types.Walker do
     body =
       resource
       |> fields(opts)
-      |> Enum.map_join("\n", fn {field, ts} -> "  #{field}: #{ts}" end)
+      |> Enum.map_join("\n", fn {field, ts} -> "  #{TS.object_key(field)}: #{ts}" end)
 
     "export type #{TS.type_name(name)} = {\n#{body}\n}\n\n"
   end
@@ -203,7 +203,9 @@ defmodule PhoenixAssets.Types.Walker do
         |> Info.public_attributes()
         |> Enum.reject(& &1.sensitive?)
         |> Enum.sort_by(& &1.name)
-        |> Enum.map_join("; ", fn attr -> "#{attr.name}: #{attr_ts(attr, ancestors)}" end)
+        |> Enum.map_join("; ", fn attr ->
+          "#{TS.object_key(attr.name)}: #{attr_ts(attr, ancestors)}"
+        end)
 
       "{ " <> body <> " }"
     end
@@ -228,7 +230,8 @@ defmodule PhoenixAssets.Types.Walker do
       fields ->
         body =
           Enum.map_join(fields, "; ", fn {name, field_opts} ->
-            "#{name}: #{map_type(field_opts[:type], field_opts[:constraints] || [], ancestors)}"
+            type = map_type(field_opts[:type], field_opts[:constraints] || [], ancestors)
+            "#{TS.object_key(name)}: #{type}"
           end)
 
         "{ " <> body <> " }"

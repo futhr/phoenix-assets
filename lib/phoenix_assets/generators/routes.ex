@@ -113,12 +113,12 @@ defmodule PhoenixAssets.Generators.Routes do
   end
 
   defp render_route(%{name: name, path: path, params: []}) do
-    "  #{name}: () => #{JSON.encode!(path)},\n"
+    "  #{TS.object_key(name)}: () => #{JSON.encode!(path)},\n"
   end
 
   defp render_route(%{name: name, path: path, params: params}) do
-    args = Enum.map_join(params, ", ", &"#{TS.camelize(&1)}: string | number")
-    "  #{name}: (#{args}) => `#{TS.url_template(path)}`,\n"
+    args = Enum.map_join(params, ", ", &"#{TS.arg_name(&1)}: string | number")
+    "  #{TS.object_key(name)}: (#{args}) => `#{TS.url_template(path)}`,\n"
   end
 
   defp render_names([]), do: "  never"

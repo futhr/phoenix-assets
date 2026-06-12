@@ -20,6 +20,8 @@ defmodule PhoenixAssets.Generators.RoutesTest do
 
     get("/", Stub, :index)
     get("/api/health", Stub, :health)
+    get("/api/classes/:new", Stub, :reserved_param)
+    get("/api/files/*path", Stub, :file_download)
 
     scope "/shapes" do
       get("/portfolios", Stub, :public_portfolios)
@@ -81,6 +83,23 @@ defmodule PhoenixAssets.Generators.RoutesTest do
 
   test "excludes frontend page routes" do
     refute generate() =~ "index:"
+  end
+
+  test "a param named after a TS reserved word is sanitised consistently" do
+    ts = generate()
+
+    assert ts =~ "reservedParam: (new_: string | number) =>"
+    assert ts =~ "/api/classes/${encodeURIComponent(String(new_))}"
+    refute ts =~ "(new: string"
+  end
+
+  test "a glob segment becomes a parameter that preserves slashes, encoded per segment" do
+    ts = generate()
+
+    assert ts =~ "fileDownload: (path: string | number) =>"
+
+    assert ts =~
+             ~s|/api/files/${String(path).split("/").map(encodeURIComponent).join("/")}|
   end
 
   test "is deterministic" do

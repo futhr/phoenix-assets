@@ -89,14 +89,14 @@ defmodule PhoenixAssets.PubSub do
 
   defp render_topic({name, opts}) do
     pattern = opts[:pattern]
-    fname = TS.camelize(name)
+    fname = name |> TS.camelize() |> TS.object_key()
 
     case placeholder_params(pattern) do
       [] ->
         "  #{fname}: () => #{JSON.encode!(pattern)},\n"
 
       params ->
-        args = Enum.map_join(params, ", ", &"#{TS.camelize(&1)}: string | number")
+        args = Enum.map_join(params, ", ", &"#{TS.arg_name(&1)}: string | number")
         "  #{fname}: (#{args}) => `#{placeholder_template(pattern)}`,\n"
     end
   end
@@ -114,9 +114,14 @@ defmodule PhoenixAssets.PubSub do
   end
 
   defp payload_type(payload) when is_map(payload) do
-    "{ " <>
-      Enum.map_join(payload, "; ", fn {field, type} -> "#{field}: #{TS.primitive(type)}" end) <>
-      " }"
+    body =
+      payload
+      |> Enum.sort_by(fn {field, _} -> to_string(field) end)
+      |> Enum.map_join("; ", fn {field, type} ->
+        "#{TS.object_key(field)}: #{TS.primitive(type)}"
+      end)
+
+    "{ " <> body <> " }"
   end
 
   defp payload_type(payload), do: TS.type_name(payload)
@@ -126,6 +131,6 @@ defmodule PhoenixAssets.PubSub do
   end
 
   defp placeholder_template(pattern) do
-    Regex.replace(@placeholder, pattern, fn _, param -> "${#{TS.camelize(param)}}" end)
+    Regex.replace(@placeholder, pattern, fn _, param -> "${#{TS.arg_name(param)}}" end)
   end
 end
