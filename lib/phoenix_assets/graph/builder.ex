@@ -3,9 +3,10 @@ defmodule PhoenixAssets.Graph.Builder do
   Assembles the Phoenix Asset Graph map from plugins and the Vite manifest.
 
   Collects every plugin's `graph_entries/2`, groups them by kind (pages, routes,
-  stories, electric shapes, pubsub topics, locales) into key-sorted maps, and
-  merges the Vite manifest's entry chunks. The result is a plain map ready to be
-  encoded as `graph.json`.
+  stories, electric shapes, pubsub topics, locales), merges every plugin's
+  `vite_config/2` patch into the `"vite"` section, and merges the Vite
+  manifest's entry chunks. The result is a plain map ready to be encoded as
+  `graph.json` (key ordering is applied by the canonical encoder at write time).
 
   ## Why
 
@@ -29,12 +30,13 @@ defmodule PhoenixAssets.Graph.Builder do
   """
   @spec build(Context.t(), keyword()) :: map()
   def build(%Context{} = ctx, opts \\ []) do
-    entries = graph_entries(ctx)
+    {entries, vite} = collect_plugins(ctx)
 
     %{
       "version" => 1,
       "app" => to_string(ctx.otp_app),
       "entries" => manifest_entries(ctx, opts),
+      "vite" => vite,
       "pages" => group(entries, :page),
       "routes" => group(entries, :route),
       "stories" => group(entries, :story),
@@ -44,10 +46,11 @@ defmodule PhoenixAssets.Graph.Builder do
     }
   end
 
-  defp graph_entries(ctx) do
+  defp collect_plugins(ctx) do
     case Engine.init_plugins(ctx) do
       {:ok, initialized} ->
-        Engine.collect(ctx, initialized, :graph_entries)
+        {Engine.collect(ctx, initialized, :graph_entries),
+         Engine.collect_map(ctx, initialized, :vite_config)}
 
       {:error, {module, reason}} ->
         Logger.error(
@@ -55,14 +58,13 @@ defmodule PhoenixAssets.Graph.Builder do
             "failed to initialise: #{inspect(reason)}"
         )
 
-        []
+        {[], %{}}
     end
   end
 
   defp group(entries, kind) do
     entries
     |> Enum.filter(&(&1.kind == kind))
-    |> Enum.sort_by(& &1.key)
     |> Map.new(fn entry -> {entry.key, payload(entry)} end)
   end
 

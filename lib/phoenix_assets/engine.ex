@@ -46,13 +46,35 @@ defmodule PhoenixAssets.Engine do
   Calls `callback/2` on every initialised plugin and concatenates the results.
 
   `callback` is one of the list-returning `PhoenixAssets.Plugin` callbacks
-  (`:generated_files`, `:dev_processes`, `:graph_entries`, `:doctor_checks`,
-  `:runtime_modules`). Each plugin receives `(ctx, state)`.
+  (`:generated_files`, `:dev_processes`, `:graph_entries`, `:doctor_checks`).
+  Each plugin receives `(ctx, state)`.
   """
   @spec collect(Context.t(), [initialized()], atom()) :: [term()]
   def collect(%Context{} = ctx, initialized, callback) when is_atom(callback) do
     Enum.flat_map(initialized, fn {module, _, state} ->
       apply(module, callback, [ctx, state])
+    end)
+  end
+
+  @doc """
+  Calls `callback/2` on every initialised plugin and deep-merges the returned
+  maps.
+
+  Plugins are visited in resolved order and a later plugin wins on key
+  conflicts, so overrides follow the same deterministic ordering as every
+  other collection. Used for the map-returning `:vite_config` callback.
+  """
+  @spec collect_map(Context.t(), [initialized()], atom()) :: map()
+  def collect_map(%Context{} = ctx, initialized, callback) when is_atom(callback) do
+    Enum.reduce(initialized, %{}, fn {module, _, state}, acc ->
+      deep_merge(acc, apply(module, callback, [ctx, state]))
+    end)
+  end
+
+  defp deep_merge(left, right) do
+    Map.merge(left, right, fn
+      _key, l, r when is_map(l) and is_map(r) -> deep_merge(l, r)
+      _key, _l, r -> r
     end)
   end
 end

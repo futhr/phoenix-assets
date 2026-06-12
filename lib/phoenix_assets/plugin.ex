@@ -3,7 +3,7 @@ defmodule PhoenixAssets.Plugin do
   The behaviour every `phoenix_assets` integration implements.
 
   A plugin contributes *declarations* -- generated files, Vite config patches,
-  dev processes, graph entries, runtime modules, doctor checks -- computed from a
+  dev processes, graph entries, doctor checks -- computed from a
   `PhoenixAssets.Context` and its own initialised state. Plugins never mutate
   files or global state directly; the core engine collects their declarations and
   acts on them. This keeps the plugin layer pure and the system deterministic.
@@ -60,7 +60,10 @@ defmodule PhoenixAssets.Plugin do
   @doc "Returns the generated contract files this plugin contributes."
   @callback generated_files(ctx :: Context.t(), state()) :: [GeneratedFile.t()]
 
-  @doc "Returns a Vite config patch (merged into the asset graph's `vite` section)."
+  @doc """
+  Returns a Vite config patch, deep-merged (in plugin order, later plugin wins)
+  into the asset graph's `"vite"` section.
+  """
   @callback vite_config(ctx :: Context.t(), state()) :: map()
 
   @doc "Returns external dev processes this plugin needs supervised."
@@ -68,9 +71,6 @@ defmodule PhoenixAssets.Plugin do
 
   @doc "Returns asset-graph entries this plugin contributes."
   @callback graph_entries(ctx :: Context.t(), state()) :: [Graph.Entry.t()]
-
-  @doc "Returns runtime modules this plugin wants started/registered."
-  @callback runtime_modules(ctx :: Context.t(), state()) :: [module()]
 
   @doc "Returns doctor checks this plugin contributes."
   @callback doctor_checks(ctx :: Context.t(), state()) :: [Doctor.Check.t()]
@@ -81,7 +81,6 @@ defmodule PhoenixAssets.Plugin do
                       vite_config: 2,
                       dev_processes: 2,
                       graph_entries: 2,
-                      runtime_modules: 2,
                       doctor_checks: 2
 
   @doc false
@@ -145,7 +144,6 @@ defmodule PhoenixAssets.Plugin do
       {{:vite_config, 2}, quote(do: def(vite_config(_, _), do: %{}))},
       {{:dev_processes, 2}, quote(do: def(dev_processes(_, _), do: []))},
       {{:graph_entries, 2}, quote(do: def(graph_entries(_, _), do: []))},
-      {{:runtime_modules, 2}, quote(do: def(runtime_modules(_, _), do: []))},
       {{:doctor_checks, 2}, quote(do: def(doctor_checks(_, _), do: []))}
     ]
     |> Enum.reject(fn {sig, _} -> Module.defines?(module, sig) end)

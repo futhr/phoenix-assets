@@ -12,11 +12,11 @@ defmodule PhoenixAssets.Preset do
       defmodule MyApp.Assets.Stack do
         use PhoenixAssets.Preset
 
-        integration PhoenixAssets.SvelteKit, ssr: false, adapter: :static
+        integration PhoenixAssets.SvelteKit
         integration PhoenixAssets.Tailwind, entry: "src/app.css"
         integration PhoenixAssets.Storybook, port: 6006
         integration PhoenixAssets.Electric, shapes: MyApp.Assets.ElectricShapes
-        integration PhoenixAssets.PubSub, pubsub: MyApp.PubSub, topics: MyApp.Assets.PubSubTopics
+        integration PhoenixAssets.PubSub, topics: MyApp.Assets.PubSubTopics
         integration PhoenixAssets.Localize, locales: ~w(en sv), default_locale: "en"
       end
 

@@ -29,7 +29,6 @@ defmodule PhoenixAssets.PluginTest do
     assert Bare.vite_config(%{}, %{}) == %{}
     assert Bare.dev_processes(%{}, %{}) == []
     assert Bare.graph_entries(%{}, %{}) == []
-    assert Bare.runtime_modules(%{}, %{}) == []
     assert Bare.doctor_checks(%{}, %{}) == []
   end
 

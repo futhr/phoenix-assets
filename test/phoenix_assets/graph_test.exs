@@ -31,6 +31,19 @@ defmodule PhoenixAssets.GraphTest do
         Entry.new(kind: :electric_shape, key: "portfolios", data: %{"table" => "portfolios"})
       ]
     end
+
+    def vite_config(_, _) do
+      %{"tailwind" => %{"plugin" => "@tailwindcss/vite", "entry" => "src/app.css"}}
+    end
+  end
+
+  defmodule OverridePlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def vite_config(_, _) do
+      %{"tailwind" => %{"entry" => "src/custom.css"}, "extra" => true}
+    end
   end
 
   @manifest %{
@@ -56,6 +69,28 @@ defmodule PhoenixAssets.GraphTest do
     assert graph["routes"]["health"] == %{"path" => "/api/health"}
     assert graph["electric_shapes"]["portfolios"] == %{"table" => "portfolios"}
     assert graph["entries"]["src/app.ts"]["file"] == "/assets/app-AAA.js"
+  end
+
+  test "build/2 deep-merges plugin vite_config patches into the vite section" do
+    graph = Graph.build(ctx(), manifest: @manifest)
+
+    assert graph["vite"] == %{
+             "tailwind" => %{"plugin" => "@tailwindcss/vite", "entry" => "src/app.css"}
+           }
+  end
+
+  test "a later plugin's vite_config wins on conflicting keys, deeply" do
+    config = Config.load!(otp_app: :my_app)
+
+    context =
+      Context.new(config, env: :test, plugins: [{FakePlugin, []}, {OverridePlugin, []}])
+
+    graph = Graph.build(context, manifest: @manifest)
+
+    assert graph["vite"] == %{
+             "tailwind" => %{"plugin" => "@tailwindcss/vite", "entry" => "src/custom.css"},
+             "extra" => true
+           }
   end
 
   test "write/2 and load/1 round-trip via graph.json" do
