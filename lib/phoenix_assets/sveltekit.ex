@@ -123,16 +123,22 @@ defmodule PhoenixAssets.SvelteKit do
 
   defp page_key("/"), do: "Index"
 
+  # Param segments contribute to the key (`/users/:id` -> `UsersById`) so a
+  # param route can never collide with -- and silently displace -- its static
+  # sibling (`/users` -> `Users`) in the graph's key-indexed page map.
   defp page_key(route) do
     route
     |> String.split("/")
-    |> Enum.reject(&(&1 == "" or String.starts_with?(&1, ":")))
-    |> Enum.map_join("", &Macro.camelize/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.map_join("", &segment_key/1)
     |> case do
       "" -> "Index"
       key -> key
     end
   end
+
+  defp segment_key(":" <> param), do: "By" <> Macro.camelize(param)
+  defp segment_key(segment), do: Macro.camelize(segment)
 
   defp file_check(ctx, file, label) do
     path = Path.join(ctx.asset_root, file)

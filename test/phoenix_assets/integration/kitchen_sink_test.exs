@@ -66,6 +66,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
     File.write!(Path.join(root, "src/app.css"), "@import \"tailwindcss\";\n")
     File.write!(Path.join(root, "src/routes/+page.svelte"), "")
     File.write!(Path.join(root, "src/routes/about/+page.svelte"), "")
+    File.write!(Path.join(root, "src/routes/users/+page.svelte"), "")
     File.write!(Path.join(root, "src/routes/users/[id]/+page.svelte"), "")
 
     on_exit(fn -> File.rm_rf!(root) end)
@@ -151,6 +152,9 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
     assert graph["app"] == "phoenix_assets"
     assert Map.has_key?(graph["pages"], "Index")
     assert Map.has_key?(graph["pages"], "About")
+    # A param route never displaces its static sibling in the page map.
+    assert Map.has_key?(graph["pages"], "Users")
+    assert Map.has_key?(graph["pages"], "UsersById")
     assert Map.has_key?(graph["electric_shapes"], "portfolios")
     assert Map.has_key?(graph["electric_shapes"], "user_portfolios")
     assert Map.has_key?(graph["pubsub_topics"], "portfolio")
