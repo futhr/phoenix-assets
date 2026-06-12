@@ -7,8 +7,8 @@ defmodule PhoenixAssets.Types.Schema do
       defmodule MyApp.Assets.Types do
         use PhoenixAssets.Types.Schema
 
-        type "PortfolioRow",
-          resource: MyApp.Portfolio.Portfolio,
+        type "ArticleRow",
+          resource: MyApp.Content.Article,
           only: :public,
           omit: [:internal_score],
           calculations: [:like_count]
@@ -22,12 +22,25 @@ defmodule PhoenixAssets.Types.Schema do
     * `:expose` -- non-public attribute names to add (opt-in escape hatch).
     * `:calculations` -- calculation names to include.
 
+  Declarations are validated at compile time: a missing `:resource` or an
+  unknown option is a compile error. Field-level names (`:expose`,
+  `:calculations`) are checked at generation time against the resource, which
+  raises a clear error for unknown names.
+
   ## Why
 
   Field exposure is a deliberate, auditable decision (sensitive fields must stay
   out of wire rows). Declaring it explicitly -- rather than reflecting every
   attribute -- keeps the generated types faithful to what the API actually serves.
   """
+
+  @type_schema NimbleOptions.new!(
+                 resource: [type: :atom, required: true, doc: "the Ash resource module"],
+                 only: [type: {:in, [:public, :all]}, default: :public],
+                 omit: [type: {:list, :atom}, default: []],
+                 expose: [type: {:list, :atom}, default: []],
+                 calculations: [type: {:list, :atom}, default: []]
+               )
 
   @doc false
   defmacro __using__(_) do
@@ -48,11 +61,28 @@ defmodule PhoenixAssets.Types.Schema do
   @doc false
   defmacro __before_compile__(env) do
     types =
-      env.module |> Module.get_attribute(:phoenix_assets_types) |> List.wrap() |> Enum.reverse()
+      env.module
+      |> Module.get_attribute(:phoenix_assets_types)
+      |> List.wrap()
+      |> Enum.reverse()
+      |> Enum.map(fn {name, opts} -> {name, validate!(env, name, opts)} end)
 
     quote do
       @doc "Returns the declared types as `{name, opts}` pairs."
       def __phoenix_assets_types__, do: unquote(Macro.escape(types))
+    end
+  end
+
+  defp validate!(env, name, opts) do
+    case NimbleOptions.validate(opts, @type_schema) do
+      {:ok, validated} ->
+        validated
+
+      {:error, error} ->
+        raise CompileError,
+          file: env.file,
+          line: env.line,
+          description: "phoenix_assets type #{inspect(name)}: #{Exception.message(error)}"
     end
   end
 end

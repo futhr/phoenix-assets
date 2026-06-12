@@ -25,10 +25,12 @@ defmodule PhoenixAssets.ElectricTest do
 
   defmodule RouteEdgeShapes do
     @moduledoc false
-    use PhoenixAssets.Electric.Shapes
-
-    shape(:no_route, type: "GhostRow")
-    shape(:ghost, route: "/shapes/ghost", type: "GhostRow")
+    # A plain declaration module (no DSL): the DSL rejects a missing :route at
+    # compile time, but the plugin must stay defensive against hand-rolled
+    # modules that bypass it.
+    def __phoenix_assets_shapes__ do
+      [no_route: [type: "GhostRow"], ghost: [route: "/shapes/ghost", type: "GhostRow"]]
+    end
   end
 
   defmodule Stub do
