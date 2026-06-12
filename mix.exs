@@ -55,7 +55,6 @@ defmodule PhoenixAssets.MixProject do
     [
       {:phoenix, "~> 1.8"},
       {:plug, "~> 1.14"},
-      {:jason, "~> 1.4"},
       {:telemetry, "~> 1.1"},
       {:file_system, "~> 1.0"},
       {:muontrap, "~> 1.5"},
