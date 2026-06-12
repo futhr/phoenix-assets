@@ -8,7 +8,7 @@ defmodule PhoenixAssets.DevIntelligence.TidewaveToolsTest do
 
   setup do
     root = Path.join(System.tmp_dir!(), "pa_tw_#{System.unique_integer([:positive])}")
-    File.mkdir_p!(root)
+    File.mkdir_p!(Path.join(root, "node_modules/.bin"))
     saved = Application.get_all_env(:phoenix_assets)
 
     on_exit(fn ->

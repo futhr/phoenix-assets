@@ -57,7 +57,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
   setup do
     root = Path.join(System.tmp_dir!(), "pa_ks_#{System.unique_integer([:positive])}")
 
-    for dir <- ["src/routes/about", "src/routes/users/[id]"] do
+    for dir <- ["src/routes/about", "src/routes/users/[id]", "node_modules/.bin"] do
       File.mkdir_p!(Path.join(root, dir))
     end
 

@@ -85,7 +85,8 @@ defmodule PhoenixAssets.SvelteKit do
         id: :package_json,
         group: :sveltekit,
         run: &file_check(&1, "package.json", "package.json")
-      )
+      ),
+      Check.new(id: :vite_binary, group: :sveltekit, run: &vite_binary_check/1)
     ]
   end
 
@@ -147,6 +148,21 @@ defmodule PhoenixAssets.SvelteKit do
       Check.ok("#{label} present")
     else
       Check.warn("#{label} missing at #{path}")
+    end
+  end
+
+  # Validates the exact binary the dev supervisor execs (`Context.bin_path/2`),
+  # so "doctor says ok" and "vite actually starts" cannot diverge.
+  defp vite_binary_check(ctx) do
+    path = Context.bin_path(ctx, "vite")
+
+    if File.exists?(path) do
+      Check.ok("vite binary present")
+    else
+      Check.warn(
+        "vite binary missing at #{path}",
+        "run #{ctx.package_manager} install in #{ctx.asset_root}"
+      )
     end
   end
 end

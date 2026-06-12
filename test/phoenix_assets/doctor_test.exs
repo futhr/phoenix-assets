@@ -40,7 +40,7 @@ defmodule PhoenixAssets.DoctorTest do
 
   defp ctx(plugins \\ []) do
     tmp = Path.join(System.tmp_dir!(), "doc_#{System.unique_integer([:positive])}")
-    File.mkdir_p!(tmp)
+    File.mkdir_p!(Path.join(tmp, "node_modules/.bin"))
     on_exit(fn -> File.rm_rf!(tmp) end)
     config = Config.load!(otp_app: :my_app, asset_root: tmp, static_root: tmp)
     Context.new(config, env: :test, plugins: plugins)
@@ -112,5 +112,79 @@ defmodule PhoenixAssets.DoctorTest do
 
     assert :asset_root in ids
     refute :boom in ids
+  end
+
+  test "errors when node_modules is missing, with an install hint" do
+    tmp = Path.join(System.tmp_dir!(), "nm_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(tmp)
+    on_exit(fn -> File.rm_rf!(tmp) end)
+
+    config = Config.load!(otp_app: :my_app, asset_root: tmp)
+    {status, results} = Doctor.run(Context.new(config, env: :test))
+
+    assert status == :error
+    assert result_for(results, :node_modules).status == :error
+    assert result_for(results, :node_modules).hint =~ "pnpm install"
+  end
+
+  defp budget_ctx(max_kb) do
+    context = ctx()
+    manifest_path = Context.manifest_path(context)
+    File.mkdir_p!(Path.dirname(manifest_path))
+
+    File.write!(
+      manifest_path,
+      JSON.encode!(%{"src/app.ts" => %{"file" => "assets/app.js", "isEntry" => true}})
+    )
+
+    app_js = Path.join(context.static_root, "assets/app.js")
+    File.mkdir_p!(Path.dirname(app_js))
+    File.write!(app_js, String.duplicate("x", 2048))
+
+    config =
+      Config.load!(
+        otp_app: :my_app,
+        asset_root: context.asset_root,
+        static_root: context.static_root,
+        build: [
+          vite_manifest: manifest_path,
+          budgets: [{"src/app.ts", max_kb}]
+        ]
+      )
+
+    Context.new(config, env: :test)
+  end
+
+  test "a bundle within its budget passes; one over it errors" do
+    {_, results} = Doctor.run(budget_ctx(4), production: true)
+    assert result_for(results, :bundle_budget).status == :ok
+
+    {status, results} = Doctor.run(budget_ctx(1), production: true)
+    assert status == :error
+    assert result_for(results, :bundle_budget).status == :error
+    assert result_for(results, :bundle_budget).message =~ "over its 1 KiB budget"
+  end
+
+  test "warns about publicly served source maps unless explicitly allowed" do
+    context = ctx()
+    File.mkdir_p!(Path.join(context.static_root, "assets"))
+    File.write!(Path.join(context.static_root, "assets/app.js.map"), "{}")
+    manifest_path = Context.manifest_path(context)
+    File.mkdir_p!(Path.dirname(manifest_path))
+    File.write!(manifest_path, "{}")
+
+    {_, results} = Doctor.run(context, production: true)
+    assert result_for(results, :source_maps).status == :warn
+
+    allowed =
+      Config.load!(
+        otp_app: :my_app,
+        asset_root: context.asset_root,
+        static_root: context.static_root,
+        build: [allow_source_maps: true]
+      )
+
+    {_, results} = Doctor.run(Context.new(allowed, env: :test), production: true)
+    assert result_for(results, :source_maps).status == :ok
   end
 end

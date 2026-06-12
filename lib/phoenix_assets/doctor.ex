@@ -18,7 +18,7 @@ defmodule PhoenixAssets.Doctor do
   installed -- into explicit, enforceable checks.
   """
 
-  alias PhoenixAssets.{Context, Engine, Generated, Telemetry}
+  alias PhoenixAssets.{Context, Engine, Generated, Manifest, Telemetry}
   alias PhoenixAssets.Doctor.Check
 
   @type result :: {Check.t(), Check.result()}
@@ -34,7 +34,7 @@ defmodule PhoenixAssets.Doctor do
     production? = Keyword.get(opts, :production, false)
 
     results =
-      (builtin_checks() ++ plugin_checks(ctx))
+      (builtin_checks(ctx) ++ plugin_checks(ctx))
       |> Enum.filter(&include?(&1, production?))
       |> Enum.map(fn check -> {check, safe_run(check, ctx)} end)
 
@@ -46,10 +46,14 @@ defmodule PhoenixAssets.Doctor do
   defp include?(%Check{production?: true}, production?), do: production?
   defp include?(_, _), do: true
 
+  # A diagnostic must never take the doctor down with it: exceptions, exits,
+  # and throws all surface as an error *result* for that one check.
   defp safe_run(%Check{run: run, id: id}, ctx) do
     run.(ctx)
   rescue
     exception -> Check.error("check #{id} crashed: #{Exception.message(exception)}")
+  catch
+    kind, reason -> Check.error("check #{id} crashed: #{inspect(kind)} #{inspect(reason)}")
   end
 
   defp plugin_checks(ctx) do
@@ -59,18 +63,37 @@ defmodule PhoenixAssets.Doctor do
     end
   end
 
-  defp builtin_checks do
+  defp builtin_checks(ctx) do
     [
       Check.new(id: :asset_root, group: :paths, run: &asset_root_check/1),
       Check.new(id: :package_manager, group: :tooling, run: &package_manager_check/1),
+      Check.new(id: :node_modules, group: :tooling, run: &node_modules_check/1),
       Check.new(
         id: :generated_fresh,
         group: :generated,
         production?: true,
         run: &generated_check/1
       ),
-      Check.new(id: :manifest_present, group: :build, production?: true, run: &manifest_check/1)
-    ]
+      Check.new(id: :manifest_present, group: :build, production?: true, run: &manifest_check/1),
+      Check.new(id: :source_maps, group: :build, production?: true, run: &source_maps_check/1)
+    ] ++ budget_checks(ctx)
+  end
+
+  # One production check per configured bundle budget:
+  #
+  #     config :phoenix_assets, :build,
+  #       budgets: [{"src/app.ts", 300}]   # entry key => max KiB (entry + imports + css)
+  defp budget_checks(ctx) do
+    ctx.config.build
+    |> Keyword.get(:budgets, [])
+    |> Enum.map(fn {entry, max_kb} ->
+      Check.new(
+        id: :bundle_budget,
+        group: :build,
+        production?: true,
+        run: &budget_check(&1, entry, max_kb)
+      )
+    end)
   end
 
   defp asset_root_check(ctx) do
@@ -111,5 +134,80 @@ defmodule PhoenixAssets.Doctor do
     else
       Check.error("Vite manifest missing at #{path}", "run the production asset build")
     end
+  end
+
+  defp node_modules_check(ctx) do
+    path = Path.join(ctx.asset_root, "node_modules")
+
+    if File.dir?(path) do
+      Check.ok("node_modules is present")
+    else
+      Check.error(
+        "node_modules missing at #{path}",
+        "run #{ctx.package_manager} install in #{ctx.asset_root}"
+      )
+    end
+  end
+
+  # Source maps under the served static root expose original sources publicly.
+  # Hosts that serve them deliberately opt out with
+  # `config :phoenix_assets, :build, allow_source_maps: true`; the recommended
+  # production setup is Vite's `build.sourcemap: "hidden"` plus upload to the
+  # error tracker.
+  defp source_maps_check(ctx) do
+    cond do
+      Keyword.get(ctx.config.build, :allow_source_maps, false) ->
+        Check.ok("source maps are explicitly allowed in the static root")
+
+      [] == Path.wildcard(Path.join(ctx.static_root, "**/*.map")) ->
+        Check.ok("no source maps in the served static root")
+
+      true ->
+        Check.warn(
+          "source maps found under #{ctx.static_root} and will be publicly served",
+          "use build.sourcemap: \"hidden\" (upload to your error tracker) or set " <>
+            "build: [allow_source_maps: true] to silence"
+        )
+    end
+  end
+
+  defp budget_check(ctx, entry, max_kb) do
+    with {:ok, manifest} <- Manifest.load(Context.manifest_path(ctx)),
+         {:ok, total} <- entry_weight(ctx, manifest, entry) do
+      kb = div(total, 1024)
+
+      if kb <= max_kb do
+        Check.ok("bundle #{entry} is #{kb} KiB (budget #{max_kb} KiB)")
+      else
+        Check.error(
+          "bundle #{entry} is #{kb} KiB, over its #{max_kb} KiB budget",
+          "split the entry or raise the budget in :build, :budgets"
+        )
+      end
+    else
+      _ ->
+        Check.warn(
+          "bundle budget for #{entry} could not be evaluated",
+          "build the assets so the manifest and files exist"
+        )
+    end
+  end
+
+  defp entry_weight(ctx, manifest, entry) do
+    hrefs =
+      [Manifest.file(manifest, entry) | Manifest.imports(manifest, entry)] ++
+        Manifest.css(manifest, entry)
+
+    hrefs
+    |> Enum.map(&Path.join(ctx.static_root, String.trim_leading(&1, "/")))
+    |> Enum.reduce_while({:ok, 0}, fn path, {:ok, acc} ->
+      case File.stat(path) do
+        {:ok, %{size: size}} -> {:cont, {:ok, acc + size}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  rescue
+    # Manifest.file/2 raises KeyError for an unknown entry key.
+    e in KeyError -> {:error, e}
   end
 end

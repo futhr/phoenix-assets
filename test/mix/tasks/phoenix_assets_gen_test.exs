@@ -22,6 +22,7 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
   setup do
     root = Path.join(System.tmp_dir!(), "pa_task_#{System.unique_integer([:positive])}")
     File.mkdir_p!(Path.join(root, "src"))
+    File.mkdir_p!(Path.join(root, "node_modules/.bin"))
     File.write!(Path.join(root, "svelte.config.js"), "export default {}\n")
     File.write!(Path.join(root, "package.json"), "{}\n")
     File.write!(Path.join(root, "src/app.css"), "@import \"tailwindcss\";\n")
