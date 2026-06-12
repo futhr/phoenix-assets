@@ -32,12 +32,16 @@ defmodule PhoenixAssets.DevProcess do
   @spec new(Enumerable.t()) :: t()
   def new(attrs), do: struct!(__MODULE__, attrs)
 
+  alias PhoenixAssets.{DevServer, Telemetry}
+
   @doc """
   Builds a supervised `MuonTrap.Daemon` child spec for this dev process.
 
   MuonTrap wraps the OS process so its entire process group is torn down when the
   BEAM exits -- even on a hard crash -- releasing the port. `:logger_fun` (an
   `mfargs` tuple) routes the process's output to the dev server's log buffer.
+  Each start emits `[:phoenix_assets, :dev_server, :start]`, and the dev server
+  monitors the daemon to emit `:stop`/`:crash` on exit.
   """
   @spec to_child_spec(t(), keyword()) :: Supervisor.child_spec()
   def to_child_spec(%__MODULE__{} = process, opts \\ []) do
@@ -49,11 +53,27 @@ defmodule PhoenixAssets.DevProcess do
 
     %{
       id: process.id,
-      start: {MuonTrap.Daemon, :start_link, [command, args, daemon_opts]},
+      start: {__MODULE__, :start_daemon, [process.id, command, args, daemon_opts]},
       restart: process.restart,
       shutdown: 500,
       type: :worker
     }
+  end
+
+  @doc false
+  @spec start_daemon(atom(), String.t(), [String.t()], keyword()) :: GenServer.on_start()
+  def start_daemon(id, command, args, daemon_opts) do
+    with {:ok, pid} <- MuonTrap.Daemon.start_link(command, args, daemon_opts) do
+      Telemetry.execute([:dev_server, :start], %{}, %{id: id, os_pid: os_pid(pid)})
+      DevServer.monitor_daemon(id, pid)
+      {:ok, pid}
+    end
+  end
+
+  defp os_pid(pid) do
+    MuonTrap.Daemon.os_pid(pid)
+  catch
+    _, _ -> nil
   end
 
   defp put_logger_fun(opts, nil), do: opts

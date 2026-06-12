@@ -18,22 +18,36 @@ defmodule PhoenixAssets.Manifest do
   production without coupling to specific hashes.
   """
 
+  alias PhoenixAssets.Telemetry
+
   @type t :: %{optional(String.t()) => map()}
 
   @doc "Loads and decodes a Vite manifest from `path`."
   @spec load(Path.t()) :: {:ok, t()} | {:error, term()}
   def load(path) do
-    with {:ok, raw} <- File.read(path) do
-      JSON.decode(raw)
+    with {:ok, raw} <- File.read(path),
+         {:ok, manifest} <- JSON.decode(raw) do
+      Telemetry.execute([:manifest, :load], %{entries: map_size(manifest)}, %{path: path})
+      {:ok, manifest}
     end
   end
 
-  @doc "Fetches the raw chunk for `key`, raising `KeyError` if it is absent."
+  @doc """
+  Fetches the raw chunk for `key`, raising `KeyError` if it is absent.
+
+  A missing key also emits `[:phoenix_assets, :manifest, :missing_entry]`, so
+  production observability catches requests for entries the build no longer
+  produces.
+  """
   @spec entry!(t(), String.t()) :: map()
   def entry!(manifest, key) do
     case Map.fetch(manifest, key) do
-      {:ok, chunk} -> chunk
-      :error -> raise KeyError, key: key, term: manifest
+      {:ok, chunk} ->
+        chunk
+
+      :error ->
+        Telemetry.execute([:manifest, :missing_entry], %{}, %{entry: key})
+        raise KeyError, key: key, term: manifest
     end
   end
 

@@ -124,8 +124,17 @@ defmodule PhoenixAssets.Generated do
 
   defp check(files, ctx) do
     case files |> Enum.reject(&fresh?(&1, ctx)) |> Enum.map(& &1.path) do
-      [] -> :ok
-      stale -> {:error, {:stale, stale}}
+      [] ->
+        :ok
+
+      stale ->
+        Telemetry.execute(
+          [:generated, :stale],
+          %{stale: length(stale)},
+          %{otp_app: ctx.otp_app, stale: stale}
+        )
+
+        {:error, {:stale, stale}}
     end
   end
 

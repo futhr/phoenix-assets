@@ -88,8 +88,20 @@ defmodule PhoenixAssets.DevServer do
     end
   end
 
+  @doc """
+  Monitors a daemon so `[:phoenix_assets, :dev_server, :stop | :crash]` is
+  emitted when it exits. A no-op if the tracker is down.
+  """
+  @spec monitor_daemon(atom(), pid()) :: :ok
+  def monitor_daemon(id, pid) do
+    case Process.whereis(__MODULE__) do
+      nil -> :ok
+      server -> GenServer.cast(server, {:monitor, id, pid})
+    end
+  end
+
   @impl GenServer
-  def init(_), do: {:ok, %{logs: %{}}}
+  def init(_), do: {:ok, %{logs: %{}, monitors: %{}}}
 
   @impl GenServer
   def handle_cast({:log, id, line}, state) do
@@ -97,11 +109,36 @@ defmodule PhoenixAssets.DevServer do
     {:noreply, %{state | logs: Map.put(state.logs, id, lines)}}
   end
 
+  def handle_cast({:monitor, id, pid}, state) do
+    ref = Process.monitor(pid)
+    {:noreply, %{state | monitors: Map.put(state.monitors, ref, id)}}
+  end
+
   @impl GenServer
   def handle_call({:logs, id, limit}, _, state) do
     lines = state.logs |> Map.get(id, []) |> Enum.take(limit) |> Enum.reverse()
     {:reply, lines, state}
   end
+
+  @impl GenServer
+  def handle_info({:DOWN, ref, :process, _pid, reason}, state) do
+    {id, monitors} = Map.pop(state.monitors, ref)
+
+    if id do
+      PhoenixAssets.Telemetry.execute([:dev_server, event_for(reason)], %{}, %{
+        id: id,
+        reason: reason
+      })
+    end
+
+    {:noreply, %{state | monitors: monitors}}
+  end
+
+  def handle_info(_, state), do: {:noreply, state}
+
+  defp event_for(reason) when reason in [:normal, :shutdown], do: :stop
+  defp event_for({:shutdown, _}), do: :stop
+  defp event_for(_), do: :crash
 
   defp child_status(nil), do: :unknown
   defp child_status({_, pid, _, _}) when is_pid(pid), do: :running

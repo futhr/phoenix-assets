@@ -5,7 +5,7 @@ defmodule PhoenixAssets.DevProcessTest do
 
   alias PhoenixAssets.DevProcess
 
-  test "to_child_spec/2 builds a MuonTrap.Daemon spec" do
+  test "to_child_spec/2 builds a telemetry-wrapped MuonTrap.Daemon spec" do
     process =
       DevProcess.new(
         id: :vite,
@@ -20,7 +20,7 @@ defmodule PhoenixAssets.DevProcessTest do
     assert spec.id == :vite
     assert spec.restart == :transient
     assert spec.shutdown == 500
-    assert {MuonTrap.Daemon, :start_link, [command, args, opts]} = spec.start
+    assert {DevProcess, :start_daemon, [:vite, command, args, opts]} = spec.start
     assert command == "pnpm"
     assert args == ["vite", "--port", "5173"]
     assert opts[:cd] == "assets"
@@ -32,8 +32,7 @@ defmodule PhoenixAssets.DevProcessTest do
   test "omits logger_fun when none is given" do
     process = DevProcess.new(id: :sb, command: ["pnpm", "storybook"], cd: "assets")
 
-    {MuonTrap.Daemon, :start_link, [_, _, opts]} =
-      DevProcess.to_child_spec(process).start
+    {DevProcess, :start_daemon, [:sb, _, _, opts]} = DevProcess.to_child_spec(process).start
 
     refute Keyword.has_key?(opts, :logger_fun)
   end

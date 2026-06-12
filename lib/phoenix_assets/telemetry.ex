@@ -9,16 +9,21 @@ defmodule PhoenixAssets.Telemetry do
   ## Events
 
     * `[:phoenix_assets, :generated, :start | :stop | :exception]` -- a contract
-      generation run. Metadata: `%{otp_app:, files:, written:}`.
-    * `[:phoenix_assets, :generated, :stale]` -- a `--check` run found drift.
-      Metadata: `%{otp_app:, stale: [Path.t()]}`.
+      generation run (span). Start metadata: `%{otp_app:, check:}`; the stop
+      event adds `%{written:, unchanged:}` (write runs) or `%{stale:}` (check
+      runs).
+    * `[:phoenix_assets, :generated, :stale]` -- a check run found drift.
+      Measurements: `%{stale: count}`. Metadata: `%{otp_app:, stale: [Path.t()]}`.
     * `[:phoenix_assets, :manifest, :load]` -- a Vite manifest was parsed.
+      Measurements: `%{entries: count}`. Metadata: `%{path:}`.
     * `[:phoenix_assets, :manifest, :missing_entry]` -- an entry was requested
       but absent from the manifest. Metadata: `%{entry:}`.
-    * `[:phoenix_assets, :dev_server, :start | :stop | :crash]` -- a supervised
-      dev process changed state. Metadata: `%{id:, os_pid:}`.
-    * `[:phoenix_assets, :doctor, :run]` -- a doctor run finished. Metadata:
-      `%{status:, checks:}`.
+    * `[:phoenix_assets, :dev_server, :start]` -- a supervised dev process
+      started. Metadata: `%{id:, os_pid:}`.
+    * `[:phoenix_assets, :dev_server, :stop | :crash]` -- a supervised dev
+      process exited (cleanly or not). Metadata: `%{id:, reason:}`.
+    * `[:phoenix_assets, :doctor, :run]` -- a doctor run finished.
+      Measurements: `%{checks: count}`. Metadata: `%{status:}`.
 
   ## Why
 
