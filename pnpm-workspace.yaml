@@ -1,6 +1,26 @@
 packages:
   - "npm/*"
 
+# One catalog entry per shared tool; packages reference them with "catalog:"
+# so versions cannot drift between npm/vite, npm/svelte, and npm/lint.
+# Peer ranges stay wide and hand-written in each package.json — only dev-tool
+# versions are catalogued. `pnpm publish` rewrites "catalog:" to the resolved
+# range automatically.
+catalog:
+  "@electric-sql/client": ^1.5.21
+  "@sveltejs/vite-plugin-svelte": ^7.1.2
+  "@tanstack/electric-db-collection": ^0.3.6
+  "@tanstack/svelte-db": ^0.1.85
+  "@types/node": ^24.13.1
+  "@vitest/coverage-v8": ^4.1.8
+  happy-dom: ^20.10.2
+  svelte: ^5.56.3
+  tailwindcss: ^4.3.1
+  tsup: ^8.5.1
+  typescript: ^6.0.3
+  vite: ^8.0.16
+  vitest: ^4.1.8
+
 # pnpm 10's home for the build-script allowlist (moved out of package.json's
 # "pnpm" field). Only these packages may run install/build scripts.
 onlyBuiltDependencies:

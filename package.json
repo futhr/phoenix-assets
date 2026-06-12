@@ -17,9 +17,9 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
-    "@biomejs/biome": "^2.4.16",
+    "@biomejs/biome": "^2.5.0",
     "knip": "^6.16.1",
     "publint": "^0.3.21",
-    "typescript": "^6.0.3"
+    "typescript": "catalog:"
   }
 }
