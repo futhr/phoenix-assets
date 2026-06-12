@@ -5,10 +5,11 @@ defmodule PhoenixAssets.Electric do
   Reads the shapes declared in the module passed as `shapes:` (see
   `PhoenixAssets.Electric.Shapes`) and emits `electric.ts` -- a `ShapeStream`
   factory per shape, typed by the shape's row type. Each factory takes a params
-  map (path placeholders are substituted, the rest become query params) and is
-  built through `@phoenix-assets/svelte`: the URL via `createShapeUrl/2` and,
-  critically, the request's auth headers via `authHeaders/0`. Also contributes
-  graph entries and a doctor check per shape that the route exists in the router.
+  map whose route placeholders are *required, typed keys* (the rest become
+  query params), and is built through `@phoenix-assets/svelte`: the URL via
+  `createShapeUrl/2` and, critically, the request's auth headers via
+  `authHeaders/0`. Also contributes graph entries and a doctor check per shape
+  that the route exists in the router.
 
   ## Why
 
@@ -100,15 +101,30 @@ defmodule PhoenixAssets.Electric do
   # One uniform factory shape: a params map feeds `createShapeUrl/2` (which
   # substitutes `:placeholders` and appends the rest as query params), and every
   # stream carries `authHeaders()` so tenant-scoped shapes are never requested
-  # unauthenticated.
+  # unauthenticated. Placeholder params are typed as required keys -- under
+  # their route spelling, because `createShapeUrl` substitutes by raw name --
+  # so omitting one is a compile error in the frontend, not a malformed URL.
   defp render_shape({name, opts}) do
     route = opts[:route]
     type = TS.type_name(opts[:type])
-    fname = TS.camelize(name)
+    fname = name |> TS.camelize() |> TS.object_key()
 
-    "  #{fname}: (params: Record<string, string | number> = {}) => " <>
+    "  #{fname}: (#{params_signature(route)}) => " <>
       "new ShapeStream<#{type}>({ url: createShapeUrl(#{JSON.encode!(route)}, params), " <>
       "headers: authHeaders() }),\n"
+  end
+
+  defp params_signature(route) do
+    case TS.path_params(route) do
+      [] ->
+        "params: Record<string, string | number> = {}"
+
+      placeholders ->
+        required =
+          Enum.map_join(placeholders, "; ", &"#{TS.object_key(&1)}: string | number")
+
+        "params: { #{required} } & Record<string, string | number>"
+    end
   end
 
   defp route_check(_, name, nil), do: Check.error("electric shape #{name} has no :route")

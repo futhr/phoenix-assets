@@ -44,6 +44,8 @@ Each is a small DSL. The declarations are metadata only — the actual server wo
 defmodule MyApp.Assets.ElectricShapes do
   use PhoenixAssets.Electric.Shapes
   shape :portfolios, route: "/shapes/portfolios", type: "PortfolioRow"
+  # Route placeholders become required, typed keys on the generated factory;
+  # `params:` is optional documentation, validated at compile time to match.
   shape :user_portfolios, route: "/shapes/users/:user_id/portfolios",
         type: "PortfolioRow", params: [:user_id]
 end

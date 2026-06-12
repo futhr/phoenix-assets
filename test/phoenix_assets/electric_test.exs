@@ -75,6 +75,14 @@ defmodule PhoenixAssets.ElectricTest do
     refute out =~ ~s|{ url: "/shapes/portfolios" }|
   end
 
+  test "route placeholders become required, typed param keys" do
+    out = render()
+
+    assert out =~
+             "userPortfolios: (params: { user_id: string | number } " <>
+               "& Record<string, string | number>) =>"
+  end
+
   test "a nil shapes module contributes no files, entries, or checks" do
     assert Electric.generated_files(ctx(), %{module: nil}) == []
     assert Electric.graph_entries(ctx(), %{module: nil}) == []
