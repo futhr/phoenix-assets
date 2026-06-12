@@ -7,8 +7,22 @@ on:
 
 jobs:
   quality:
-    name: quality (mix check)
+    name: quality (elixir ${{ matrix.elixir }} / otp ${{ matrix.otp }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Floor: the oldest supported toolchain compiles warning-free and
+          # passes ExUnit.
+          - elixir: "1.18"
+            otp: "27"
+            check: elixir
+          # Latest: the full quality gate (Elixir + frontend) and the
+          # coverage upload.
+          - elixir: "1.20"
+            otp: "29"
+            check: full
     steps:
       - uses: actions/checkout@v6
         with:
@@ -16,41 +30,56 @@ jobs:
 
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "28.4"
-          elixir-version: "1.19.4"
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
 
       - uses: pnpm/action-setup@v6
+        if: matrix.check == 'full'
       - uses: actions/setup-node@v6
+        if: matrix.check == 'full'
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
+      # Keyed per Elixir/OTP pair: _build (and the dialyzer PLTs inside it)
+      # must never be shared across toolchains.
       - uses: actions/cache@v5
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          key: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
 
       - run: mix deps.get
       - run: pnpm install --frozen-lockfile
+        if: matrix.check == 'full'
 
       # The phoenix_assets.install test scaffolds a throwaway app via
       # Igniter's phx_test_project/1, which shells out to the Phoenix
       # project generator. Install the archive so that test can run.
       - run: mix archive.install hex phx_new --force
 
+      # Floor leg: compile (warnings as errors) + ExUnit only. Formatting,
+      # static analysis, and the frontend run once, on the latest toolchain.
+      - run: mix compile --warnings-as-errors
+        if: matrix.check == 'elixir'
+      - run: mix test
+        if: matrix.check == 'elixir'
+
       # One gate: compile (warnings as errors), format, credo, dialyzer,
       # mix_audit, ExUnit+coverage, biome, typecheck, vitest+coverage, knip,
       # and package-export correctness (publint + arethetypeswrong).
       - run: mix check
+        if: matrix.check == 'full'
 
       - name: Audit JS dependencies (advisory)
+        if: matrix.check == 'full'
         run: pnpm audit --prod
         continue-on-error: true
 
       - name: Upload coverage to Codecov
+        if: matrix.check == 'full'
         uses: codecov/codecov-action@v6
         with:
           files: >-
