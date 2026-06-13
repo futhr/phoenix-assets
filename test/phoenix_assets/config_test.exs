@@ -5,6 +5,8 @@ defmodule PhoenixAssets.ConfigTest do
 
   alias PhoenixAssets.Config
 
+  doctest PhoenixAssets.Config
+
   describe "load!/1" do
     test "applies defaults" do
       config = Config.load!(otp_app: :my_app)

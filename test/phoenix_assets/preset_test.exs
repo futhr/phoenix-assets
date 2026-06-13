@@ -3,6 +3,8 @@ defmodule PhoenixAssets.PresetTest do
 
   use ExUnit.Case, async: true
 
+  doctest PhoenixAssets.Preset
+
   defmodule P1 do
     @moduledoc false
     use PhoenixAssets.Plugin

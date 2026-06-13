@@ -2,7 +2,7 @@
 
 > A supervised, type-safe SvelteKit frontend, first-class inside Phoenix.
 
-[![Hex.pm](https://img.shields.io/hexpm/v/phoenix_assets.svg)](https://hex.pm/packages/phoenix_assets) [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/phoenix_assets) [![CI](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml/badge.svg)](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/futhr/phoenix_assets/branch/main/graph/badge.svg)](https://codecov.io/gh/futhr/phoenix_assets) [![License: MIT](https://img.shields.io/github/license/futhr/phoenix_assets)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml/badge.svg)](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/futhr/phoenix_assets/branch/main/graph/badge.svg)](https://codecov.io/gh/futhr/phoenix_assets) [![License: MIT](https://img.shields.io/github/license/futhr/phoenix_assets)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -83,17 +83,10 @@ your CSS. `@phoenix-assets/lint` adds a Tailwind v4 linter that flags arbitrary
 values like `w-[180px]` when a named equivalent (`w-45`) exists — checked against
 your *real* design system.
 
-**The frontend imports generated contracts directly:**
-
-```ts
-import { routes } from "$phoenix/routes"
-import type { Portfolio } from "$phoenix/types"
-import { shapes } from "$phoenix/electric"
-import { topics } from "$phoenix/pubsub"
-```
-
-HMR is bridged: when Elixir regenerates a contract, the Vite plugin invalidates
-the affected virtual modules and reloads — no manual restart, no stale types.
+**The frontend imports generated contracts directly** through `$phoenix/*`
+virtual modules, and HMR is bridged: when Elixir regenerates a contract, the Vite
+plugin invalidates the affected modules and reloads — no manual restart, no stale
+types.
 
 ---
 
@@ -112,18 +105,35 @@ runtime helpers, and shared frontend lint tooling.
 
 ---
 
+## Requirements
+
+- Elixir 1.18+ and Phoenix 1.8+.
+- Development supervision (Vite and Storybook as OS children with process-group
+  teardown) requires a POSIX platform — macOS, Linux, or WSL2 — via MuonTrap.
+  Production manifest serving and contract generation are platform-independent.
+
+---
+
 ## Usage
 
-> **Runs in production on the author's platforms.** Install from GitHub; a Hex
-> release is pending.
+> Runs in production on the author's platforms. Installed directly from GitHub.
 
-The full Svelte stack is the default — there's no preset module to write. Add the
-dependency, point Phoenix at it, and name your declaration modules:
+The full Svelte stack is the default — there's no preset module to write.
+
+### Install
 
 ```elixir
 # mix.exs
 {:phoenix_assets, github: "futhr/phoenix_assets"}
+```
 
+```bash
+cd assets && pnpm add -D @phoenix-assets/vite @phoenix-assets/svelte @phoenix-assets/lint
+```
+
+### Configure & supervise
+
+```elixir
 # config/config.exs
 config :phoenix_assets,
   otp_app: :my_app,
@@ -134,19 +144,100 @@ config :phoenix_assets, :stack,
   shapes: MyApp.Assets.ElectricShapes,
   topics: MyApp.Assets.PubSubTopics,
   types: MyApp.Assets.Types
+
+# config/dev.exs — supervise Vite, Storybook, and the generated-file watcher
+config :phoenix_assets, :dev, enabled: true
 ```
 
-Want a different mix? Write a module with `use PhoenixAssets.Preset` and set it
-as `:preset` — copy `PhoenixAssets.Presets.Svelte` as your starting point.
+Add the runtime to your supervision tree — `child_specs/0` returns the manifest
+server always, plus the dev supervisor in development:
+
+```elixir
+children = [...] ++ PhoenixAssets.child_specs()
+```
+
+`:otp_app` is the only required option; the full reference is `PhoenixAssets.Config`.
+Sub-configs: `:dev`, `:build` (`vite_manifest`, `asset_graph`, `asset_url`,
+`budgets`, `allow_source_maps`), `:env` (`expose:`), and `:stack`.
+
+### Declare & generate contracts
+
+Declare your backend contracts — metadata only; the real work (Ash queries,
+policies, tenancy) stays in your controllers:
+
+```elixir
+defmodule MyApp.Assets.ElectricShapes do
+  use PhoenixAssets.Electric.Shapes
+  shape :articles, route: "/shapes/articles", type: "Article"
+end
+
+defmodule MyApp.Assets.PubSubTopics do
+  use PhoenixAssets.PubSub.Topics
+  topic :room, pattern: "room:{id}", events: [message: "Message"]
+end
+
+defmodule MyApp.Assets.Types do
+  use PhoenixAssets.Types.Schema
+  type "Article", resource: MyApp.Blog.Article, only: :public
+end
+```
+
+```bash
+mix phoenix_assets.gen          # write assets/src/generated/*
+mix phoenix_assets.gen --check  # CI drift gate; fails when the checked-in output is stale
+```
+
+Import the typed output through `$phoenix/*` virtual modules. Sensitive and
+non-public Ash fields never reach a generated type, and page routes are
+SvelteKit's — never generated:
+
+```ts
+import { routes } from "$phoenix/routes"
+import type { Article } from "$phoenix/types"
+import { shapes } from "$phoenix/electric"
+```
+
+### Render assets
+
+```heex
+<PhoenixAssets.Components.vite_assets entry="src/app.ts" nonce={@csp_nonce} />
+<PhoenixAssets.Components.svelte_page name="Dashboard" props={%{user: @user}} />
+```
+
+In development these point at the Vite dev server; in production they emit the
+hashed file with its stylesheet links, module preloads, and Subresource Integrity
+from the manifest. Set `config :phoenix_assets, :build, asset_url:` for a CDN, or
+add `plug PhoenixAssets.EarlyHints, entry: "src/app.ts"` for HTTP 103 Early Hints.
+
+### Ship
+
+Wire the drift gate and the production doctor into your deploy alias:
+
+```elixir
+# mix.exs
+"assets.deploy": ["phoenix_assets.gen --check", "phoenix_assets.doctor --production", ...]
+```
+
+`doctor --production` validates the manifest, contract freshness, bundle budgets,
+source-map leakage, and that every plugin initialises. Every long-running
+operation emits `:telemetry` under `[:phoenix_assets, ...]` — see
+`PhoenixAssets.Telemetry`.
+
+### A different stack
+
+Write a module with `use PhoenixAssets.Preset`, list your `integration/2` calls,
+and set it as `:preset` (copy `PhoenixAssets.Presets.Svelte` as a starting point).
+Add an integration the stack doesn't ship by writing a `use PhoenixAssets.Plugin`
+module.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/futhr/phoenix_assets/blob/main/CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## License
 
-Phoenix Assets is released under the MIT License. See [LICENSE](LICENSE) for details.
+Phoenix Assets is released under the MIT License. See [LICENSE](https://github.com/futhr/phoenix_assets/blob/main/LICENSE) for details.

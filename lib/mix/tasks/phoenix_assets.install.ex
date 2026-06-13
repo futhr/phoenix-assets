@@ -99,7 +99,7 @@ else
     Installs `phoenix_assets`. Requires the optional `igniter` dependency.
 
     Run `mix igniter.install phoenix_assets`, or add
-    `{:igniter, "~> 0.5", only: [:dev]}` to your deps and re-run
+    `{:igniter, "~> 0.6", only: [:dev]}` to your deps and re-run
     `mix phoenix_assets.install`.
     """
     @shortdoc "Install and configure phoenix_assets (requires igniter)"
@@ -115,7 +115,7 @@ else
 
           mix igniter.install phoenix_assets
 
-      or add {:igniter, "~> 0.5", only: [:dev]} to your deps and re-run
+      or add {:igniter, "~> 0.6", only: [:dev]} to your deps and re-run
       mix phoenix_assets.install.
       """)
     end

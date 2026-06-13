@@ -65,7 +65,7 @@ defmodule PhoenixAssets.MixProject do
       {:phoenix_sync, "~> 0.6", optional: true},
       {:gettext, "~> 1.0", optional: true},
       {:tidewave, "~> 0.5", optional: true},
-      {:igniter, "~> 0.5", optional: true},
+      {:igniter, "~> 0.6", optional: true},
       {:git_ops, "~> 2.6", only: [:dev], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
@@ -95,18 +95,41 @@ defmodule PhoenixAssets.MixProject do
 
   defp docs do
     [
-      main: "PhoenixAssets",
+      main: "readme",
       source_url: @source_url,
       source_ref: "v#{@version}",
-      extras: ["README.md", "CHANGELOG.md"],
+      formatters: ["html"],
+      extras: [
+        "README.md": [title: "Overview"],
+        "usage-rules.md": [title: "Usage rules"],
+        "CHANGELOG.md": [title: "Changelog"]
+      ],
+      groups_for_extras: [
+        Reference: ["usage-rules.md", "CHANGELOG.md"]
+      ],
+      nest_modules_by_prefix: [
+        PhoenixAssets.Generators,
+        PhoenixAssets.Graph,
+        PhoenixAssets.Doctor,
+        PhoenixAssets.Plugin,
+        PhoenixAssets.Presets,
+        PhoenixAssets.DevIntelligence
+      ],
+      skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
       groups_for_modules: [
-        Engine: [
+        "Runtime & configuration": [
+          PhoenixAssets,
+          PhoenixAssets.Config,
+          PhoenixAssets.Context
+        ],
+        "Plugin engine": [
           PhoenixAssets.Plugin,
           PhoenixAssets.Plugin.Resolver,
           PhoenixAssets.Preset,
-          PhoenixAssets.Engine,
-          PhoenixAssets.Config,
-          PhoenixAssets.Context
+          PhoenixAssets.Engine
+        ],
+        Presets: [
+          PhoenixAssets.Presets.Svelte
         ],
         "Stack plugins": [
           PhoenixAssets.SvelteKit,
@@ -117,8 +140,49 @@ defmodule PhoenixAssets.MixProject do
           PhoenixAssets.Localize,
           PhoenixAssets.Types
         ],
-        Presets: [
-          PhoenixAssets.Presets.Svelte
+        "Declarations (DSL)": [
+          PhoenixAssets.Electric.Shapes,
+          PhoenixAssets.PubSub.Topics,
+          PhoenixAssets.Types.Schema
+        ],
+        "Generated contracts": [
+          PhoenixAssets.Generated,
+          PhoenixAssets.Generators.Routes,
+          PhoenixAssets.Generators.Env,
+          PhoenixAssets.Generators.TS,
+          PhoenixAssets.Types.Walker
+        ],
+        "Asset graph": [
+          PhoenixAssets.Graph,
+          PhoenixAssets.Graph.Builder,
+          PhoenixAssets.Graph.Compiled
+        ],
+        "Manifest & HTTP": [
+          PhoenixAssets.Manifest,
+          PhoenixAssets.ManifestServer,
+          PhoenixAssets.Components,
+          PhoenixAssets.Plug,
+          PhoenixAssets.EarlyHints
+        ],
+        "Dev tooling": [
+          PhoenixAssets.DevSupervisor,
+          PhoenixAssets.DevServer,
+          PhoenixAssets.Generated.Watcher,
+          PhoenixAssets.DevIntelligence.TidewaveTools
+        ],
+        Diagnostics: [
+          PhoenixAssets.Doctor,
+          PhoenixAssets.Doctor.Check
+        ],
+        Telemetry: [
+          PhoenixAssets.Telemetry
+        ],
+        Internal: [
+          PhoenixAssets.MixHelpers,
+          PhoenixAssets.CanonicalJSON,
+          PhoenixAssets.DevProcess,
+          PhoenixAssets.GeneratedFile,
+          PhoenixAssets.Graph.Entry
         ]
       ]
     ]

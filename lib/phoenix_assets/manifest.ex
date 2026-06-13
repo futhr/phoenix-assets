@@ -51,7 +51,13 @@ defmodule PhoenixAssets.Manifest do
     end
   end
 
-  @doc "The hashed output file for `key` (prefixed with `/`)."
+  @doc ~S"""
+  The hashed output file for `key` (prefixed with `/`).
+
+      iex> manifest = %{"src/app.ts" => %{"file" => "assets/app-Cw3Qz1.js"}}
+      iex> PhoenixAssets.Manifest.file(manifest, "src/app.ts")
+      "/assets/app-Cw3Qz1.js"
+  """
   @spec file(t(), String.t()) :: String.t()
   def file(manifest, key), do: manifest |> entry!(key) |> Map.fetch!("file") |> prefix()
 
@@ -61,6 +67,10 @@ defmodule PhoenixAssets.Manifest do
   Raises `KeyError` when `key` itself is absent (like `file/2` and
   `imports/2`); transitive imports that are missing from the manifest are
   skipped.
+
+      iex> manifest = %{"src/app.ts" => %{"file" => "assets/app.js", "css" => ["assets/app.css"]}}
+      iex> PhoenixAssets.Manifest.css(manifest, "src/app.ts")
+      ["/assets/app.css"]
   """
   @spec css(t(), String.t()) :: [String.t()]
   def css(manifest, key) do
@@ -93,6 +103,10 @@ defmodule PhoenixAssets.Manifest do
   field. Vite emits that field only when an SRI plugin is configured, so the map
   is empty otherwise -- callers render `integrity`/`crossorigin` only when a hash
   is present.
+
+      iex> manifest = %{"src/app.ts" => %{"file" => "assets/app.js", "integrity" => "sha384-abc"}}
+      iex> PhoenixAssets.Manifest.subresource_integrity(manifest, "src/app.ts")
+      %{"/assets/app.js" => "sha384-abc"}
   """
   @spec subresource_integrity(t(), String.t()) :: %{String.t() => String.t()}
   def subresource_integrity(manifest, key) do

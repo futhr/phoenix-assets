@@ -24,6 +24,13 @@ if config_env() == :dev do
     manage_readme_version: false,
     types: [
       tidbit: [hidden?: true],
-      important: [header: "Important Changes"]
+      important: [header: "Important Changes"],
+      # Keep routine commit types out of the changelog so releases read as a
+      # curated list of features, fixes, and breaking changes.
+      chore: [hidden?: true],
+      test: [hidden?: true],
+      ci: [hidden?: true],
+      build: [hidden?: true],
+      style: [hidden?: true]
     ]
 end

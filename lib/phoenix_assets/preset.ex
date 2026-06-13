@@ -20,7 +20,11 @@ defmodule PhoenixAssets.Preset do
         integration PhoenixAssets.Localize, locales: ~w(en sv), default_locale: "en"
       end
 
-      iex> [{first, _opts} | _] = MyApp.Assets.Stack.plugins()
+  `plugins/0` returns the resolved `{module, opts}` list. The built-in
+  `PhoenixAssets.Presets.Svelte` is one such preset; its graph begins with the
+  SvelteKit integration the others build on:
+
+      iex> [{first, _opts} | _] = PhoenixAssets.Presets.Svelte.plugins()
       iex> first
       PhoenixAssets.SvelteKit
 

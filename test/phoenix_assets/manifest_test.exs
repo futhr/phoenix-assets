@@ -5,6 +5,8 @@ defmodule PhoenixAssets.ManifestTest do
 
   alias PhoenixAssets.Manifest
 
+  doctest PhoenixAssets.Manifest
+
   @manifest %{
     "src/app.ts" => %{
       "file" => "assets/app-AAA.js",
@@ -80,6 +82,14 @@ defmodule PhoenixAssets.ManifestTest do
 
   test "load/1 errors for a missing file" do
     assert {:error, _} = Manifest.load("/nonexistent/manifest.json")
+  end
+
+  test "load/1 errors on a corrupt manifest file" do
+    path = Path.join(System.tmp_dir!(), "m_bad_#{System.unique_integer([:positive])}.json")
+    File.write!(path, "{ not valid json")
+    on_exit(fn -> File.rm_rf!(path) end)
+
+    assert {:error, _} = Manifest.load(path)
   end
 
   test "css/2 de-duplicates a diamond import graph without looping" do

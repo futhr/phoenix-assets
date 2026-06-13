@@ -5,8 +5,8 @@ defmodule PhoenixAssets.Config do
   Reads the host application's `config :phoenix_assets, ...` keys and returns a
   `t:t/0` struct. The top-level scalar keys are validated against a strict
   `NimbleOptions` schema; the nested sub-configs (`:dev`, `:build`, `:env`,
-  `:dev_intelligence`) are captured as keyword lists for the subsystems that own
-  their validation (the dev supervisor, the generators, the doctor).
+  `:dev_intelligence`, `:stack`) are captured as keyword lists for the subsystems
+  that own their validation (the dev supervisor, the generators, the doctor).
 
   ## Example
 
