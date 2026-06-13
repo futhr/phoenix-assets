@@ -17,7 +17,7 @@ defmodule PhoenixAssets.Graph.Builder do
 
   require Logger
 
-  alias PhoenixAssets.{Context, Engine, Manifest}
+  alias PhoenixAssets.{Context, Engine, Manifest, Telemetry}
   alias PhoenixAssets.Graph.Entry
 
   @doc """
@@ -58,6 +58,12 @@ defmodule PhoenixAssets.Graph.Builder do
             "failed to initialise: #{inspect(reason)}"
         )
 
+        Telemetry.execute([:graph, :degraded], %{}, %{
+          reason: :plugin_init_failed,
+          plugin: module,
+          error: reason
+        })
+
         {[], %{}}
     end
   end
@@ -72,8 +78,8 @@ defmodule PhoenixAssets.Graph.Builder do
   defp payload(%Entry{data: data, source: source}), do: Map.put(data, "source", source)
 
   defp manifest_entries(ctx, opts) do
-    case opts[:manifest] || load_manifest(ctx) do
-      manifest when is_map(manifest) ->
+    case resolve_manifest(ctx, opts) do
+      {:ok, manifest} ->
         manifest
         |> Enum.filter(fn {_, chunk} -> chunk["isEntry"] end)
         |> Map.new(fn {key, _} ->
@@ -85,15 +91,37 @@ defmodule PhoenixAssets.Graph.Builder do
            }}
         end)
 
-      _ ->
+      :absent ->
         %{}
+
+      {:error, reason} ->
+        Telemetry.execute([:graph, :degraded], %{}, %{
+          reason: :manifest_unreadable,
+          path: Context.manifest_path(ctx),
+          error: reason
+        })
+
+        %{}
+    end
+  end
+
+  # A pre-loaded manifest (the production write path) is trusted as-is. Otherwise
+  # the configured manifest is read from disk, distinguishing `:absent` (no file
+  # -- the normal development case, silent) from `{:error, _}` (a file that exists
+  # but cannot be read or parsed -- a real problem worth a telemetry event).
+  defp resolve_manifest(ctx, opts) do
+    case Keyword.fetch(opts, :manifest) do
+      {:ok, manifest} when is_map(manifest) -> {:ok, manifest}
+      {:ok, _} -> :absent
+      :error -> load_manifest(ctx)
     end
   end
 
   defp load_manifest(ctx) do
     case Manifest.load(Context.manifest_path(ctx)) do
-      {:ok, manifest} -> manifest
-      _ -> nil
+      {:ok, manifest} -> {:ok, manifest}
+      {:error, :enoent} -> :absent
+      {:error, reason} -> {:error, reason}
     end
   end
 end

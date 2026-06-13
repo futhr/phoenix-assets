@@ -112,6 +112,7 @@ defmodule PhoenixAssets.Electric.Shapes do
     opts
   end
 
+  @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()
   defp compile_error!(env, name, message) do
     raise CompileError,
       file: env.file,

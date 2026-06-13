@@ -26,7 +26,16 @@ defmodule PhoenixAssets do
   applications: Vite is not supervised, Storybook drifts, generated contracts are
   ad hoc, and frontend runtime errors are disconnected from Phoenix. This library
   gives Phoenix one explicit asset runtime and one graph so those seams close.
+
+  ## Platform support
+
+  Development supervision -- Vite and Storybook as OS children with process-group
+  teardown -- requires a POSIX platform (macOS, Linux, or WSL2), because it relies
+  on MuonTrap, which is POSIX-only. Production manifest serving and contract
+  generation are platform-independent.
   """
+
+  require Logger
 
   alias PhoenixAssets.{Config, Context, DevSupervisor, Graph, Manifest, ManifestServer}
 
@@ -43,7 +52,7 @@ defmodule PhoenixAssets do
 
   Options:
 
-    * `:config` -- a `PhoenixAssets.Config` (defaults to `Config.load!/0`).
+    * `:config` -- a `PhoenixAssets.Config` (defaults to `PhoenixAssets.Config.load!/1`).
     * `:ctx` -- a prebuilt `PhoenixAssets.Context` (defaults to one derived from
       the config and the configured preset).
   """
@@ -154,12 +163,26 @@ defmodule PhoenixAssets do
   defp hot_url do
     root = Application.get_env(:phoenix_assets, :asset_root, "assets")
 
-    with {:ok, contents} <- File.read(Path.join(root, ".phoenix-assets/hot")),
-         url = String.trim(contents),
-         true <- String.starts_with?(url, ["http://", "https://"]) do
-      String.trim_trailing(url, "/")
-    else
-      _ -> nil
+    # A missing hot file is the normal production/pre-boot case (silent). A file
+    # that exists but is malformed means the dev server wrote something unexpected
+    # -- log it (dev-only path) rather than silently masking the misconfiguration.
+    case File.read(Path.join(root, ".phoenix-assets/hot")) do
+      {:ok, contents} ->
+        url = String.trim(contents)
+
+        if String.starts_with?(url, ["http://", "https://"]) do
+          String.trim_trailing(url, "/")
+        else
+          Logger.debug(
+            "phoenix_assets: ignoring malformed .phoenix-assets/hot " <>
+              "(#{inspect(url)}); using the configured dev URL"
+          )
+
+          nil
+        end
+
+      {:error, _} ->
+        nil
     end
   end
 

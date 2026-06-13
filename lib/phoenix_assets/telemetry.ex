@@ -24,6 +24,10 @@ defmodule PhoenixAssets.Telemetry do
       process exited (cleanly or not). Metadata: `%{id:, reason:}`.
     * `[:phoenix_assets, :doctor, :run]` -- a doctor run finished.
       Measurements: `%{checks: count}`. Metadata: `%{status:}`.
+    * `[:phoenix_assets, :graph, :degraded]` -- the asset graph was assembled with
+      missing data. Metadata: `%{reason: :plugin_init_failed, plugin:, error:}` (a
+      plugin's `init/2` failed) or `%{reason: :manifest_unreadable, path:, error:}`
+      (the Vite manifest existed but could not be read or parsed).
 
   ## Why
 

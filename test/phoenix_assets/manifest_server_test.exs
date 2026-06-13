@@ -7,6 +7,13 @@ defmodule PhoenixAssets.ManifestServerTest do
 
   @manifest %{"src/app.ts" => %{"file" => "assets/app-AAA.js", "css" => [], "imports" => []}}
 
+  # ManifestServer.init/1 writes the parsed manifest into :persistent_term, which
+  # outlives the supervised process. Erase it after every test so the global term
+  # never leaks into another module's tests (e.g. EarlyHints reads it directly).
+  setup do
+    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+  end
+
   defp start_with_manifest do
     path = Path.join(System.tmp_dir!(), "ms_#{System.unique_integer([:positive])}.json")
     File.write!(path, JSON.encode!(@manifest))
@@ -59,5 +66,14 @@ defmodule PhoenixAssets.ManifestServerTest do
 
     # The cache must still serve the last-good manifest, not {:error, :missing}.
     assert Manifest.file(ManifestServer.manifest(), "src/app.ts") == "/assets/app-AAA.js"
+  end
+
+  test "reports missing when the manifest file is corrupt at boot" do
+    path = Path.join(System.tmp_dir!(), "ms_bad_#{System.unique_integer([:positive])}.json")
+    File.write!(path, "{ not valid json")
+    on_exit(fn -> File.rm_rf!(path) end)
+
+    start_supervised!({ManifestServer, path: path})
+    assert ManifestServer.manifest() == {:error, :missing}
   end
 end

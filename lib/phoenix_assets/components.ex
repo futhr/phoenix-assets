@@ -125,7 +125,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
     defp graph_page_routes do
       PhoenixAssets.graph()
       |> Map.get("pages", %{})
-      |> Enum.map(fn {_key, data} -> data["route"] end)
+      |> Enum.map(fn {_, data} -> data["route"] end)
       |> Enum.reject(&is_nil/1)
       |> Enum.sort()
     end

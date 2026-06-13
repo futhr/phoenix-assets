@@ -121,7 +121,7 @@ defmodule PhoenixAssets.DevServer do
   end
 
   @impl GenServer
-  def handle_info({:DOWN, ref, :process, _pid, reason}, state) do
+  def handle_info({:DOWN, ref, :process, _, reason}, state) do
     {id, monitors} = Map.pop(state.monitors, ref)
 
     if id do

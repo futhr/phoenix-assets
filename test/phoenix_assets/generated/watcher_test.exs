@@ -105,7 +105,7 @@ defmodule PhoenixAssets.Generated.WatcherTest do
   test ":regenerate reloads code before generating" do
     parent = self()
 
-    reload_fun = fn _ctx ->
+    reload_fun = fn _ ->
       send(parent, :reloaded)
       :ok
     end

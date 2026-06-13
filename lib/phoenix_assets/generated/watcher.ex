@@ -124,9 +124,10 @@ defmodule PhoenixAssets.Generated.Watcher do
   """
   @spec reload_code(Context.t()) :: :ok
   def reload_code(%Context{endpoint: endpoint}) when not is_nil(endpoint) do
-    if Code.ensure_loaded?(Phoenix.CodeReloader) do
-      _ = Phoenix.CodeReloader.reload(endpoint)
-    end
+    _ =
+      if Code.ensure_loaded?(Phoenix.CodeReloader) do
+        Phoenix.CodeReloader.reload(endpoint)
+      end
 
     :ok
   catch

@@ -26,7 +26,7 @@ defmodule PhoenixAssets.Graph.Compiled do
   @doc false
   defmacro __using__(opts) do
     path = Keyword.fetch!(opts, :graph)
-    graph = path |> File.read!() |> JSON.decode!()
+    graph = read_graph!(path)
 
     quote do
       @external_resource unquote(path)
@@ -46,6 +46,32 @@ defmodule PhoenixAssets.Graph.Compiled do
       @doc "Fetches a route by name, raising if absent."
       @spec route!(String.t()) :: map()
       def route!(name), do: unquote(__MODULE__).fetch!(graph(), "routes", name)
+    end
+  end
+
+  # Reads and decodes the graph at compile time, raising a clear CompileError
+  # (instead of a raw File.Error / JSON.DecodeError surfacing from inside the
+  # macro) so a missing or malformed graph.json points the caller at the fix.
+  @spec read_graph!(Path.t()) :: map()
+  defp read_graph!(path) do
+    case File.read(path) do
+      {:ok, raw} ->
+        case JSON.decode(raw) do
+          {:ok, graph} ->
+            graph
+
+          {:error, reason} ->
+            raise CompileError,
+              description:
+                "PhoenixAssets.Graph.Compiled: #{path} is not valid JSON " <>
+                  "(#{inspect(reason)}). Run `mix phoenix_assets.gen` to regenerate it."
+        end
+
+      {:error, reason} ->
+        raise CompileError,
+          description:
+            "PhoenixAssets.Graph.Compiled: cannot read graph file #{path} " <>
+              "(#{inspect(reason)}). Run `mix phoenix_assets.gen` before compiling."
     end
   end
 

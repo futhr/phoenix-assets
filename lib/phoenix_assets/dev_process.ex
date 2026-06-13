@@ -73,7 +73,10 @@ defmodule PhoenixAssets.DevProcess do
   defp os_pid(pid) do
     MuonTrap.Daemon.os_pid(pid)
   catch
-    _, _ -> nil
+    # The daemon may have exited between start_link/3 returning and this call,
+    # which surfaces as an exit from the GenServer.call inside os_pid/1. That is
+    # the only expected failure; let anything else surface rather than masking it.
+    :exit, _ -> nil
   end
 
   defp put_logger_fun(opts, nil), do: opts

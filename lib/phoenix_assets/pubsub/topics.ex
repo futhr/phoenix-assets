@@ -98,6 +98,7 @@ defmodule PhoenixAssets.PubSub.Topics do
 
   defp valid_payload?(_), do: false
 
+  @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()
   defp compile_error!(env, name, message) do
     raise CompileError,
       file: env.file,

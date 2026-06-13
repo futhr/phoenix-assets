@@ -114,6 +114,16 @@ defmodule PhoenixAssets.DoctorTest do
     refute :boom in ids
   end
 
+  test "errors in production when a plugin fails to initialise (graph would be incomplete)" do
+    {_, results} = Doctor.run(ctx([{FailPlugin, []}]), production: true)
+    assert result_for(results, :graph_complete).status == :error
+  end
+
+  test "passes the graph_complete check when all plugins initialise" do
+    {_, results} = Doctor.run(ctx(), production: true)
+    assert result_for(results, :graph_complete).status == :ok
+  end
+
   test "errors when node_modules is missing, with an install hint" do
     tmp = Path.join(System.tmp_dir!(), "nm_#{System.unique_integer([:positive])}")
     File.mkdir_p!(tmp)

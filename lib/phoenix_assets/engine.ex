@@ -73,8 +73,8 @@ defmodule PhoenixAssets.Engine do
 
   defp deep_merge(left, right) do
     Map.merge(left, right, fn
-      _key, l, r when is_map(l) and is_map(r) -> deep_merge(l, r)
-      _key, _l, r -> r
+      _, l, r when is_map(l) and is_map(r) -> deep_merge(l, r)
+      _, _, r -> r
     end)
   end
 end

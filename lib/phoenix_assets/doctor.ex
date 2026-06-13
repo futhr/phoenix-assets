@@ -75,7 +75,13 @@ defmodule PhoenixAssets.Doctor do
         run: &generated_check/1
       ),
       Check.new(id: :manifest_present, group: :build, production?: true, run: &manifest_check/1),
-      Check.new(id: :source_maps, group: :build, production?: true, run: &source_maps_check/1)
+      Check.new(id: :source_maps, group: :build, production?: true, run: &source_maps_check/1),
+      Check.new(
+        id: :graph_complete,
+        group: :generated,
+        production?: true,
+        run: &graph_complete_check/1
+      )
     ] ++ budget_checks(ctx)
   end
 
@@ -119,6 +125,24 @@ defmodule PhoenixAssets.Doctor do
       Check.error("generated contracts are stale", "run mix phoenix_assets.gen")
     else
       Check.ok("generated contracts are up to date")
+    end
+  end
+
+  # A plugin whose init/2 fails makes the graph builder degrade to an empty graph
+  # (logged, plus a [:graph, :degraded] telemetry event, but otherwise invisible).
+  # This turns that into a red production check. Checking init_plugins/1 directly
+  # avoids false-positiving on an app that legitimately has an empty graph.
+  defp graph_complete_check(ctx) do
+    case Engine.init_plugins(ctx) do
+      {:ok, _} ->
+        Check.ok("all plugins initialise; the asset graph can be built")
+
+      {:error, {module, reason}} ->
+        Check.error(
+          "plugin #{inspect(module)} failed to initialise — the asset graph would be " <>
+            "incomplete (#{inspect(reason)})",
+          "fix the plugin's configuration, then run mix phoenix_assets.gen"
+        )
     end
   end
 
