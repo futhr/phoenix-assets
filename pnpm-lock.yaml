@@ -25,8 +25,8 @@ catalogs:
       specifier: ^4.1.8
       version: 4.1.8
     happy-dom:
-      specifier: ^20.10.2
-      version: 20.10.2
+      specifier: ^20.10.6
+      version: 20.10.6
     svelte:
       specifier: ^5.56.3
       version: 5.56.3
@@ -104,7 +104,7 @@ importers:
         version: 4.1.8(vitest@4.1.8)
       happy-dom:
         specifier: 'catalog:'
-        version: 20.10.2
+        version: 20.10.6
       svelte:
         specifier: 'catalog:'
         version: 5.56.3(@typescript-eslint/types@8.60.1)
@@ -116,7 +116,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.2)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.6)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
 
   npm/vite:
     devDependencies:
@@ -137,7 +137,7 @@ importers:
         version: 8.0.16(@types/node@24.13.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.2)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.6)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
 
@@ -1298,8 +1298,8 @@ packages:
   get-tsconfig@4.14.0:
     resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
 
-  happy-dom@20.10.2:
-    resolution: {integrity: sha512-5p9Sxis3eowDJKqx90QCsgbNA02XXqJ59NOHvD4V6cxp+rP4d/xOyVx7uY3hS8hiUbY1VeiFH8lbJ81AyuDVLQ==}
+  happy-dom@20.10.6:
+    resolution: {integrity: sha512-6QD0ilzDDt93tX44y8tbmZdAcdTRYDhUP+Asgi6pC8Pp5IA3cvaZGyoVN/EGtlq9ziT65iPuBBn3ASLr6hCgVw==}
     engines: {node: '>=20.0.0'}
 
   has-flag@4.0.0:
@@ -2475,7 +2475,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.2)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.6)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
 
   '@vitest/expect@4.1.8':
     dependencies:
@@ -2717,7 +2717,7 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  happy-dom@20.10.2:
+  happy-dom@20.10.6:
     dependencies:
       '@types/node': 25.9.2
       '@types/whatwg-mimetype': 3.0.2
@@ -3227,7 +3227,7 @@ snapshots:
     optionalDependencies:
       vite: 8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)
 
-  vitest@4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.2)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)):
+  vitest@4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.6)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.8
       '@vitest/mocker': 4.1.8(vite@8.0.16(@types/node@24.13.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
@@ -3252,11 +3252,11 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.13.1
       '@vitest/coverage-v8': 4.1.8(vitest@4.1.8)
-      happy-dom: 20.10.2
+      happy-dom: 20.10.6
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.2)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)):
+  vitest@4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(happy-dom@20.10.6)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.8
       '@vitest/mocker': 4.1.8(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
@@ -3281,7 +3281,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.9.2
       '@vitest/coverage-v8': 4.1.8(vitest@4.1.8)
-      happy-dom: 20.10.2
+      happy-dom: 20.10.6
     transitivePeerDependencies:
       - msw
 
