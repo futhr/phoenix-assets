@@ -13,8 +13,8 @@ catalogs:
       specifier: ^7.1.2
       version: 7.1.2
     '@tanstack/electric-db-collection':
-      specifier: ^0.3.6
-      version: 0.3.6
+      specifier: ^0.3.7
+      version: 0.3.7
     '@tanstack/svelte-db':
       specifier: ^0.1.85
       version: 0.1.85
@@ -95,7 +95,7 @@ importers:
         version: 7.1.2(svelte@5.56.3(@typescript-eslint/types@8.60.1))(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
       '@tanstack/electric-db-collection':
         specifier: 'catalog:'
-        version: 0.3.6(typescript@6.0.3)
+        version: 0.3.7(typescript@6.0.3)
       '@tanstack/svelte-db':
         specifier: 'catalog:'
         version: 0.1.85(svelte@5.56.3(@typescript-eslint/types@8.60.1))(typescript@6.0.3)
@@ -994,8 +994,13 @@ packages:
     peerDependencies:
       typescript: '>=4.7'
 
-  '@tanstack/electric-db-collection@0.3.6':
-    resolution: {integrity: sha512-mphfXJo0Z5BVP8WzQzyLPnc3ZqDXuVOz9S4TkmGhigWz1ZbDNelAew8wdrcYxYAfdcaiSFxztyjhKhA1mLj8xA==}
+  '@tanstack/db@0.6.9':
+    resolution: {integrity: sha512-vK7MdMSEGNUOPqwL0WLt08pDbr907G4IsV/MsatY7RTEwZvPzZJL5wpgh0+SqDmSYDA/Wr3sYQ6B/vnQBlAm7g==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/electric-db-collection@0.3.7':
+    resolution: {integrity: sha512-M1YCkLzai6vMQJB+5ssV21thVhUfviSwYacnoA4s1zAaeYiBPZckqQZZ6rtqgob2/KIP47FZH8HIJ/51XXdcLA==}
 
   '@tanstack/pacer-lite@0.2.2':
     resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
@@ -2408,11 +2413,18 @@ snapshots:
       '@tanstack/pacer-lite': 0.2.2
       typescript: 6.0.3
 
-  '@tanstack/electric-db-collection@0.3.6(typescript@6.0.3)':
+  '@tanstack/db@0.6.9(typescript@6.0.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.18(typescript@6.0.3)
+      '@tanstack/pacer-lite': 0.2.2
+      typescript: 6.0.3
+
+  '@tanstack/electric-db-collection@0.3.7(typescript@6.0.3)':
     dependencies:
       '@electric-sql/client': 1.5.21
       '@standard-schema/spec': 1.1.0
-      '@tanstack/db': 0.6.8(typescript@6.0.3)
+      '@tanstack/db': 0.6.9(typescript@6.0.3)
       '@tanstack/store': 0.9.3
       debug: 4.4.3
     transitivePeerDependencies:
