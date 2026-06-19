@@ -12,7 +12,7 @@ catalog:
   "@tanstack/electric-db-collection": ^0.3.6
   "@tanstack/svelte-db": ^0.1.85
   "@types/node": ^24.13.1
-  "@vitest/coverage-v8": ^4.1.8
+  "@vitest/coverage-v8": ^4.1.9
   happy-dom: ^20.10.2
   svelte: ^5.56.3
   tailwindcss: ^4.3.1
