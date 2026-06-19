@@ -19,7 +19,7 @@ catalog:
   tsup: ^8.5.1
   typescript: ^6.0.3
   vite: ^8.0.16
-  vitest: ^4.1.8
+  vitest: ^4.1.9
 
 # pnpm 10's home for the build-script allowlist (moved out of package.json's
 # "pnpm" field). Only these packages may run install/build scripts.
