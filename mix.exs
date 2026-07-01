@@ -62,7 +62,7 @@ defmodule PhoenixAssets.MixProject do
       {:phoenix_live_view, "~> 1.1", optional: true},
       {:ash, "~> 3.0", optional: true},
       {:ash_typescript, "~> 0.17", optional: true},
-      {:phoenix_sync, "~> 0.6", optional: true},
+      {:phoenix_sync, "~> 0.6.1", optional: true},
       {:gettext, "~> 1.0", optional: true},
       {:tidewave, "~> 0.5", optional: true},
       {:igniter, "~> 0.6", optional: true},
