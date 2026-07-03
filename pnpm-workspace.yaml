@@ -10,7 +10,7 @@ catalog:
   "@electric-sql/client": ^1.5.21
   "@sveltejs/vite-plugin-svelte": ^7.1.2
   "@tanstack/electric-db-collection": ^0.3.6
-  "@tanstack/svelte-db": ^0.1.85
+  "@tanstack/svelte-db": ^0.1.91
   "@types/node": ^24.13.1
   "@vitest/coverage-v8": ^4.1.8
   happy-dom: ^20.10.2
