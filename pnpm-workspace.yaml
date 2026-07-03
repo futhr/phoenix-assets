@@ -14,7 +14,7 @@ catalog:
   "@types/node": ^24.13.1
   "@vitest/coverage-v8": ^4.1.8
   happy-dom: ^20.10.2
-  svelte: ^5.56.3
+  svelte: ^5.56.4
   tailwindcss: ^4.3.1
   tsup: ^8.5.1
   typescript: ^6.0.3
