@@ -92,7 +92,7 @@ jobs:
       # coverage on Codecov.
       - name: Upload Elixir coverage to Codecov
         if: matrix.check == 'full'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: cover/lcov.info
           flags: elixir
@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload Vite coverage to Codecov
         if: matrix.check == 'full'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: npm/vite/coverage/lcov.info
           flags: vite
@@ -112,7 +112,7 @@ jobs:
 
       - name: Upload Svelte coverage to Codecov
         if: matrix.check == 'full'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: npm/svelte/coverage/lcov.info
           flags: svelte
