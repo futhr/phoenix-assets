@@ -12,15 +12,22 @@
   },
   "files": [
     "biome.base.json",
-    "lint-tailwind.ts",
-    "README.md"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "bin": {
+    "phoenix-assets-lint-tailwind": "./dist/lint-tailwind.js"
+  },
   "exports": {
     "./biome.base.json": "./biome.base.json",
-    "./lint-tailwind.ts": "./lint-tailwind.ts"
+    "./lint-tailwind.js": "./dist/lint-tailwind.js"
   },
   "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "check:publish": "publint"
   },
   "peerDependencies": {
@@ -32,7 +39,9 @@
     "@types/node": "catalog:",
     "svelte": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

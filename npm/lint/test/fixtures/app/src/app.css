@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  /* px-configured spacing scale */
+  --spacing: 4px;
+}

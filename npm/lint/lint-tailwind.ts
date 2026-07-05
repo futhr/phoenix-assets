@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /// <reference types="node" />
 /**
  * Tailwind CSS arbitrary value linter for Svelte + TypeScript files.
@@ -9,11 +10,11 @@
  *   A) Pixel values: compute units from --spacing, verify via candidatesToCss
  *   B) CSS-value comparison: match non-px arbitrary forms against named CSS output
  *
- * Usage: node --experimental-strip-types lint-tailwind.ts [paths...]
+ * Usage: phoenix-assets-lint-tailwind [paths...]
  *        Defaults to src/**\/*.svelte + src/**\/*.variants.ts
  */
 
-import { readdirSync, readFileSync } from "node:fs"
+import { type Dirent, readdirSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, join, relative, resolve } from "node:path"
 
@@ -163,9 +164,21 @@ const spacingProps = new Set([
 
 const arbitraryPxRe = /^([\w-]+)-\[(\d+(?:\.\d+)?)px\]$/
 
+// Tailwind v4's `--spacing` base unit may carry any CSS unit (default `0.25rem`,
+// but `4px`, `1em`, … are all valid). Resolve it to a px multiplier where that is
+// meaningful; return null when the unit is not px-convertible so Strategy A bails.
+const spacingUnitPx = (raw: string): number | null => {
+  const m = raw.trim().match(/^(\d+(?:\.\d+)?)(px|rem|em)?$/)
+  if (!m || m[1] === undefined) return null
+  const value = parseFloat(m[1])
+  const unit = m[2] ?? "rem"
+  if (unit === "px") return value
+  if (unit === "rem" || unit === "em") return value * 16
+  return null
+}
+
 const createChecker = (ds: DesignSystem) => {
-  const spacingRem = parseFloat(ds.resolveThemeValue("--spacing") ?? "0.25")
-  const unitPx = spacingRem * 16
+  const unitPx = spacingUnitPx(ds.resolveThemeValue("--spacing") ?? "0.25rem")
 
   // Strategy B cache: named CSS declarations → named class
   let namedCssMap: Map<string, string> | null = null
@@ -199,7 +212,7 @@ const createChecker = (ds: DesignSystem) => {
   return function check(cls: string): string | null {
     // Strategy A: pixel values on spacing props
     const pxMatch = cls.match(arbitraryPxRe)
-    if (pxMatch) {
+    if (pxMatch && unitPx !== null) {
       const [, prefix, pxStr] = pxMatch
       if (prefix === undefined || pxStr === undefined) return null
       if (!spacingProps.has(prefix)) return null
@@ -211,8 +224,14 @@ const createChecker = (ds: DesignSystem) => {
       if (Math.abs(units - rounded) > 0.001) return null
 
       const candidate = `${prefix}-${rounded}`
-      const result = ds.candidatesToCss([candidate])
-      if (result[0]) return candidate
+      const candidateCss = ds.candidatesToCss([candidate])[0]
+      const arbCss = ds.candidatesToCss([cls])[0]
+      // Only suggest the named step when its CSS is identical to the arbitrary
+      // form — a theme-overridden step must not yield a wrong suggestion.
+      if (candidateCss && arbCss && extractDeclarations(candidateCss) === extractDeclarations(arbCss)) {
+        return candidate
+      }
+      return null
     }
 
     // Strategy B: non-px arbitrary values (rem, calc, etc.)
@@ -348,33 +367,50 @@ const extractClassesSvelte = (source: string): ClassRegion[] => {
   }
 
   const regions: ClassRegion[] = []
+  // Utility calls consumed via a `class={…}` attribute so the generic
+  // CallExpression pass below does not report them a second time.
+  const visitedCalls = new Set<SvelteNode>()
+
+  // Expression: class={cn("...")}, class={"w-[180px]"}, class={cond ? "a" : "b"}
+  const handleClassExpression = (expr: SvelteNode, offset: number): void => {
+    const strings = extractCallExprStrings(expr)
+    if (strings.length > 0) {
+      visitedCalls.add(expr)
+    } else {
+      strings.push(...extractStringLiterals(expr))
+    }
+    if (strings.length === 0) return
+    const { line, col } = lineColFromOffset(source, offset)
+    for (const s of strings) regions.push({ text: s, line, col })
+  }
 
   walkAst(ast, (node) => {
-    // Template: class="..." attributes
-    if (node.type === "Attribute" && node.name === "class" && Array.isArray(node.value)) {
-      for (const chunk of node.value) {
-        if (chunk.type === "Text" && typeof chunk.data === "string" && chunk.start != null) {
-          const { line, col } = lineColFromOffset(source, chunk.start)
-          regions.push({ text: chunk.data, line, col })
-        }
-        // Expression: class={cn("...")} or class={cond ? "a" : "b"}
-        if (chunk.type === "ExpressionTag" && chunk.expression) {
-          const strings = extractCallExprStrings(chunk.expression)
-          if (strings.length === 0) {
-            // Try direct string literals (class={"..."})
-            strings.push(...extractStringLiterals(chunk.expression))
-          }
-          for (const s of strings) {
-            const offset = chunk.start ?? 0
-            const { line, col } = lineColFromOffset(source, offset)
-            regions.push({ text: s, line, col })
+    // Template: class="..." / class={…} attributes.
+    // Svelte 5 types Attribute.value as `true | ExpressionTag | Array<Text | ExpressionTag>`.
+    if (node.type === "Attribute" && node.name === "class") {
+      const value = node.value
+      if (Array.isArray(value)) {
+        for (const chunk of value) {
+          if (chunk.type === "Text" && typeof chunk.data === "string" && chunk.start != null) {
+            const { line, col } = lineColFromOffset(source, chunk.start)
+            regions.push({ text: chunk.data, line, col })
+          } else if (chunk.type === "ExpressionTag" && chunk.expression) {
+            handleClassExpression(chunk.expression, chunk.start ?? 0)
           }
         }
+      } else if (
+        value &&
+        typeof value === "object" &&
+        (value as SvelteNode).type === "ExpressionTag" &&
+        (value as SvelteNode).expression
+      ) {
+        const tag = value as SvelteNode
+        handleClassExpression(tag.expression as SvelteNode, tag.start ?? 0)
       }
     }
 
-    // Script: cn(), clsx(), tv(), cva() calls
-    if (node.type === "CallExpression") {
+    // Script: cn(), clsx(), tv(), cva() calls not already consumed above.
+    if (node.type === "CallExpression" && !visitedCalls.has(node)) {
       const strings = extractCallExprStrings(node)
       for (const s of strings) {
         const offset = (node.start as number) ?? 0
@@ -426,7 +462,14 @@ const extractClassesRegex = (source: string): ClassRegion[] => {
 
 const collectFiles = (dir: string, exts: string[]): string[] => {
   const files: string[] = []
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  let entries: Dirent[]
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return files
+    throw err
+  }
+  for (const entry of entries) {
     const full = join(dir, entry.name)
     if (entry.isDirectory() && entry.name !== "node_modules" && entry.name !== ".svelte-kit") {
       files.push(...collectFiles(full, exts))
@@ -451,10 +494,7 @@ const main = async () => {
   const paths =
     args.length > 0
       ? args
-      : [
-          ...collectFiles(resolve("src"), [".svelte"]),
-          ...collectFiles(resolve("src"), [".variants.ts"]),
-        ]
+      : collectFiles(resolve("src"), [".svelte", ".variants.ts"])
 
   const violations: Violation[] = []
 
