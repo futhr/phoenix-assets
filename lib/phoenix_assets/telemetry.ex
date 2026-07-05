@@ -51,9 +51,16 @@ defmodule PhoenixAssets.Telemetry do
     :telemetry.span([@prefix | suffix], metadata, fun)
   end
 
-  @doc "Emits a one-off telemetry event under `[:phoenix_assets | suffix]`."
+  @doc """
+  Emits a one-off telemetry event under `[:phoenix_assets | suffix]`.
+
+  A `:system_time` measurement (`System.system_time/0`) is always added so
+  handlers can timestamp a point event without relying on their own clock, per
+  the `:telemetry` convention for non-span events.
+  """
   @spec execute([atom()], :telemetry.event_measurements(), :telemetry.event_metadata()) :: :ok
   def execute(suffix, measurements, metadata) when is_list(suffix) do
+    measurements = Map.put(measurements, :system_time, System.system_time())
     :telemetry.execute([@prefix | suffix], measurements, metadata)
   end
 end

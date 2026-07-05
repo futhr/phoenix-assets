@@ -12,9 +12,9 @@ defmodule PhoenixAssets.Plugin.Resolver do
   ## Why
 
   Generation, dev startup, and graph building all walk plugins in the same order;
-  Storybook must initialise after SvelteKit, Tailwind's Vite patch must precede
-  others. Computing one deterministic order up front (and failing loudly on
-  ambiguity) is what makes the whole engine reproducible.
+  Storybook, for instance, orders itself after SvelteKit (a hard dependency) and
+  Tailwind (a soft edge). Computing one deterministic order up front (and failing
+  loudly on ambiguity) is what makes the whole engine reproducible.
 
   ## See also
 
@@ -24,7 +24,8 @@ defmodule PhoenixAssets.Plugin.Resolver do
 
   @type plugin :: {module(), keyword()}
   @type error ::
-          {:missing_dependency, module(), module()}
+          {:duplicate, module()}
+          | {:missing_dependency, module(), module()}
           | {:cycle, [module()]}
 
   @doc """
@@ -39,7 +40,8 @@ defmodule PhoenixAssets.Plugin.Resolver do
     index = modules |> Enum.with_index() |> Map.new()
     set = MapSet.new(modules)
 
-    with :ok <- check_missing(plugins, set) do
+    with :ok <- check_duplicates(modules),
+         :ok <- check_missing(plugins, set) do
       edges = build_edges(plugins, set)
       indeg = indegrees(modules, edges)
 
@@ -56,12 +58,23 @@ defmodule PhoenixAssets.Plugin.Resolver do
 
   @doc "Renders a resolver error as a human-readable string."
   @spec format_error(error()) :: String.t()
+  def format_error({:duplicate, module}) do
+    "#{inspect(module)} is listed more than once in the preset"
+  end
+
   def format_error({:missing_dependency, plugin, dependency}) do
     "#{inspect(plugin)} depends on #{inspect(dependency)}, which is not part of the preset"
   end
 
   def format_error({:cycle, modules}) do
     "dependency cycle among: " <> Enum.map_join(modules, ", ", &inspect/1)
+  end
+
+  defp check_duplicates(modules) do
+    case modules -- Enum.uniq(modules) do
+      [] -> :ok
+      [duplicate | _] -> {:error, {:duplicate, duplicate}}
+    end
   end
 
   defp check_missing(plugins, set) do

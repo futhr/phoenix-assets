@@ -111,9 +111,18 @@ defmodule PhoenixAssets.Graph.Builder do
   # but cannot be read or parsed -- a real problem worth a telemetry event).
   defp resolve_manifest(ctx, opts) do
     case Keyword.fetch(opts, :manifest) do
-      {:ok, manifest} when is_map(manifest) -> {:ok, manifest}
-      {:ok, _} -> :absent
-      :error -> load_manifest(ctx)
+      {:ok, manifest} when is_map(manifest) ->
+        {:ok, manifest}
+
+      {:ok, :absent} ->
+        :absent
+
+      {:ok, other} ->
+        raise ArgumentError,
+              "phoenix_assets: :manifest must be a map or :absent, got: #{inspect(other)}"
+
+      :error ->
+        load_manifest(ctx)
     end
   end
 

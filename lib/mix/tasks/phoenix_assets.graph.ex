@@ -9,9 +9,10 @@ defmodule Mix.Tasks.PhoenixAssets.Graph do
 
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @impl Mix.Task
   def run(_) do
-    Mix.Task.run("compile")
     ctx = PhoenixAssets.MixHelpers.context!(env: Mix.env())
     {:ok, path} = PhoenixAssets.Graph.write(ctx)
     Mix.shell().info("phoenix_assets: wrote asset graph to #{path}")

@@ -47,8 +47,14 @@ defmodule PhoenixAssets.Graph do
     path = graph_path(ctx)
     File.mkdir_p!(Path.dirname(path))
     tmp = "#{path}.tmp.#{System.unique_integer([:positive])}"
-    File.write!(tmp, CanonicalJSON.encode!(build(ctx, opts)))
-    File.rename!(tmp, path)
+
+    try do
+      File.write!(tmp, CanonicalJSON.encode!(build(ctx, opts)))
+      File.rename!(tmp, path)
+    after
+      File.rm(tmp)
+    end
+
     {:ok, path}
   end
 

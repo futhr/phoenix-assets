@@ -81,7 +81,7 @@ if Code.ensure_loaded?(Igniter.Mix.Task) do
 
         2. Install the frontend packages from assets/:
 
-               cd assets && pnpm add -D @phoenix-assets/vite \
+               cd assets && pnpm add -D @phoenix-assets/vite \\
                  @phoenix-assets/svelte @phoenix-assets/lint
 
         3. Declare your stack and generate the typed contracts:

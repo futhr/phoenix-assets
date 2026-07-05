@@ -12,7 +12,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
     serialising props as a data attribute.
 
     Available only when `Phoenix.Component` is present (it is an optional
-    dependency); apps that exclude `phoenix_live_view` simply do not get this
+    dependency); apps that exclude `phoenix_live_view` do not get this
     module.
 
     ## Why
@@ -90,7 +90,7 @@ if Code.ensure_loaded?(Phoenix.Component) do
 
     @spec svelte_page(map()) :: Phoenix.LiveView.Rendered.t()
     def svelte_page(assigns) do
-      assigns = assign_new(assigns, :id, fn -> "svelte-" <> assigns.name end)
+      assigns = assign(assigns, :id, assigns.id || "svelte-" <> assigns.name)
 
       ~H"""
       <div id={@id} data-svelte-page={@name} data-props={JSON.encode!(@props)}></div>

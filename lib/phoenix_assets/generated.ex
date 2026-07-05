@@ -47,10 +47,11 @@ defmodule PhoenixAssets.Generated do
           {:ok, generate_result()} | :ok | {:error, term()}
   def generate(%Context{} = ctx, opts \\ []) do
     check? = Keyword.get(opts, :check, false)
+    metadata = %{otp_app: ctx.otp_app, check: check?}
 
-    Telemetry.span([:generated], %{otp_app: ctx.otp_app, check: check?}, fn ->
+    Telemetry.span([:generated], metadata, fn ->
       result = do_generate(ctx, opts)
-      {result, telemetry_metadata(result)}
+      {result, Map.merge(metadata, telemetry_metadata(result))}
     end)
   end
 
@@ -118,8 +119,13 @@ defmodule PhoenixAssets.Generated do
   # contract mid-HMR.
   defp atomic_write!(abs, contents) do
     tmp = "#{abs}.tmp.#{System.unique_integer([:positive])}"
-    File.write!(tmp, contents)
-    File.rename!(tmp, abs)
+
+    try do
+      File.write!(tmp, contents)
+      File.rename!(tmp, abs)
+    after
+      File.rm(tmp)
+    end
   end
 
   defp check(files, ctx) do

@@ -14,15 +14,20 @@ defmodule Mix.Tasks.PhoenixAssets.Gen do
 
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @impl Mix.Task
   def run(args) do
-    Mix.Task.run("compile")
     # Strict parsing: a typo'd --check must fail loudly, not silently turn the
     # CI drift gate into a full write.
     {opts, _} = OptionParser.parse!(args, strict: [check: :boolean, only: :string])
+    only = opts[:only]
     ctx = PhoenixAssets.MixHelpers.context!(env: Mix.env())
 
     case PhoenixAssets.Generated.generate(ctx, generate_opts(opts)) do
+      {:ok, %{written: [], unchanged: []}} when is_binary(only) ->
+        Mix.shell().error("phoenix_assets: --only #{only} matched no generators; nothing written")
+
       {:ok, %{written: written, unchanged: unchanged}} ->
         Mix.shell().info(
           "phoenix_assets: #{length(written)} written, #{length(unchanged)} unchanged"

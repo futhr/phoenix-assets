@@ -26,24 +26,21 @@ defmodule PhoenixAssets.EarlyHints do
 
   @behaviour Plug
 
-  alias PhoenixAssets.ManifestServer
-
   @impl Plug
-  def init(opts), do: Keyword.fetch!(opts, :entry) && opts
+  def init(opts) do
+    case Keyword.fetch!(opts, :entry) do
+      entry when is_binary(entry) ->
+        opts
 
-  @impl Plug
-  def call(conn, opts) do
-    case ManifestServer.manifest() do
-      manifest when is_map(manifest) ->
-        inform(conn, opts[:entry])
-
-      _ ->
-        conn
+      other ->
+        raise ArgumentError,
+              "phoenix_assets: PhoenixAssets.EarlyHints :entry must be a binary, got: #{inspect(other)}"
     end
   end
 
-  defp inform(conn, entry) do
-    case PhoenixAssets.entry!(entry) do
+  @impl Plug
+  def call(conn, opts) do
+    case PhoenixAssets.entry!(opts[:entry]) do
       %{file: file, css: css, imports: imports} ->
         links =
           Enum.map(css, &{"link", "<#{&1}>; rel=preload; as=style"}) ++
@@ -55,8 +52,9 @@ defmodule PhoenixAssets.EarlyHints do
         conn
     end
   rescue
-    # A missing manifest entry must not take the request down; the asset tags
+    # A missing manifest or entry must not take the request down; the asset tags
     # raise (visibly) later if the entry is genuinely wrong.
+    RuntimeError -> conn
     KeyError -> conn
   end
 end

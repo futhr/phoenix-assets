@@ -33,6 +33,21 @@ defmodule PhoenixAssets.Generators.TS do
   def header, do: @header
 
   @doc ~S"""
+  Renders the `import type { … } from "$phoenix/types"` line for a list of type
+  names, or an empty string when there are none.
+
+      iex> PhoenixAssets.Generators.TS.type_import([])
+      ""
+      iex> PhoenixAssets.Generators.TS.type_import(["ArticleRow"])
+      ~s(import type { ArticleRow } from "$phoenix/types"\n)
+  """
+  @spec type_import([String.t()]) :: String.t()
+  def type_import([]), do: ""
+
+  def type_import(types),
+    do: ~s|import type { #{Enum.join(types, ", ")} } from "$phoenix/types"\n|
+
+  @doc ~S"""
   Converts a value to a lowerCamelCase identifier safe as a TS parameter name.
 
   Reserved words gain a trailing underscore and a leading digit gains a
@@ -52,6 +67,38 @@ defmodule PhoenixAssets.Generators.TS do
       name in @reserved -> name <> "_"
       name =~ ~r/^[0-9]/ -> "_" <> name
       true -> name
+    end
+  end
+
+  @doc ~S"""
+  Converts a list of raw parameter names to unique lowerCamelCase argument
+  names, in order.
+
+  Two distinct route placeholders can camelize to the same identifier (`user_id`
+  and `userId` both become `userId`); a collision gains a numeric suffix so the
+  emitted TypeScript never declares duplicate parameters.
+
+      iex> PhoenixAssets.Generators.TS.arg_names(["user_id", "userId"])
+      ["userId", "userId2"]
+  """
+  @spec arg_names([atom() | String.t()]) :: [String.t()]
+  def arg_names(params) do
+    {names, _} =
+      Enum.map_reduce(params, MapSet.new(), fn param, taken ->
+        name = dedupe_arg(arg_name(param), taken)
+        {name, MapSet.put(taken, name)}
+      end)
+
+    names
+  end
+
+  defp dedupe_arg(name, taken) do
+    if MapSet.member?(taken, name) do
+      Stream.iterate(2, &(&1 + 1))
+      |> Stream.map(&"#{name}#{&1}")
+      |> Enum.find(&(not MapSet.member?(taken, &1)))
+    else
+      name
     end
   end
 
@@ -134,18 +181,23 @@ defmodule PhoenixAssets.Generators.TS do
   """
   @spec url_template(String.t()) :: String.t()
   def url_template(path) do
-    path
-    |> String.split("/")
-    |> Enum.map_join("/", fn
-      ":" <> param ->
-        "${encodeURIComponent(String(#{arg_name(param)}))}"
+    names = path |> path_params() |> arg_names()
 
-      "*" <> param ->
-        "${String(#{arg_name(param)}).split(\"/\").map(encodeURIComponent).join(\"/\")}"
+    {segments, _} =
+      path
+      |> String.split("/")
+      |> Enum.map_reduce(names, fn
+        ":" <> _, [name | rest] ->
+          {"${encodeURIComponent(String(#{name}))}", rest}
 
-      segment ->
-        segment
-    end)
+        "*" <> _, [name | rest] ->
+          {"${String(#{name}).split(\"/\").map(encodeURIComponent).join(\"/\")}", rest}
+
+        segment, rest ->
+          {segment, rest}
+      end)
+
+    Enum.join(segments, "/")
   end
 
   @doc ~S"""

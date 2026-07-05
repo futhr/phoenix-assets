@@ -11,9 +11,9 @@ defmodule PhoenixAssets.Engine do
 
   ## Why
 
-  Centralising `init/2` and callback fan-out keeps every subsystem consistent: a
-  plugin's `init/2` side of state is computed once, and "ask every plugin for its
-  X" is one well-tested function instead of four ad hoc reductions.
+  Centralising `init/2` and callback fan-out keeps every subsystem consistent:
+  each plugin's `init/2` runs once per operation, and "ask every plugin for its
+  X" lives in a single function rather than being reimplemented per subsystem.
   """
 
   alias PhoenixAssets.Context

@@ -39,6 +39,7 @@ defmodule PhoenixAssets.Generators.Env do
       ctx.config.env_expose
       |> Keyword.get(:expose, [])
       |> Enum.sort_by(fn {key, _} -> key end)
+      |> Enum.uniq_by(fn {key, _} -> TS.camelize(key) end)
 
     GeneratedFile.new(
       path: Path.join(ctx.generated_dir, "env.ts"),
@@ -57,6 +58,5 @@ defmodule PhoenixAssets.Generators.Env do
       end),
       "} as const\n"
     ]
-    |> IO.iodata_to_binary()
   end
 end

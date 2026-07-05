@@ -36,9 +36,9 @@ defmodule PhoenixAssets.ManifestTest do
              ["/assets/vendor-BBB.js", "/assets/shared-CCC.js"]
   end
 
-  test "preload_links/2 mirrors imports/2" do
+  test "preload_links/2 returns the transitive import chunk files, in order" do
     assert Manifest.preload_links(@manifest, "src/app.ts") ==
-             Manifest.imports(@manifest, "src/app.ts")
+             ["/assets/vendor-BBB.js", "/assets/shared-CCC.js"]
   end
 
   test "subresource_integrity/2 is empty when no chunk declares a hash" do

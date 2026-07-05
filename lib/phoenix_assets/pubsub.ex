@@ -63,7 +63,7 @@ defmodule PhoenixAssets.PubSub do
 
     [
       TS.header(),
-      import_types(types),
+      TS.type_import(types),
       "\nexport const topics = {\n",
       Enum.map(sorted, &render_topic/1),
       "} as const\n\n",
@@ -71,11 +71,6 @@ defmodule PhoenixAssets.PubSub do
     ]
     |> IO.iodata_to_binary()
   end
-
-  defp import_types([]), do: ""
-
-  defp import_types(types),
-    do: ~s|import type { #{Enum.join(types, ", ")} } from "$phoenix/types"\n|
 
   defp type_imports(topics) do
     for {_, opts} <- topics,
@@ -127,7 +122,7 @@ defmodule PhoenixAssets.PubSub do
   defp payload_type(payload), do: TS.type_name(payload)
 
   defp placeholder_params(pattern) do
-    @placeholder |> Regex.scan(pattern) |> Enum.map(fn [_, param] -> param end)
+    @placeholder |> Regex.scan(pattern) |> Enum.map(fn [_, param] -> param end) |> Enum.uniq()
   end
 
   defp placeholder_template(pattern) do

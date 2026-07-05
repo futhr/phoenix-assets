@@ -52,7 +52,7 @@ defmodule PhoenixAssets.DevIntelligence.TidewaveTools do
   @spec doctor(keyword()) :: {Doctor.Check.status(), [{Doctor.Check.t(), Doctor.Check.result()}]}
   def doctor(opts \\ []) do
     config = Config.load!()
-    ctx = Context.new(config, plugins: Config.preset_plugins(config))
+    ctx = Context.new(config, plugins: Config.preset_plugins(config), env: :dev)
     Doctor.run(ctx, opts)
   end
 end

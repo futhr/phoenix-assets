@@ -38,6 +38,9 @@ defmodule PhoenixAssets.PubSub.Topics do
                   ]
                 )
 
+  @placeholder ~r/\{(\w+)\}/
+  @js_identifier ~r/^[A-Za-z_$][\w$]*$/
+
   @doc false
   defmacro __using__(_) do
     quote do
@@ -63,9 +66,20 @@ defmodule PhoenixAssets.PubSub.Topics do
       |> Enum.reverse()
       |> Enum.map(fn {name, opts} -> {name, validate!(env, name, opts)} end)
 
+    ensure_unique_names!(env, topics)
+
     quote do
       @doc "Returns the declared PubSub topics as `{name, opts}` pairs."
       def __phoenix_assets_topics__, do: unquote(Macro.escape(topics))
+    end
+  end
+
+  defp ensure_unique_names!(env, topics) do
+    names = Enum.map(topics, fn {name, _} -> name end)
+
+    case names -- Enum.uniq(names) do
+      [] -> :ok
+      [dup | _] -> compile_error!(env, dup, "declared more than once")
     end
   end
 
@@ -75,6 +89,8 @@ defmodule PhoenixAssets.PubSub.Topics do
         {:ok, validated} -> validated
         {:error, error} -> compile_error!(env, name, Exception.message(error))
       end
+
+    validate_pattern!(env, name, opts[:pattern])
 
     Enum.each(opts[:events], fn {event, payload} ->
       unless valid_payload?(payload) do
@@ -90,7 +106,30 @@ defmodule PhoenixAssets.PubSub.Topics do
     opts
   end
 
-  defp valid_payload?(payload) when is_binary(payload) or is_atom(payload), do: true
+  # The pattern is spliced into a TS template literal, so a backtick or a `${`
+  # would break or inject the generated builder; placeholders become function
+  # arguments, so they must be unique, valid JS identifiers.
+  defp validate_pattern!(env, name, pattern) do
+    if String.contains?(pattern, "`") or String.contains?(pattern, "${") do
+      compile_error!(env, name, "pattern #{inspect(pattern)} must not contain a backtick or `${`")
+    end
+
+    params = @placeholder |> Regex.scan(pattern) |> Enum.map(fn [_, param] -> param end)
+
+    Enum.each(params, fn param ->
+      unless Regex.match?(@js_identifier, param) do
+        compile_error!(env, name, "placeholder #{inspect(param)} is not a valid JS identifier")
+      end
+    end)
+
+    if params != Enum.uniq(params) do
+      compile_error!(env, name, "pattern #{inspect(pattern)} repeats a placeholder")
+    end
+  end
+
+  defp valid_payload?(payload)
+       when is_binary(payload) or (is_atom(payload) and payload not in [nil, true, false]),
+       do: true
 
   defp valid_payload?(payload) when is_map(payload) do
     Enum.all?(payload, fn {field, type} -> is_atom(field) and is_atom(type) end)
@@ -99,10 +138,6 @@ defmodule PhoenixAssets.PubSub.Topics do
   defp valid_payload?(_), do: false
 
   @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()
-  defp compile_error!(env, name, message) do
-    raise CompileError,
-      file: env.file,
-      line: env.line,
-      description: "phoenix_assets topic #{inspect(name)}: #{message}"
-  end
+  defp compile_error!(env, name, message),
+    do: PhoenixAssets.DSL.compile_error!(env, "topic", name, message)
 end

@@ -3,9 +3,11 @@ defmodule PhoenixAssets.DevProcess do
   A declaration of an external development process to supervise (Vite, Storybook).
 
   Plugins return these from `c:PhoenixAssets.Plugin.dev_processes/2`. The dev
-  supervisor turns each declaration into a supervised child whose entire OS
-  process tree is torn down when the BEAM stops -- no orphaned Vite, no leaked
-  ports. The child-spec construction (`to_child_spec/2`) lives alongside the dev
+  supervisor turns each declaration into a supervised child that MuonTrap tears
+  down when the BEAM stops. Where MuonTrap can use Linux cgroups the whole OS
+  process tree goes with it; on macOS (and other systems without cgroups) only
+  the immediate child is killed, so a stubborn grandchild can still leak. The
+  child-spec construction (`to_child_spec/2`) lives alongside the dev
   supervisor.
 
   ## Why
@@ -37,18 +39,25 @@ defmodule PhoenixAssets.DevProcess do
   @doc """
   Builds a supervised `MuonTrap.Daemon` child spec for this dev process.
 
-  MuonTrap wraps the OS process so its entire process group is torn down when the
-  BEAM exits -- even on a hard crash -- releasing the port. `:logger_fun` (an
-  `mfargs` tuple) routes the process's output to the dev server's log buffer.
-  Each start emits `[:phoenix_assets, :dev_server, :start]`, and the dev server
-  monitors the daemon to emit `:stop`/`:crash` on exit.
+  MuonTrap wraps the OS process and kills it when the BEAM exits -- even on a
+  hard crash -- releasing the port (the whole process tree where Linux cgroups
+  are available, otherwise the immediate child). `stderr_to_stdout: true` folds
+  the process's stderr into stdout so Vite/Storybook errors reach the log
+  buffer. `:logger_fun` (an `mfargs` tuple) routes that output to the dev
+  server's log buffer. Each start emits `[:phoenix_assets, :dev_server, :start]`,
+  and the dev server monitors the daemon to emit `:stop`/`:crash` on exit.
   """
   @spec to_child_spec(t(), keyword()) :: Supervisor.child_spec()
   def to_child_spec(%__MODULE__{} = process, opts \\ []) do
     [command | args] = process.command
 
     daemon_opts =
-      [cd: process.cd, env: process.env, exit_status_to_reason: &{:exit_status, &1}]
+      [
+        cd: process.cd,
+        env: process.env,
+        stderr_to_stdout: true,
+        exit_status_to_reason: &{:exit_status, &1}
+      ]
       |> put_logger_fun(opts[:logger_fun])
 
     %{

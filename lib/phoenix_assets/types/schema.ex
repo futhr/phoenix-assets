@@ -67,9 +67,23 @@ defmodule PhoenixAssets.Types.Schema do
       |> Enum.reverse()
       |> Enum.map(fn {name, opts} -> {name, validate!(env, name, opts)} end)
 
+    ensure_unique_names!(env, types)
+
     quote do
       @doc "Returns the declared types as `{name, opts}` pairs."
       def __phoenix_assets_types__, do: unquote(Macro.escape(types))
+    end
+  end
+
+  defp ensure_unique_names!(env, types) do
+    names = Enum.map(types, fn {name, _} -> name end)
+
+    case names -- Enum.uniq(names) do
+      [] ->
+        :ok
+
+      [dup | _] ->
+        compile_error!(env, dup, "declared more than once")
     end
   end
 
@@ -79,10 +93,11 @@ defmodule PhoenixAssets.Types.Schema do
         validated
 
       {:error, error} ->
-        raise CompileError,
-          file: env.file,
-          line: env.line,
-          description: "phoenix_assets type #{inspect(name)}: #{Exception.message(error)}"
+        compile_error!(env, name, Exception.message(error))
     end
   end
+
+  @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()
+  defp compile_error!(env, name, message),
+    do: PhoenixAssets.DSL.compile_error!(env, "type", name, message)
 end

@@ -61,9 +61,12 @@ defmodule PhoenixAssets.Electric do
   def doctor_checks(_, %{module: nil}), do: []
 
   def doctor_checks(_, %{module: module}) do
+    # Shape names are a bounded compile-time set of existing atoms, so each
+    # check gets the shape's own name as its id -- a crash names the shape
+    # instead of the shared `:electric_shape`.
     Enum.map(shapes(module), fn {name, opts} ->
       Check.new(
-        id: :electric_shape,
+        id: name,
         group: :electric,
         run: &route_check(&1, name, opts[:route])
       )
@@ -85,18 +88,13 @@ defmodule PhoenixAssets.Electric do
       TS.header(),
       ~s|\nimport { ShapeStream } from "@electric-sql/client"\n|,
       ~s|import { authHeaders, createShapeUrl } from "@phoenix-assets/svelte"\n|,
-      import_types(types),
+      TS.type_import(types),
       "\nexport const shapes = {\n",
       Enum.map(sorted, &render_shape/1),
       "} as const\n"
     ]
     |> IO.iodata_to_binary()
   end
-
-  defp import_types([]), do: ""
-
-  defp import_types(types),
-    do: ~s|import type { #{Enum.join(types, ", ")} } from "$phoenix/types"\n|
 
   # One uniform factory shape: a params map feeds `createShapeUrl/2` (which
   # substitutes `:placeholders` and appends the rest as query params), and every

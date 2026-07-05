@@ -33,9 +33,6 @@ defmodule PhoenixAssets.Preset do
   Listing integrations once, with their options, and resolving order
   deterministically removes the per-project guesswork of "which plugin runs
   first" and turns ordering bugs into compile errors instead of runtime surprises.
-
-  ## Note
-
   Integration modules referenced by a preset must already be compiled when the
   preset compiles -- in practice they come from a dependency (the stack package),
   so this is automatic.

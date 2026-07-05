@@ -141,11 +141,9 @@ defmodule PhoenixAssets.Types.Walker do
     if nilable, do: base <> " | null", else: base
   end
 
-  defp calc_ts(%{type: type} = calc, ancestors) do
-    map_type(type, Map.get(calc, :constraints) || [], ancestors)
+  defp calc_ts(calc, ancestors) do
+    map_type(calc.type, calc.constraints || [], ancestors)
   end
-
-  defp calc_ts(_, _), do: "unknown"
 
   defp map_type({:array, inner}, constraints, ancestors) do
     "Array<#{map_type(inner, Keyword.get(constraints, :items, []), ancestors)}>"

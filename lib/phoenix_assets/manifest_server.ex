@@ -30,11 +30,13 @@ defmodule PhoenixAssets.ManifestServer do
 
     * `:path` -- the `manifest.json` location. When absent or unreadable, reads
       resolve to `{:error, :missing}`.
-    * `:name` -- the registered name (default the module).
+
+  This is a singleton registered under the module name; the cache lives in a
+  single `:persistent_term` key, so only one instance runs per node.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, opts, name: opts[:name] || __MODULE__)
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @doc """

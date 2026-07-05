@@ -102,6 +102,12 @@ defmodule PhoenixAssets.Types do
           "verify #{inspect(resource)}'s policies compile; the cross-check was skipped"
         )
     end
+  rescue
+    # Type names are host strings, not a bounded atom set, so the check id
+    # cannot carry them; name the type in the message so a crash is traceable
+    # to the offending declaration rather than the shared `:types_field_policy`.
+    exception ->
+      Check.error("type #{name} field-policy check crashed: #{Exception.message(exception)}")
   end
 
   defp field_policy_fields(resource) do

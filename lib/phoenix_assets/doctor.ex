@@ -89,6 +89,11 @@ defmodule PhoenixAssets.Doctor do
   #
   #     config :phoenix_assets, :build,
   #       budgets: [{"src/app.ts", 300}]   # entry key => max KiB (entry + imports + css)
+  #
+  # Every check keeps the stable `:bundle_budget` id -- the entry keys are
+  # host-supplied strings, so minting a per-entry atom would be an unbounded
+  # atom source. The entry is carried in each result message instead (including
+  # the crash path in `budget_check/3`), which is what distinguishes lines.
   defp budget_checks(ctx) do
     ctx.config.build
     |> Keyword.get(:budgets, [])
@@ -215,6 +220,12 @@ defmodule PhoenixAssets.Doctor do
           "build the assets so the manifest and files exist"
         )
     end
+  rescue
+    exception ->
+      Check.error("bundle budget for #{entry} crashed: #{Exception.message(exception)}")
+  catch
+    kind, reason ->
+      Check.error("bundle budget for #{entry} crashed: #{inspect(kind)} #{inspect(reason)}")
   end
 
   defp entry_weight(ctx, manifest, entry) do

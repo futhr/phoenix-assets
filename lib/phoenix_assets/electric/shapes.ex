@@ -78,9 +78,20 @@ defmodule PhoenixAssets.Electric.Shapes do
       |> Enum.reverse()
       |> Enum.map(fn {name, opts} -> {name, validate!(env, name, opts)} end)
 
+    ensure_unique_names!(env, shapes)
+
     quote do
       @doc "Returns the declared Electric shapes as `{name, opts}` pairs."
       def __phoenix_assets_shapes__, do: unquote(Macro.escape(shapes))
+    end
+  end
+
+  defp ensure_unique_names!(env, shapes) do
+    names = Enum.map(shapes, fn {name, _} -> name end)
+
+    case names -- Enum.uniq(names) do
+      [] -> :ok
+      [dup | _] -> compile_error!(env, dup, "declared more than once")
     end
   end
 
@@ -113,10 +124,6 @@ defmodule PhoenixAssets.Electric.Shapes do
   end
 
   @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()
-  defp compile_error!(env, name, message) do
-    raise CompileError,
-      file: env.file,
-      line: env.line,
-      description: "phoenix_assets shape #{inspect(name)}: #{message}"
-  end
+  defp compile_error!(env, name, message),
+    do: PhoenixAssets.DSL.compile_error!(env, "shape", name, message)
 end

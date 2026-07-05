@@ -60,7 +60,7 @@ defmodule PhoenixAssets do
   @spec child_specs(keyword()) :: [Supervisor.child_spec() | {module(), term()}]
   def child_specs(opts \\ []) do
     config = opts[:config] || Config.load!()
-    base = [{ManifestServer, path: Keyword.get(config.build, :vite_manifest)}]
+    base = [{ManifestServer, path: Context.manifest_path(Context.new(config))}]
 
     if dev?() do
       ctx = opts[:ctx] || Context.new(config, env: :dev, plugins: Config.preset_plugins(config))
@@ -135,14 +135,21 @@ defmodule PhoenixAssets do
   Returns the served path for an asset key.
 
   In production resolves to the hashed file from the manifest (prefixed with
-  the configured `:asset_url`, if any); otherwise returns the key as a
-  root-relative path (the Vite dev server serves it).
+  the configured `:asset_url`, if any). In development returns the key as a
+  root-relative path (the Vite dev server serves it). Raises if a manifest is
+  expected but unavailable.
   """
   @spec asset_path(String.t()) :: String.t()
   def asset_path(key) do
     case ManifestServer.manifest() do
-      manifest when is_map(manifest) -> prefix_asset_url(Manifest.file(manifest, key))
-      _ -> "/" <> String.trim_leading(key, "/")
+      :dev ->
+        "/" <> String.trim_leading(key, "/")
+
+      {:error, reason} ->
+        raise "phoenix_assets: Vite manifest unavailable (#{inspect(reason)}). Run `mix assets.build`."
+
+      manifest ->
+        prefix_asset_url(Manifest.file(manifest, key))
     end
   end
 
@@ -200,10 +207,11 @@ defmodule PhoenixAssets do
 
       base ->
         %{
-          file: base <> resolved.file,
-          css: Enum.map(resolved.css, &(base <> &1)),
-          imports: Enum.map(resolved.imports, &(base <> &1)),
-          integrity: Map.new(resolved.integrity, fn {href, hash} -> {base <> href, hash} end)
+          file: join_asset_url(base, resolved.file),
+          css: Enum.map(resolved.css, &join_asset_url(base, &1)),
+          imports: Enum.map(resolved.imports, &join_asset_url(base, &1)),
+          integrity:
+            Map.new(resolved.integrity, fn {href, hash} -> {join_asset_url(base, href), hash} end)
         }
     end
   end
@@ -211,9 +219,15 @@ defmodule PhoenixAssets do
   defp prefix_asset_url(href) do
     case asset_url() do
       nil -> href
-      base -> base <> href
+      base -> join_asset_url(base, href)
     end
   end
+
+  # Absolute hrefs (a manifest entry served from its own origin) already carry a
+  # scheme; prefixing the CDN base would produce "https://cdn...https://...".
+  defp join_asset_url(_, "http://" <> _ = href), do: href
+  defp join_asset_url(_, "https://" <> _ = href), do: href
+  defp join_asset_url(base, href), do: base <> href
 
   defp asset_url do
     case Application.get_env(:phoenix_assets, :build, [])[:asset_url] do

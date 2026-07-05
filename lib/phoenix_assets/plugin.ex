@@ -27,11 +27,13 @@ defmodule PhoenixAssets.Plugin do
   hard ordering edge (the dependency must be present and ordered first);
   `after_plugin/1` declares a soft edge (honoured only if that plugin is present).
 
-  ## Phases
+  ## Callbacks
 
-  The engine invokes plugins in a fixed lifecycle: configure, discover, generate,
-  dev, build, validate, runtime. A given callback belongs to one phase
-  (`generated_files/2` in generate, `dev_processes/2` in dev, and so on).
+  `c:init/2` runs once to build per-plugin state; the collection callbacks
+  (`c:generated_files/2`, `c:vite_config/2`, `c:dev_processes/2`,
+  `c:graph_entries/2`, `c:doctor_checks/2`) each answer "what does this plugin
+  contribute?" for one kind of declaration. `PhoenixAssets.Engine` initialises
+  plugins and fans each callback out across them in resolved order.
 
   ## Why
 
@@ -76,7 +78,6 @@ defmodule PhoenixAssets.Plugin do
   @callback doctor_checks(ctx :: Context.t(), state()) :: [Doctor.Check.t()]
 
   @optional_callbacks name: 0,
-                      init: 2,
                       generated_files: 2,
                       vite_config: 2,
                       dev_processes: 2,
@@ -146,7 +147,7 @@ defmodule PhoenixAssets.Plugin do
       {{:graph_entries, 2}, quote(do: def(graph_entries(_, _), do: []))},
       {{:doctor_checks, 2}, quote(do: def(doctor_checks(_, _), do: []))}
     ]
-    |> Enum.reject(fn {sig, _} -> Module.defines?(module, sig) end)
+    |> Enum.reject(fn {sig, _} -> Module.defines?(module, sig, :def) end)
     |> Enum.map(fn {_, ast} -> ast end)
   end
 end

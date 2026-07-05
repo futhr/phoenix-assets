@@ -5,7 +5,7 @@ defmodule PhoenixAssets.TelemetryTest do
   # detaches on exit, but runs sync to avoid cross-test event bleed.
   use ExUnit.Case, async: false
 
-  alias PhoenixAssets.{Config, Context, DevProcess, DevServer, Generated, GeneratedFile}
+  alias PhoenixAssets.{Config, Context, DevProcess, DevServer, Doctor, Generated, GeneratedFile}
   alias PhoenixAssets.Manifest
 
   defmodule StalePlugin do
@@ -15,6 +15,21 @@ defmodule PhoenixAssets.TelemetryTest do
     def generated_files(_, _) do
       [GeneratedFile.new(path: "gen/x.ts", contents: "x\n", plugin: :x, kind: :x)]
     end
+  end
+
+  defmodule RaisingPlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def generated_files(_, _), do: raise("boom in generated_files")
+  end
+
+  defp tmp_ctx(plugins) do
+    tmp = Path.join(System.tmp_dir!(), "tg_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(tmp)
+    on_exit(fn -> File.rm_rf!(tmp) end)
+
+    Context.new(Config.load!(otp_app: :my_app, asset_root: tmp), env: :test, plugins: plugins)
   end
 
   defp attach(events) do
@@ -93,5 +108,65 @@ defmodule PhoenixAssets.TelemetryTest do
     assert_receive {:event, [:phoenix_assets, :dev_server, :stop], _,
                     %{id: :probe, reason: :shutdown}},
                    1_000
+  end
+
+  test "[:dev_server, :crash] fires when a daemon exits with a non-shutdown reason" do
+    attach([[:phoenix_assets, :dev_server, :crash]])
+
+    start_supervised!(DevServer)
+
+    assert {:ok, pid} = DevProcess.start_daemon(:crasher, "sleep", ["5"], [])
+    # Flush the async :monitor cast so the monitor is in place before the exit.
+    _ = DevServer.logs(:crasher)
+
+    # Unlink so the abnormal exit does not take the test process down with it.
+    Process.unlink(pid)
+    GenServer.stop(pid, :boom)
+
+    assert_receive {:event, [:phoenix_assets, :dev_server, :crash], _,
+                    %{id: :crasher, reason: :boom}},
+                   1_000
+  end
+
+  test "[:doctor, :run] fires once a doctor run finishes, carrying the check count and status" do
+    attach([[:phoenix_assets, :doctor, :run]])
+
+    {status, results} = Doctor.run(tmp_ctx([]))
+
+    assert_received {:event, [:phoenix_assets, :doctor, :run], %{checks: checks},
+                     %{status: ^status}}
+
+    assert checks == length(results)
+    assert checks > 0
+    assert status in [:ok, :error]
+  end
+
+  test "[:generated, :start | :stop] wrap a write run as a span" do
+    attach([
+      [:phoenix_assets, :generated, :start],
+      [:phoenix_assets, :generated, :stop]
+    ])
+
+    ctx = tmp_ctx([{StalePlugin, []}])
+
+    assert {:ok, %{written: ["gen/x.ts"], unchanged: []}} = Generated.generate(ctx)
+
+    assert_received {:event, [:phoenix_assets, :generated, :start], _,
+                     %{otp_app: :my_app, check: false}}
+
+    assert_received {:event, [:phoenix_assets, :generated, :stop], %{duration: _},
+                     %{otp_app: :my_app, check: false, written: 1, unchanged: 0}}
+  end
+
+  test "[:generated, :exception] fires when a plugin raises mid-generation" do
+    attach([[:phoenix_assets, :generated, :exception]])
+
+    ctx = tmp_ctx([{RaisingPlugin, []}])
+
+    assert_raise RuntimeError, ~r/boom in generated_files/, fn -> Generated.generate(ctx) end
+
+    assert_received {:event, [:phoenix_assets, :generated, :exception], %{duration: _}, meta}
+    assert meta.kind == :error
+    assert meta.otp_app == :my_app
   end
 end

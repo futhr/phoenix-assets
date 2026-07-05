@@ -80,6 +80,24 @@ defmodule PhoenixAssets.LocalizeTest do
     assert out =~ ~s|export const defaultLocale: Locale = "en"|
   end
 
+  test "zero locales raises instead of emitting a `Locale = never` union" do
+    {:ok, state} = Localize.init([locales: []], ctx())
+
+    error =
+      assert_raise ArgumentError, fn -> Localize.generated_files(ctx(), state) end
+
+    assert Exception.message(error) =~ "no locales found"
+  end
+
+  test "a default_locale outside the locale list raises instead of emitting broken TS" do
+    {:ok, state} = Localize.init([locales: ~w(en sv), default_locale: "de"], ctx())
+
+    error =
+      assert_raise ArgumentError, fn -> Localize.generated_files(ctx(), state) end
+
+    assert Exception.message(error) =~ ~s(default locale "de" is not one of)
+  end
+
   test "an explicit default_locale overrides the backend" do
     {:ok, state} =
       Localize.init(

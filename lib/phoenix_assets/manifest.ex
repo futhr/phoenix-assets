@@ -8,8 +8,13 @@ defmodule PhoenixAssets.Manifest do
   following `imports` and de-duplicating -- so a caller can ask "for this entry,
   what stylesheet links, script src, and module preloads do I emit?".
 
-  All returned paths are prefixed with `/` (Vite emits them relative to the
-  served static root).
+  Root-relative paths are prefixed with `/` (Vite emits them relative to the
+  served static root); absolute `http(s)://` URLs -- an entry Vite resolves to a
+  CDN origin -- pass through unchanged.
+
+  The query functions (`file/2`, `css/2`, `imports/2`, `subresource_integrity/2`)
+  all raise `KeyError` when the requested top-level `key` is absent; transitive
+  imports missing from the manifest are skipped.
 
   ## Why
 
@@ -75,7 +80,7 @@ defmodule PhoenixAssets.Manifest do
   @spec css(t(), String.t()) :: [String.t()]
   def css(manifest, key) do
     _ = entry!(manifest, key)
-    {_, _, css} = gather(manifest, key, MapSet.new())
+    {_, css, _} = collect(manifest, key)
     css |> Enum.uniq() |> Enum.map(&prefix/1)
   end
 
@@ -83,7 +88,7 @@ defmodule PhoenixAssets.Manifest do
   @spec imports(t(), String.t()) :: [String.t()]
   def imports(manifest, key) do
     own = entry!(manifest, key)["file"]
-    {_, files, _} = gather(manifest, key, MapSet.new())
+    {files, _, _} = collect(manifest, key)
 
     files
     |> List.delete(own)
@@ -104,55 +109,52 @@ defmodule PhoenixAssets.Manifest do
   is empty otherwise -- callers render `integrity`/`crossorigin` only when a hash
   is present.
 
+  Raises `KeyError` when `key` itself is absent (like `file/2`, `css/2`, and
+  `imports/2`).
+
       iex> manifest = %{"src/app.ts" => %{"file" => "assets/app.js", "integrity" => "sha384-abc"}}
       iex> PhoenixAssets.Manifest.subresource_integrity(manifest, "src/app.ts")
       %{"/assets/app.js" => "sha384-abc"}
   """
   @spec subresource_integrity(t(), String.t()) :: %{String.t() => String.t()}
   def subresource_integrity(manifest, key) do
-    {_, integrities} = collect_integrity(manifest, key, MapSet.new(), %{})
-    integrities
+    _ = entry!(manifest, key)
+    {_, _, integrity} = collect(manifest, key)
+    integrity
   end
 
-  defp collect_integrity(manifest, key, visited, acc) do
-    if MapSet.member?(visited, key) do
-      {visited, acc}
+  # Single visited-set graph walk over `key` and its transitive imports,
+  # gathering chunk files, stylesheet hrefs, and SRI hashes in one pass. Files
+  # and css are prepended in pre-order and reversed once (no quadratic append).
+  defp collect(manifest, key) do
+    {_, files, css, integrity} =
+      walk(manifest, key, {%{}, [], [], %{}})
+
+    {Enum.reverse(files), Enum.reverse(css), integrity}
+  end
+
+  defp walk(manifest, key, {visited, files, css, integrity} = acc) do
+    if Map.has_key?(visited, key) do
+      acc
     else
       chunk = Map.get(manifest, key, %{})
-      visited = MapSet.put(visited, key)
+      visited = Map.put(visited, key, true)
 
-      acc =
+      files = if chunk["file"], do: [chunk["file"] | files], else: files
+      css = chunk |> Map.get("css", []) |> Enum.reduce(css, &[&1 | &2])
+
+      integrity =
         if is_binary(chunk["file"]) and is_binary(chunk["integrity"]) do
-          Map.put(acc, prefix(chunk["file"]), chunk["integrity"])
+          Map.put(integrity, prefix(chunk["file"]), chunk["integrity"])
         else
-          acc
+          integrity
         end
 
       chunk
       |> Map.get("imports", [])
-      |> Enum.reduce({visited, acc}, fn import, {v, a} ->
-        collect_integrity(manifest, import, v, a)
+      |> Enum.reduce({visited, files, css, integrity}, fn import, a ->
+        walk(manifest, import, a)
       end)
-    end
-  end
-
-  defp gather(manifest, key, visited) do
-    if MapSet.member?(visited, key) do
-      {visited, [], []}
-    else
-      chunk = Map.get(manifest, key, %{})
-      visited = MapSet.put(visited, key)
-
-      {visited, import_files, import_css} =
-        chunk
-        |> Map.get("imports", [])
-        |> Enum.reduce({visited, [], []}, fn import, {v, files, css} ->
-          {v, f, c} = gather(manifest, import, v)
-          {v, files ++ f, css ++ c}
-        end)
-
-      own_files = if chunk["file"], do: [chunk["file"]], else: []
-      {visited, own_files ++ import_files, Map.get(chunk, "css", []) ++ import_css}
     end
   end
 

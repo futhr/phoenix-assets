@@ -19,6 +19,7 @@ defmodule PhoenixAssets.DevServer do
 
   @ring_size 200
   @supervisor PhoenixAssets.DevSupervisor
+  @infra_children [__MODULE__, PhoenixAssets.Generated.Watcher]
 
   @doc "Starts the dev-process tracker."
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -81,48 +82,60 @@ defmodule PhoenixAssets.DevServer do
 
   @doc "Appends an output `line` for dev process `id`. A no-op if the server is down."
   @spec log_line(String.t(), atom()) :: :ok
-  def log_line(line, id) do
-    case Process.whereis(__MODULE__) do
-      nil -> :ok
-      pid -> GenServer.cast(pid, {:log, id, line})
-    end
-  end
+  def log_line(line, id), do: GenServer.cast(__MODULE__, {:log, id, line})
 
   @doc """
   Monitors a daemon so `[:phoenix_assets, :dev_server, :stop | :crash]` is
   emitted when it exits. A no-op if the tracker is down.
   """
   @spec monitor_daemon(atom(), pid()) :: :ok
-  def monitor_daemon(id, pid) do
-    case Process.whereis(__MODULE__) do
-      nil -> :ok
-      server -> GenServer.cast(server, {:monitor, id, pid})
-    end
-  end
+  def monitor_daemon(id, pid), do: GenServer.cast(__MODULE__, {:monitor, id, pid})
 
   @impl GenServer
-  def init(_), do: {:ok, %{logs: %{}, monitors: %{}}}
+  def init(_) do
+    {:ok, %{logs: %{}, monitors: %{}}, {:continue, :establish_monitors}}
+  end
+
+  # Daemons left running by `one_for_one` when this tracker restarts would
+  # otherwise never emit `:stop`/`:crash` again -- re-establish their monitors
+  # from whatever the dev supervisor currently runs.
+  @impl GenServer
+  def handle_continue(:establish_monitors, state) do
+    monitors =
+      @supervisor
+      |> Supervisor.which_children()
+      |> Enum.reduce(state.monitors, fn
+        {id, pid, _, _}, acc when is_pid(pid) and id not in @infra_children ->
+          put_monitor(acc, id, pid)
+
+        _, acc ->
+          acc
+      end)
+
+    {:noreply, %{state | monitors: monitors}}
+  catch
+    :exit, _ -> {:noreply, state}
+  end
 
   @impl GenServer
   def handle_cast({:log, id, line}, state) do
-    lines = [line | Map.get(state.logs, id, [])] |> Enum.take(@ring_size)
-    {:noreply, %{state | logs: Map.put(state.logs, id, lines)}}
+    logs = Map.update(state.logs, id, push(new_ring(), line), &push(&1, line))
+    {:noreply, %{state | logs: logs}}
   end
 
   def handle_cast({:monitor, id, pid}, state) do
-    ref = Process.monitor(pid)
-    {:noreply, %{state | monitors: Map.put(state.monitors, ref, id)}}
+    {:noreply, %{state | monitors: put_monitor(state.monitors, id, pid)}}
   end
 
   @impl GenServer
   def handle_call({:logs, id, limit}, _, state) do
-    lines = state.logs |> Map.get(id, []) |> Enum.take(limit) |> Enum.reverse()
+    lines = state.logs |> Map.get(id, new_ring()) |> ring_to_list() |> Enum.take(-limit)
     {:reply, lines, state}
   end
 
   @impl GenServer
-  def handle_info({:DOWN, ref, :process, _, reason}, state) do
-    {id, monitors} = Map.pop(state.monitors, ref)
+  def handle_info({:DOWN, _, :process, pid, reason}, state) do
+    {id, monitors} = Map.pop(state.monitors, pid)
 
     if id do
       PhoenixAssets.Telemetry.execute([:dev_server, event_for(reason)], %{}, %{
@@ -135,6 +148,30 @@ defmodule PhoenixAssets.DevServer do
   end
 
   def handle_info(_, state), do: {:noreply, state}
+
+  # Monitors are keyed by pid so a re-scan never double-monitors a daemon the
+  # cast path already registered.
+  defp put_monitor(monitors, id, pid) do
+    if Map.has_key?(monitors, pid) do
+      monitors
+    else
+      Process.monitor(pid)
+      Map.put(monitors, pid, id)
+    end
+  end
+
+  # A bounded ring buffer as `{count, :queue}`: pushing is O(1) amortised, so a
+  # busy process's output never rebuilds the whole buffer per line.
+  defp new_ring, do: {0, :queue.new()}
+
+  defp push({count, queue}, line) when count >= @ring_size do
+    {_, queue} = :queue.out(queue)
+    {count, :queue.in(line, queue)}
+  end
+
+  defp push({count, queue}, line), do: {count + 1, :queue.in(line, queue)}
+
+  defp ring_to_list({_, queue}), do: :queue.to_list(queue)
 
   defp event_for(reason) when reason in [:normal, :shutdown], do: :stop
   defp event_for({:shutdown, _}), do: :stop

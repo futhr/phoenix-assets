@@ -38,6 +38,20 @@ defmodule PhoenixAssets.ComponentsTest do
     assert html =~ "count"
   end
 
+  test "svelte_page derives a `svelte-<name>` id when none is given" do
+    html = render_component(&Components.svelte_page/1, name: "Dashboard")
+
+    assert html =~ ~s(id="svelte-Dashboard")
+    assert html =~ ~s(data-svelte-page="Dashboard")
+  end
+
+  test "svelte_page honours an explicit :id over the generated one" do
+    html = render_component(&Components.svelte_page/1, name: "Dashboard", id: "app-root")
+
+    assert html =~ ~s(id="app-root")
+    refute html =~ ~s(id="svelte-Dashboard")
+  end
+
   test "vite_assets emits modulepreload links, with SRI when the manifest carries it" do
     manifest = %{
       "src/app.ts" => %{

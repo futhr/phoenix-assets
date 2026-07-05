@@ -105,12 +105,19 @@ defmodule PhoenixAssets.Generated.Watcher do
   defp start_file_system([]), do: :none
 
   defp start_file_system(dirs) do
-    case FileSystem.start_link(dirs: dirs) do
+    # latency: 0 asks the backend for immediate delivery; the watcher already
+    # debounces (@default_debounce_ms), so backend batching only adds lag.
+    case FileSystem.start_link(dirs: dirs, latency: 0) do
       {:ok, watcher} ->
         FileSystem.subscribe(watcher)
         {:ok, watcher}
 
-      _ ->
+      other ->
+        Logger.warning(
+          "phoenix_assets: file-system watcher did not start (#{inspect(other)}); " <>
+            "dev contract regeneration is disabled (is inotify-tools installed?)"
+        )
+
         :none
     end
   end

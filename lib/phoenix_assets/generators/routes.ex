@@ -52,6 +52,7 @@ defmodule PhoenixAssets.Generators.Routes do
       |> Phoenix.Router.routes()
       |> Enum.filter(&endpoint_route?(&1, prefixes))
       |> Enum.map(&entry/1)
+      |> Enum.uniq_by(&{&1.name, &1.path})
       |> dedupe_names()
       |> Enum.sort_by(& &1.name)
 
@@ -154,7 +155,6 @@ defmodule PhoenixAssets.Generators.Routes do
       render_names(routes),
       "\n"
     ]
-    |> IO.iodata_to_binary()
   end
 
   defp render_route(%{name: name, path: path, params: []}) do
@@ -162,7 +162,7 @@ defmodule PhoenixAssets.Generators.Routes do
   end
 
   defp render_route(%{name: name, path: path, params: params}) do
-    args = Enum.map_join(params, ", ", &"#{TS.arg_name(&1)}: string | number")
+    args = Enum.map_join(TS.arg_names(params), ", ", &"#{&1}: string | number")
     "  #{TS.object_key(name)}: (#{args}) => `#{TS.url_template(path)}`,\n"
   end
 

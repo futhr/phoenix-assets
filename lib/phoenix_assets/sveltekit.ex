@@ -32,8 +32,8 @@ defmodule PhoenixAssets.SvelteKit do
   end
 
   @impl PhoenixAssets.Plugin
-  def dev_processes(ctx, _) do
-    vite = vite_opts(ctx)
+  def dev_processes(ctx, state) do
+    vite = vite_opts(ctx, state)
 
     if Keyword.get(vite, :enabled, true) do
       [
@@ -90,7 +90,10 @@ defmodule PhoenixAssets.SvelteKit do
     ]
   end
 
-  defp vite_opts(ctx), do: ctx.config.dev[:vite] || []
+  # Host config (`config :phoenix_assets, :dev, vite: [...]`) overrides preset
+  # `integration/2` opts, mirroring how the Storybook plugin reads its state.
+  defp vite_opts(ctx, state),
+    do: Keyword.merge(Map.to_list(state), ctx.config.dev[:vite] || [])
 
   defp page_entry(ctx, routes_dir, file) do
     relative = Path.relative_to(file, routes_dir)
@@ -119,8 +122,18 @@ defmodule PhoenixAssets.SvelteKit do
   defp route_group?(segment),
     do: String.starts_with?(segment, "(") and String.ends_with?(segment, ")")
 
-  defp segment_to_route("[" <> rest), do: ":" <> String.trim_trailing(rest, "]")
+  # SvelteKit param segments: `[id]` (required), `[[id]]` (optional), and
+  # `[...id]` (rest), each with an optional `=matcher` constraint that has no
+  # Phoenix path equivalent and is dropped. A rest param becomes a `*glob`;
+  # required and optional both become `:id` (the graph records existence, not
+  # optionality). https://svelte.dev/docs/kit/advanced-routing
+  defp segment_to_route("[[" <> rest), do: ":" <> param_name(rest)
+  defp segment_to_route("[..." <> rest), do: "*" <> param_name(rest)
+  defp segment_to_route("[" <> rest), do: ":" <> param_name(rest)
   defp segment_to_route(segment), do: segment
+
+  defp param_name(rest),
+    do: rest |> String.trim_trailing("]") |> String.split("=", parts: 2) |> hd()
 
   defp page_key("/"), do: "Index"
 
@@ -139,6 +152,7 @@ defmodule PhoenixAssets.SvelteKit do
   end
 
   defp segment_key(":" <> param), do: "By" <> Macro.camelize(param)
+  defp segment_key("*" <> param), do: "By" <> Macro.camelize(param)
   defp segment_key(segment), do: Macro.camelize(segment)
 
   defp file_check(ctx, file, label) do

@@ -110,6 +110,27 @@ defmodule PhoenixAssetsTest do
     assert length(PhoenixAssets.child_specs(config: config)) == 2
   end
 
+  test "child_specs starts the manifest server with the resolved default path, not nil" do
+    # Regression: a prod-config app must serve assets, so the ManifestServer
+    # child has to carry the DEFAULT resolved manifest path (Context.manifest_path)
+    # rather than `nil` (which would make every manifest read resolve to :missing).
+    config = Config.load!(otp_app: :phoenix_assets)
+
+    assert [{ManifestServer, opts}] = PhoenixAssets.child_specs(config: config)
+
+    refute is_nil(opts[:path])
+    assert opts[:path] == Context.manifest_path(Context.new(config))
+    assert opts[:path] == "priv/static/assets/.vite/manifest.json"
+  end
+
+  test "child_specs honours a :vite_manifest build override for the manifest path" do
+    config =
+      Config.load!(otp_app: :phoenix_assets, build: [vite_manifest: "custom/manifest.json"])
+
+    assert [{ManifestServer, opts}] = PhoenixAssets.child_specs(config: config)
+    assert opts[:path] == "custom/manifest.json"
+  end
+
   test "graph/0 is an empty map when no graph.json has been built" do
     assert PhoenixAssets.graph() == %{}
   end

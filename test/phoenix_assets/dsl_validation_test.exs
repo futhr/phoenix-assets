@@ -72,6 +72,19 @@ defmodule PhoenixAssets.DSLValidationTest do
         ~r/glob segments.*not supported in shape routes/
       )
     end
+
+    test "a shape name declared twice is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.DupShape do
+          use PhoenixAssets.Electric.Shapes
+          shape :articles, route: "/shapes/articles", type: "ArticleRow"
+          shape :articles, route: "/shapes/articles2", type: "ArticleRow"
+        end
+        """,
+        ~r/shape :articles.*declared more than once/s
+      )
+    end
   end
 
   describe "PubSub.Topics" do
@@ -112,6 +125,43 @@ defmodule PhoenixAssets.DSLValidationTest do
       assert [device: opts] = mod.__phoenix_assets_topics__()
       assert length(opts[:events]) == 3
     end
+
+    test "a topic name declared twice is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.DupTopic do
+          use PhoenixAssets.PubSub.Topics
+          topic :device, pattern: "device:{id}"
+          topic :device, pattern: "device:{other}"
+        end
+        """,
+        ~r/topic :device.*declared more than once/s
+      )
+    end
+
+    test "a pattern containing a backtick is rejected" do
+      assert_compile_error(
+        """
+        defmodule DSLV.BacktickPattern do
+          use PhoenixAssets.PubSub.Topics
+          topic :device, pattern: "device:`{id}`"
+        end
+        """,
+        ~r/must not contain a backtick or `\$\{`/
+      )
+    end
+
+    test "a pattern containing an interpolation marker (${) is rejected" do
+      assert_compile_error(
+        ~S"""
+        defmodule DSLV.DollarBracePattern do
+          use PhoenixAssets.PubSub.Topics
+          topic :device, pattern: "device:${id}"
+        end
+        """,
+        ~r/must not contain a backtick or/
+      )
+    end
   end
 
   describe "Types.Schema" do
@@ -151,6 +201,19 @@ defmodule PhoenixAssets.DSLValidationTest do
       assert [{"OkRow", opts}] = mod.__phoenix_assets_types__()
       assert opts[:only] == :public
       assert opts[:omit] == []
+    end
+
+    test "a type name declared twice is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.DupType do
+          use PhoenixAssets.Types.Schema
+          type "GhostRow", resource: Some.Resource
+          type "GhostRow", resource: Other.Resource
+        end
+        """,
+        ~r/type "GhostRow".*declared more than once/s
+      )
     end
   end
 end

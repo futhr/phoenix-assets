@@ -61,6 +61,9 @@ defmodule PhoenixAssets.MixProject do
       {:nimble_options, "~> 1.1"},
       {:phoenix_live_view, "~> 1.1", optional: true},
       {:ash, "~> 3.0", optional: true},
+      # ash_typescript and phoenix_sync are version-constraint-only: nothing in
+      # lib/ references them. They exist so hosts that pull in these libs resolve
+      # a version this package was built against. Keep them — hosts rely on the pin.
       {:ash_typescript, "~> 0.17", optional: true},
       {:phoenix_sync, "~> 0.6.1", optional: true},
       {:gettext, "~> 1.0", optional: true},

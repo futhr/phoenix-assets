@@ -8,6 +8,10 @@ defmodule PhoenixAssets.Config do
   `:dev_intelligence`, `:stack`) are captured as keyword lists for the subsystems
   that own their validation (the dev supervisor, the generators, the doctor).
 
+  The `:env` sub-config (`config :phoenix_assets, :env, expose: [...]`) carries an
+  `expose:` allow-list of constants surfaced to the frontend; it is stored on the
+  `:env_expose` struct field and consumed by `PhoenixAssets.Generators.Env`.
+
   ## Example
 
       config :phoenix_assets,
@@ -34,35 +38,39 @@ defmodule PhoenixAssets.Config do
 
   alias PhoenixAssets.Presets.Svelte
 
-  @schema [
-    otp_app: [type: :atom, required: true],
-    endpoint: [type: :atom, doc: "the Phoenix endpoint module"],
-    router: [type: :atom, doc: "the Phoenix router module (source for endpoint route helpers)"],
-    endpoint_prefixes: [
-      type: {:list, :string},
-      default: ["/shapes", "/api"],
-      doc: "router path prefixes whose routes become generated endpoint helpers"
-    ],
-    asset_root: [type: :string, default: "assets"],
-    static_root: [type: :string, default: "priv/static"],
-    static_assets_path: [type: :string, default: "/assets"],
-    generated_dir: [
-      type: :string,
-      default: "src/generated",
-      doc: "directory (relative to asset_root) where generated TypeScript contracts are written"
-    ],
-    package_manager: [type: {:in, [:pnpm, :npm, :bun]}, default: :pnpm],
-    js_runtime: [type: {:in, [:node, :bun]}, default: :node],
-    ssr_runtime: [type: {:in, [:node, :bun]}, default: :node],
-    preset: [type: :atom, doc: "a module that `use PhoenixAssets.Preset`"],
-    serve_mode: [
-      type: {:in, [:ssr, :spa]},
-      default: :ssr,
-      doc:
-        "`:ssr` (default) renders HTML from the Vite manifest; `:spa` is an adapter-static " <>
-          "SvelteKit/SPA build that serves its own index.html and needs no server-rendered manifest"
-    ]
-  ]
+  @schema NimbleOptions.new!(
+            otp_app: [type: :atom, required: true],
+            endpoint: [type: :atom, doc: "the Phoenix endpoint module"],
+            router: [
+              type: :atom,
+              doc: "the Phoenix router module (source for endpoint route helpers)"
+            ],
+            endpoint_prefixes: [
+              type: {:list, :string},
+              default: ["/shapes", "/api"],
+              doc: "router path prefixes whose routes become generated endpoint helpers"
+            ],
+            asset_root: [type: :string, default: "assets"],
+            static_root: [type: :string, default: "priv/static"],
+            static_assets_path: [type: :string, default: "/assets"],
+            generated_dir: [
+              type: :string,
+              default: "src/generated",
+              doc:
+                "directory (relative to asset_root) where generated TypeScript contracts are written"
+            ],
+            package_manager: [type: {:in, [:pnpm, :npm, :bun]}, default: :pnpm],
+            js_runtime: [type: {:in, [:node, :bun]}, default: :node],
+            ssr_runtime: [type: {:in, [:node, :bun]}, default: :node],
+            preset: [type: :atom, doc: "a module that `use PhoenixAssets.Preset`"],
+            serve_mode: [
+              type: {:in, [:ssr, :spa]},
+              default: :ssr,
+              doc:
+                "`:ssr` (default) renders HTML from the Vite manifest; `:spa` is an adapter-static " <>
+                  "SvelteKit/SPA build that serves its own index.html and needs no server-rendered manifest"
+            ]
+          )
 
   @sub_keys [:dev, :build, :env, :dev_intelligence, :stack]
 
@@ -134,7 +142,7 @@ defmodule PhoenixAssets.Config do
 
   @doc "The raw schema for the top-level scalar options, for documentation and tooling."
   @spec schema() :: keyword()
-  def schema, do: @schema
+  def schema, do: @schema.schema
 
   @doc """
   Resolves the ordered `{plugin, opts}` list for a config.

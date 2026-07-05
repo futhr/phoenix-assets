@@ -44,6 +44,40 @@ defmodule PhoenixAssets.SvelteKitTest do
     assert entry.data == %{"route" => "/:slug"}
   end
 
+  # SvelteKit advanced-routing segments map onto the graph's Phoenix-style
+  # routes/keys: rest -> `*glob`, optional -> `:param` (optionality is not
+  # recorded), and a matcher constraint (`=integer`) is dropped.
+  defp graph_entry_for(route_dir) do
+    tmp = Path.join(System.tmp_dir!(), "sk_#{System.unique_integer([:positive])}")
+    page = Path.join([tmp, "src", "routes", route_dir, "+page.svelte"])
+    File.mkdir_p!(Path.dirname(page))
+    File.write!(page, "")
+    on_exit(fn -> File.rm_rf!(tmp) end)
+
+    context = Context.new(Config.load!(otp_app: :my_app, asset_root: tmp), env: :test)
+    {:ok, state} = SvelteKit.init([], context)
+    [entry] = SvelteKit.graph_entries(context, state)
+    entry
+  end
+
+  test "a rest param ([...slug]) becomes a glob route and a By-key" do
+    entry = graph_entry_for("blog/[...slug]")
+    assert entry.data == %{"route" => "/blog/*slug"}
+    assert entry.key == "BlogBySlug"
+  end
+
+  test "an optional param ([[lang]]) becomes a required-style route and a By-key" do
+    entry = graph_entry_for("[[lang]]/about")
+    assert entry.data == %{"route" => "/:lang/about"}
+    assert entry.key == "ByLangAbout"
+  end
+
+  test "a matcher constraint ([id=integer]) is dropped from the route and key" do
+    entry = graph_entry_for("items/[id=integer]")
+    assert entry.data == %{"route" => "/items/:id"}
+    assert entry.key == "ItemsById"
+  end
+
   test "a param route and its static sibling get distinct page keys" do
     tmp = Path.join(System.tmp_dir!(), "sk_#{System.unique_integer([:positive])}")
 

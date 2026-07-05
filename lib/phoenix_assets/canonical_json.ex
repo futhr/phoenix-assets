@@ -38,9 +38,11 @@ defmodule PhoenixAssets.CanonicalJSON do
   defp encode(map, _) when map_size(map) == 0, do: "{}"
 
   defp encode(map, depth) when is_map(map) do
+    normalized = Enum.map(map, fn {key, value} -> {to_string(key), value} end)
+    reject_duplicate_keys!(normalized)
+
     pairs =
-      map
-      |> Enum.map(fn {key, value} -> {to_string(key), value} end)
+      normalized
       |> Enum.sort_by(fn {key, _} -> key end)
       |> Enum.map(fn {key, value} ->
         [indent(depth + 1), JSON.encode!(key), ": ", encode(value, depth + 1)]
@@ -57,6 +59,23 @@ defmodule PhoenixAssets.CanonicalJSON do
   end
 
   defp encode(other, _), do: JSON.encode!(other)
+
+  # A map keyed by both `:a` and `"a"` normalises to two identical string keys;
+  # sorting and emitting both would silently produce duplicate JSON keys, so we
+  # fail loudly instead — matching the module's reject-on-ambiguity policy.
+  defp reject_duplicate_keys!(pairs) do
+    keys = Enum.map(pairs, fn {key, _} -> key end)
+
+    case keys -- Enum.uniq(keys) do
+      [] ->
+        :ok
+
+      dups ->
+        raise ArgumentError,
+              "phoenix_assets: cannot canonically encode map with duplicate keys " <>
+                "after normalisation: #{inspect(Enum.uniq(dups))}"
+    end
+  end
 
   defp indent(depth), do: String.duplicate("  ", depth)
 end

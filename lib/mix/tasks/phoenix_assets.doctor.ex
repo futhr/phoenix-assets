@@ -11,9 +11,10 @@ defmodule Mix.Tasks.PhoenixAssets.Doctor do
 
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @impl Mix.Task
   def run(args) do
-    Mix.Task.run("compile")
     {opts, _} = OptionParser.parse!(args, strict: [production: :boolean])
     ctx = PhoenixAssets.MixHelpers.context!(env: Mix.env())
 

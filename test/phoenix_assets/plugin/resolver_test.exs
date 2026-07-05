@@ -66,6 +66,14 @@ defmodule PhoenixAssets.Plugin.ResolverTest do
     assert Resolver.resolve([{B, []}]) == {:error, {:missing_dependency, B, A}}
   end
 
+  test "a plugin listed more than once is a {:duplicate, module} error" do
+    assert Resolver.resolve([{A, []}, {A, [x: 1]}]) == {:error, {:duplicate, A}}
+  end
+
+  test "format_error/1 renders a duplicate as a human message" do
+    assert Resolver.format_error({:duplicate, A}) =~ "listed more than once"
+  end
+
   test "a cycle is an error" do
     assert {:error, {:cycle, modules}} = Resolver.resolve([{Cyc1, []}, {Cyc2, []}])
     assert Enum.sort(modules) == Enum.sort([Cyc1, Cyc2])

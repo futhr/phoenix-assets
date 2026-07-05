@@ -22,12 +22,15 @@ defmodule PhoenixAssets.Plug do
 
   import Plug.Conn
 
+  # `init/1` may run at compile time, so it must not freeze `dev?/0`: capture
+  # `:enabled` only when the caller set it explicitly, and evaluate the runtime
+  # default lazily in `call/2`.
   @impl Plug
-  def init(opts), do: Keyword.put_new_lazy(opts, :enabled, &PhoenixAssets.dev?/0)
+  def init(opts), do: opts
 
   @impl Plug
-  def call(%Plug.Conn{path_info: ["__assets", "status"]} = conn, opts) do
-    if Keyword.get(opts, :enabled, false) do
+  def call(%Plug.Conn{method: "GET", path_info: ["__assets", "status"]} = conn, opts) do
+    if Keyword.get_lazy(opts, :enabled, &PhoenixAssets.dev?/0) do
       conn
       |> put_resp_content_type("application/json")
       |> send_resp(200, JSON.encode!(status()))

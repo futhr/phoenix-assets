@@ -20,6 +20,14 @@ defmodule PhoenixAssets.PubSubTest do
     topic(:presence, pattern: "presence:{room}", events: [])
   end
 
+  # A hand-rolled topics module (not via the DSL, which rejects a repeated
+  # placeholder up front) to exercise the generator's own de-duplication of
+  # placeholder params in placeholder_params/1.
+  defmodule RepeatedParamTopics do
+    @moduledoc false
+    def __phoenix_assets_topics__, do: [{:room, [pattern: "room:{id}:{id}", events: []]}]
+  end
+
   defp render do
     ctx = Context.new(Config.load!(otp_app: :my_app), env: :test)
     {:ok, state} = PubSub.init([topics: Topics], ctx)
@@ -50,5 +58,16 @@ defmodule PhoenixAssets.PubSubTest do
     refute out =~ "$phoenix/types"
     assert out =~ "export type PubSubEvent = never"
     assert out =~ "presence: (room: string | number) => `presence:${room}`"
+  end
+
+  test "a pattern that repeats a placeholder collapses to a single builder arg" do
+    ctx = Context.new(Config.load!(otp_app: :my_app), env: :test)
+    {:ok, state} = PubSub.init([topics: RepeatedParamTopics], ctx)
+    out = IO.iodata_to_binary(hd(PubSub.generated_files(ctx, state)).contents)
+
+    # The `id` argument appears once, but both `{id}` positions in the pattern
+    # are still interpolated in the returned template literal.
+    assert out =~ "room: (id: string | number) => `room:${id}:${id}`"
+    refute out =~ "id: string | number, id: string | number"
   end
 end

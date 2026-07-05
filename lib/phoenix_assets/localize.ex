@@ -42,6 +42,7 @@ defmodule PhoenixAssets.Localize do
   def generated_files(ctx, state) do
     locales = locales(state)
     default = default_locale(state, locales)
+    validate_default!(state, locales, default)
 
     [
       GeneratedFile.new(
@@ -70,7 +71,29 @@ defmodule PhoenixAssets.Localize do
   end
 
   defp default_locale(state, locales) do
-    Map.get(state, :default_locale) || backend_default(state) || List.first(locales) || "en"
+    resolved = Map.get(state, :default_locale) || backend_default(state) || List.first(locales)
+    resolved && to_string(resolved)
+  end
+
+  # An explicit empty `locales:` list is a misconfiguration: it would emit a
+  # `Locale = never` union, so refuse it and point at the fix. An *empty scan*
+  # of `priv/gettext` is not an error -- a project that has not populated its
+  # gettext tree yet still gets a valid (empty) contract instead of a crash.
+  defp validate_default!(state, [], _) do
+    if Map.has_key?(state, :locales) do
+      raise ArgumentError,
+            "phoenix_assets localize: no locales found; declare `locales:` or populate " <>
+              "#{@gettext_dir}"
+    end
+  end
+
+  defp validate_default!(_, locales, default) do
+    unless default in locales do
+      raise ArgumentError,
+            "phoenix_assets localize: default locale #{inspect(default)} is not one of " <>
+              "#{inspect(locales)}; set `default_locale:` (or the Gettext backend default) " <>
+              "to a declared locale"
+    end
   end
 
   # A Gettext backend knows its own default; preferring it keeps the generated
@@ -87,8 +110,7 @@ defmodule PhoenixAssets.Localize do
     if File.dir?(dir) do
       dir
       |> File.ls!()
-      |> Enum.reject(&String.starts_with?(&1, "."))
-      |> Enum.filter(&File.dir?(Path.join(dir, &1)))
+      |> Enum.filter(&(not String.starts_with?(&1, ".") and File.dir?(Path.join(dir, &1))))
     else
       []
     end
