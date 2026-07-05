@@ -11,9 +11,10 @@ export function resolveLocale<L extends string>(
 ): L {
   if (!requested) return fallback
 
-  const exact = supported.find((locale) => locale === requested)
+  const normalized = requested.toLowerCase()
+  const exact = supported.find((locale) => locale.toLowerCase() === normalized)
   if (exact) return exact
 
-  const base = requested.split("-")[0]
-  return supported.find((locale) => locale === base) ?? fallback
+  const base = normalized.split(/[-_]/)[0]
+  return supported.find((locale) => locale.toLowerCase() === base) ?? fallback
 }

@@ -37,7 +37,7 @@
     "@electric-sql/client": "^1.0.0",
     "@tanstack/electric-db-collection": "^0.3.0",
     "@tanstack/svelte-db": "^0.1.0",
-    "svelte": "^5.0.0"
+    "svelte": "^5.7.0"
   },
   "peerDependenciesMeta": {
     "@tanstack/electric-db-collection": {

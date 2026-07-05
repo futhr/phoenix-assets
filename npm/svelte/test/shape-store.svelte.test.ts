@@ -8,7 +8,9 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock("@electric-sql/client", () => ({
-  ShapeStream: vi.fn(),
+  ShapeStream: vi.fn(function () {
+    return { unsubscribeAll() {} }
+  }),
   Shape: class {
     get currentRows() {
       return h.rows

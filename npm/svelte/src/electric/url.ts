@@ -61,7 +61,11 @@ export function createShapeUrl(path: string, params: Record<string, string | num
 
   const url = path.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (_match, key: string) => {
     used.add(key)
-    return encodeURIComponent(String(params[key] ?? ""))
+    const value = params[key]
+    if (value === undefined) {
+      throw new Error(`createShapeUrl: missing path param ":${key}" for "${path}"`)
+    }
+    return encodeURIComponent(String(value))
   })
 
   const query = Object.entries(params).filter(([key]) => !used.has(key))

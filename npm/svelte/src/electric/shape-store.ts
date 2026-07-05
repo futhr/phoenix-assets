@@ -28,9 +28,11 @@ export function createShapeStore<T extends Row<unknown>>(
 
   const subscribe = createSubscriber((update) => {
     const resolved = typeof path === "function" ? path() : path
+    const controller = new AbortController()
     const stream = new ShapeStream<T>({
       url: createShapeUrl(resolved, params),
       headers: authHeaders(config),
+      signal: controller.signal,
     })
 
     shape = new Shape(stream)
@@ -38,6 +40,8 @@ export function createShapeStore<T extends Row<unknown>>(
 
     return () => {
       unsubscribe()
+      controller.abort()
+      stream.unsubscribeAll()
       shape = undefined
     }
   })

@@ -15,6 +15,24 @@ describe("createShapeUrl", () => {
   it("leaves a plain path unchanged", () => {
     expect(createShapeUrl("/shapes/posts")).toBe("/shapes/posts")
   })
+
+  it("substitutes every path param and appends leftovers as query", () => {
+    expect(createShapeUrl("/orgs/:org/users/:id", { org: "acme", id: 7, limit: 5 })).toBe(
+      "/orgs/acme/users/7?limit=5",
+    )
+  })
+
+  it("throws a clear error naming the missing param and the path", () => {
+    expect(() => createShapeUrl("/shapes/users/:id/posts", {})).toThrowError(
+      'createShapeUrl: missing path param ":id" for "/shapes/users/:id/posts"',
+    )
+  })
+
+  it("throws when only some of several path params are provided", () => {
+    expect(() => createShapeUrl("/orgs/:org/users/:id", { org: "acme" })).toThrowError(
+      /missing path param ":id"/,
+    )
+  })
 })
 
 describe("getAuthToken", () => {

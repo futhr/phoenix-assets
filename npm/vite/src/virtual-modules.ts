@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import type { Plugin } from "vite"
-import { GENERATED, RESOLVED_PREFIX, STUBS } from "./generated"
+import { GENERATED, RESOLVED_PREFIX } from "./generated"
 import { resolveOptions } from "./options"
 import type { PhoenixAssetsOptions, ResolvedOptions } from "./types"
 
@@ -28,17 +28,17 @@ export function virtualModulesPlugin(opts: PhoenixAssetsOptions): Plugin {
     load(id) {
       if (!id.startsWith(RESOLVED_PREFIX)) return null
       const name = id.slice(RESOLVED_PREFIX.length)
-      const relative = GENERATED[name]
-      if (!relative) return null
+      const entry = GENERATED[name as keyof typeof GENERATED]
+      if (!entry) return null
 
-      const file = path.resolve(options.root, options.generatedDir, relative)
+      const file = path.resolve(options.root, options.generatedDir, entry.file)
       this.addWatchFile(file)
 
       if (!fs.existsSync(file)) {
         this.warn(
           `${options.virtualPrefix}/${name} has not been generated yet — run \`mix phoenix_assets.gen\``,
         )
-        return STUBS[name] ?? "export {}\n"
+        return entry.stub
       }
 
       return `export * from ${JSON.stringify(file)}\n`

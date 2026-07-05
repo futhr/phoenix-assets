@@ -1,5 +1,7 @@
 export interface PhoenixAssetsOptions {
-  /** "app" (default), "storybook", or "test" — adjusts which behaviours are active. */
+  /** "app" (default), "storybook", or "test". Only "app" enables the dev HMR
+   *  bridge and the build-time graph emitter; other modes keep just the virtual
+   *  modules and PO loader active. */
   mode?: "app" | "storybook" | "test"
   /** Directory (relative to the Vite root) where Elixir writes generated TS contracts. */
   generatedDir?: string

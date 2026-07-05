@@ -35,4 +35,41 @@ describe("parsePo", () => {
     const po = ['msgid "t"', 'msgstr "a\\tb"'].join("\n")
     expect(parsePo(po).t).toBe("a\tb")
   })
+
+  it("decodes an escaped backslash (\\\\n) to a literal backslash + n, not a newline", () => {
+    // Source bytes: msgstr "a\\nb"  (backslash, backslash, n)
+    const po = ['msgid "k"', 'msgstr "a\\\\nb"'].join("\n")
+    // The leading `\\` collapses to one backslash; the `n` stays a literal `n`.
+    expect(parsePo(po).k).toBe("a\\nb")
+    expect(parsePo(po).k).not.toContain("\n")
+  })
+
+  it("decodes a real \\n escape to a newline", () => {
+    // Source bytes: msgstr "a\nb"  (backslash, n)
+    const po = ['msgid "k"', 'msgstr "a\\nb"'].join("\n")
+    expect(parsePo(po).k).toBe("a\nb")
+  })
+
+  it("skips a #, fuzzy entry but keeps the following reviewed one", () => {
+    const po = ["#, fuzzy", 'msgid "fz"', 'msgstr "Fuzzy"', "", 'msgid "ok"', 'msgstr "Okay"'].join(
+      "\n",
+    )
+
+    const messages = parsePo(po)
+
+    expect(messages.fz).toBeUndefined()
+    // `fuzzy` must not leak onto the next entry.
+    expect(messages.ok).toBe("Okay")
+  })
+
+  it("captures msgstr[0] for a plural entry and ignores later plural forms", () => {
+    const po = [
+      'msgid "cat"',
+      'msgid_plural "cats"',
+      'msgstr[0] "Katze"',
+      'msgstr[1] "Katzen"',
+    ].join("\n")
+
+    expect(parsePo(po).cat).toBe("Katze")
+  })
 })

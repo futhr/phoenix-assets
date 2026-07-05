@@ -15,7 +15,7 @@ export function resolveOptions(
     gettextDir: opts.gettextDir ?? "../priv/gettext",
     graphOut: opts.graphOut ?? "../priv/phoenix_assets/graph.json",
     emitGraph: opts.emitGraph ?? false,
-    devClient: opts.devClient ?? config.command === "serve",
+    devClient: opts.devClient ?? (mode === "app" && config.command === "serve"),
     virtualPrefix: opts.virtualPrefix ?? "$phoenix",
   }
 }

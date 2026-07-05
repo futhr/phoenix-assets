@@ -13,15 +13,19 @@ import type { PhoenixAssetsOptions, ResolvedOptions } from "./types"
  */
 export function graphEmitterPlugin(opts: PhoenixAssetsOptions): Plugin {
   let options: ResolvedOptions
+  let isSsr = false
 
   return {
     name: "phoenix-assets:graph-emitter",
     apply: "build",
     configResolved(config) {
       options = resolveOptions(opts, config)
+      isSsr = Boolean(config.build?.ssr)
     },
     writeBundle(_outputOptions, bundle) {
-      if (!options.emitGraph) return
+      // writeBundle fires once per output; skip the SSR pass so it never clobbers
+      // the client graph, and skip non-app modes (storybook/test).
+      if (!options.emitGraph || isSsr || options.mode !== "app") return
 
       const entries: Record<string, unknown> = {}
       for (const [fileName, chunk] of Object.entries(bundle)) {

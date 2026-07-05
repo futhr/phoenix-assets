@@ -8,7 +8,7 @@ export default defineConfig({
   sourcemap: true,
   external: [
     "svelte",
-    "svelte/store",
+    "svelte/reactivity",
     "@electric-sql/client",
     "@tanstack/svelte-db",
     "@tanstack/electric-db-collection",

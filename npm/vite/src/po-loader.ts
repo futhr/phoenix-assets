@@ -10,21 +10,29 @@ export function poLoaderPlugin(): Plugin {
     name: "phoenix-assets:po-loader",
     enforce: "pre",
     transform(code, id) {
-      if (!id.endsWith(".po")) return null
+      const [file] = id.split("?")
+      if (!file?.endsWith(".po")) return null
       return { code: `export const messages = ${JSON.stringify(parsePo(code))}`, map: null }
     },
   }
 }
 
-/** Parses a gettext PO document into a `{ msgid: msgstr }` map, omitting empty entries. */
+/**
+ * Parses a gettext PO document into a `{ msgid: msgstr }` map, omitting empty and
+ * `#, fuzzy` (unreviewed) entries. For plural entries only `msgstr[0]` is kept.
+ * Note: `msgctxt` is not tracked, so context-disambiguated entries collapse onto
+ * their bare `msgid`.
+ */
 export function parsePo(content: string): Record<string, string> {
   const messages: Record<string, string> = {}
   let id: string | null = null
   let str: string | null = null
   let mode: "id" | "str" | null = null
+  let fuzzy = false
+  let nextFuzzy = false
 
   const flush = () => {
-    if (id && str) messages[id] = str
+    if (id && str && !fuzzy) messages[id] = str
     id = null
     str = null
   }
@@ -32,10 +40,19 @@ export function parsePo(content: string): Record<string, string> {
   for (const raw of content.split("\n")) {
     const line = raw.trim()
 
-    if (line.startsWith("msgid ")) {
+    if (line.startsWith("#")) {
+      if (line.startsWith("#,") && /\bfuzzy\b/.test(line)) nextFuzzy = true
+    } else if (line.startsWith("msgid ")) {
       flush()
+      fuzzy = nextFuzzy
+      nextFuzzy = false
       id = unquote(line.slice(6))
       mode = "id"
+    } else if (line.startsWith("msgstr[0]")) {
+      str = unquote(line.slice(line.indexOf("]") + 1).trim())
+      mode = "str"
+    } else if (line.startsWith("msgstr[")) {
+      mode = null
     } else if (line.startsWith("msgstr ")) {
       str = unquote(line.slice(7))
       mode = "str"
@@ -57,9 +74,5 @@ export function parsePo(content: string): Record<string, string> {
 function unquote(value: string): string {
   const match = value.match(/^"([\s\S]*)"$/)
   if (!match) return value
-  return (match[1] ?? "")
-    .replace(/\\n/g, "\n")
-    .replace(/\\t/g, "\t")
-    .replace(/\\"/g, '"')
-    .replace(/\\\\/g, "\\")
+  return (match[1] ?? "").replace(/\\(.)/g, (_, c) => (c === "n" ? "\n" : c === "t" ? "\t" : c))
 }
