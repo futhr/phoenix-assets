@@ -4,7 +4,9 @@
   parallel: true,
   tools: [
     ## --- Elixir ---
-    {:compiler, command: "mix compile --warnings-as-errors --force"},
+    {:compiler,
+     command: "mix compile --warnings-as-errors --force",
+     env: %{"ERL_COMPILER_OPTIONS" => "nowarn_deprecated_catch"}},
     {:formatter, command: "mix format --check-formatted"},
     {:credo, command: "mix credo --strict"},
     {:doctor, command: "mix doctor"},
@@ -14,7 +16,9 @@
     ## ExUnit with coverage: enforces minimum_coverage (coveralls.json) and
     ## writes cover/lcov.info for Codecov. Replaces the plain :ex_unit tool.
     {:ex_unit, false},
-    {:coveralls, command: "mix coveralls.lcov", env: %{"MIX_ENV" => "test"}},
+    {:coveralls,
+     command: "mix coveralls.lcov",
+     env: %{"ERL_COMPILER_OPTIONS" => "nowarn_deprecated_catch", "MIX_ENV" => "test"}},
 
     ## --- Frontend (pnpm): install, then lint / typecheck / test+coverage,
     ## dead-code detection (knip), and package-export correctness (publint + attw) ---
