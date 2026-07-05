@@ -1,7 +1,7 @@
 # Contributing
 
-Thanks for helping out. This repo is one Elixir package plus two npm packages
-(`npm/vite`, `npm/svelte`) in a pnpm workspace.
+Thanks for helping out. This repo is one Elixir package plus three npm packages
+(`npm/vite`, `npm/svelte`, `npm/lint`) in a pnpm workspace.
 
 ## Setup
 
@@ -10,8 +10,9 @@ mix deps.get
 pnpm install
 ```
 
-Toolchain is pinned in `.tool-versions` (Erlang/OTP 28, Elixir 1.19); you'll also
-need Node 22 + pnpm. The Elixir requirement for *consumers* is `~> 1.16`.
+The dev toolchain is pinned in `.tool-versions` (Erlang/OTP 28, Elixir 1.19,
+Node 24); you'll also need pnpm. The Elixir requirement for *consumers* is the
+`mix.exs` floor, `~> 1.18`.
 
 ## The quality gate
 

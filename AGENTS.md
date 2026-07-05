@@ -5,10 +5,11 @@ library in a host app, see [`usage-rules.md`](usage-rules.md).
 
 ## What this repo is
 
-One Elixir Hex package (`:phoenix_assets`, at the repo root) plus two npm packages
-in a pnpm workspace (`npm/vite`, `npm/svelte`). The Elixir side is a plugin/preset
-engine + generators + dev supervision; the npm side is the Vite plugin and Svelte
-runtime helpers. Everything lives under the `PhoenixAssets.*` namespace.
+One Elixir Hex package (`:phoenix_assets`, at the repo root) plus three npm packages
+in a pnpm workspace (`npm/vite`, `npm/svelte`, `npm/lint`). The Elixir side is a
+plugin/preset engine + generators + dev supervision; the npm side is the Vite
+plugin, the Svelte runtime helpers, and the shared frontend lint tooling.
+Everything lives under the `PhoenixAssets.*` namespace.
 
 ## Setup
 
@@ -17,8 +18,9 @@ mix deps.get
 pnpm install
 ```
 
-Toolchain is pinned in `.tool-versions` (Erlang/OTP 28, Elixir 1.19); Node 22 +
-pnpm for the frontend.
+The dev toolchain is pinned in `.tool-versions` (Erlang/OTP 28, Elixir 1.19,
+Node 24); pnpm for the frontend. Consumers only need the `mix.exs` floor —
+Elixir `~> 1.18`.
 
 ## The one command that matters
 

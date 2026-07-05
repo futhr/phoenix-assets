@@ -5,10 +5,18 @@ on:
     branches: [main]
   pull_request:
 
+# Supersede an in-flight run when a new commit lands on the same ref, so a
+# quick force-push does not queue redundant CI. `main` pushes keep a stable
+# group key too, but branch protection serialises them anyway.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: quality (elixir ${{ matrix.elixir }} / otp ${{ matrix.otp }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -78,15 +86,36 @@ jobs:
         run: pnpm audit --prod
         continue-on-error: true
 
-      - name: Upload coverage to Codecov
+      # One upload per language, so each lcov file is tagged with only its own
+      # flag. A single combined upload with `flags: elixir,vite,svelte` tags
+      # every file with all three flags, cross-contaminating the per-flag
+      # coverage on Codecov.
+      - name: Upload Elixir coverage to Codecov
         if: matrix.check == 'full'
         uses: codecov/codecov-action@v6
         with:
-          files: >-
-            cover/lcov.info,
-            npm/vite/coverage/lcov.info,
-            npm/svelte/coverage/lcov.info
-          flags: elixir,vite,svelte
+          files: cover/lcov.info
+          flags: elixir
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload Vite coverage to Codecov
+        if: matrix.check == 'full'
+        uses: codecov/codecov-action@v6
+        with:
+          files: npm/vite/coverage/lcov.info
+          flags: vite
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload Svelte coverage to Codecov
+        if: matrix.check == 'full'
+        uses: codecov/codecov-action@v6
+        with:
+          files: npm/svelte/coverage/lcov.info
+          flags: svelte
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -107,10 +107,10 @@ pnpm add -D @phoenix-assets/lint @biomejs/biome tailwindcss svelte
   Svelte-aware rules (a `**/*.svelte` override disabling `useConst`,
   `useImportType`, `noUnusedVariables`, `noUnusedImports` — Biome false-positives
   on those in Svelte).
-- **Tailwind v4 hygiene:** add a `lint:tw` script running
-  `node --experimental-strip-types node_modules/@phoenix-assets/lint/lint-tailwind.ts`
-  — it flags arbitrary values with a standard equivalent (`w-[180px]` → `w-45`).
-  Wire both into CI.
+- **Tailwind v4 hygiene:** add a `lint:tw` script running the compiled
+  `phoenix-assets-lint-tailwind` binary the package ships (or invoke it ad hoc with
+  `pnpm exec phoenix-assets-lint-tailwind`) — it flags arbitrary values with a
+  standard equivalent (`w-[180px]` → `w-45`). Wire both into CI.
 
 ## When you genuinely need to deviate
 

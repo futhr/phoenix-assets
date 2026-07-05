@@ -50,7 +50,8 @@ Phoenix knows things a PHP or Ruby app never will at build time:
   link into a single validated graph (`graph.json`, or a zero-cost compiled
   module) the app can query and the doctor can validate.
 - **Supervised, not unsupervised.** Vite and Storybook run as real OTP children
-  (MuonTrap, with OS process-group cleanup) with status/logs/restart
+  (MuonTrap kills the OS process when the BEAM exits; on Linux, cgroups tear down
+  the whole process tree, on macOS the immediate child) with status/logs/restart
   introspection — not a detached `npm run dev` that silently dies.
 - **Deterministic, content-gated generation.** Generators emit byte-identical
   output for identical inputs; a regeneration that changes nothing writes nothing
@@ -108,9 +109,10 @@ runtime helpers, and shared frontend lint tooling.
 ## Requirements
 
 - Elixir 1.18+ and Phoenix 1.8+.
-- Development supervision (Vite and Storybook as OS children with process-group
-  teardown) requires a POSIX platform — macOS, Linux, or WSL2 — via MuonTrap.
-  Production manifest serving and contract generation are platform-independent.
+- Development supervision (Vite and Storybook as OS children, torn down with the
+  BEAM — the whole process tree via Linux cgroups, the immediate child on macOS)
+  requires a POSIX platform — macOS, Linux, or WSL2 — via MuonTrap. Production
+  manifest serving and contract generation are platform-independent.
 
 ---
 
