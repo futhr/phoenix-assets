@@ -8,7 +8,7 @@ packages:
 # range automatically.
 catalog:
   "@electric-sql/client": ^1.5.23
-  "@sveltejs/vite-plugin-svelte": ^7.1.2
+  "@sveltejs/vite-plugin-svelte": ^7.2.0
   "@tanstack/electric-db-collection": ^0.3.12
   "@tanstack/svelte-db": ^0.1.91
   "@types/node": ^26.1.0
