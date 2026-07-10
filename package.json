@@ -16,7 +16,7 @@
     "audit": "pnpm audit --prod"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.4",
+    "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.5.2",
     "knip": "^6.24.0",
     "publint": "^0.3.21",
