@@ -19,7 +19,7 @@ catalog:
   tsup: ^8.5.1
   # tsup 8.5.1's declaration bundler uses compiler APIs removed in TypeScript 7.
   # Keep the newest compatible major until tsup supports TS 7.
-  typescript: ^6.0.3
+  typescript: ^7.0.2
   vite: ^8.1.4
   vitest: ^4.1.10
 
