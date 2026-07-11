@@ -18,11 +18,11 @@ defmodule PhoenixAssets.PubSub.Topics do
   `pattern:`, an unknown option, or a malformed event payload is a compile
   error rather than a crash mid-generation.
 
-  ## Why
+  > #### `use PhoenixAssets.PubSub.Topics` {: .info}
+  >
+  > Using this module imports `topic/2` and defines
+  > `__phoenix_assets_topics__/0` with the validated declarations.
 
-  Topic strings and event shapes are otherwise scattered, stringly-typed, and
-  easy to mistype. Declaring them once lets `PhoenixAssets.PubSub` generate
-  typed topic builders and a discriminated `PubSubEvent` union.
   """
 
   @topic_schema NimbleOptions.new!(
@@ -40,6 +40,22 @@ defmodule PhoenixAssets.PubSub.Topics do
 
   @placeholder ~r/\{(\w+)\}/
   @js_identifier ~r/^[A-Za-z_$][\w$]*$/
+  @primitive_types [
+    :string,
+    :binary,
+    :id,
+    :uuid,
+    :date,
+    :datetime,
+    :integer,
+    :float,
+    :number,
+    :decimal,
+    :boolean,
+    :map
+  ]
+
+  alias PhoenixAssets.Generators.TS
 
   @doc false
   defmacro __using__(_) do
@@ -101,9 +117,13 @@ defmodule PhoenixAssets.PubSub.Topics do
             "or a map of field => primitive atom, got: #{inspect(payload)}"
         )
       end
+
+      if not is_map(payload), do: TS.type_name(payload)
     end)
 
     opts
+  rescue
+    error in ArgumentError -> compile_error!(env, name, Exception.message(error))
   end
 
   # The pattern is spliced into a TS template literal, so a backtick or a `${`
@@ -132,7 +152,7 @@ defmodule PhoenixAssets.PubSub.Topics do
        do: true
 
   defp valid_payload?(payload) when is_map(payload) do
-    Enum.all?(payload, fn {field, type} -> is_atom(field) and is_atom(type) end)
+    Enum.all?(payload, fn {field, type} -> is_atom(field) and type in @primitive_types end)
   end
 
   defp valid_payload?(_), do: false

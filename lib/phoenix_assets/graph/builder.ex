@@ -8,11 +8,6 @@ defmodule PhoenixAssets.Graph.Builder do
   manifest's entry chunks. The result is a plain map ready to be encoded as
   `graph.json` (key ordering is applied by the canonical encoder at write time).
 
-  ## Why
-
-  Keeping assembly separate from I/O (`PhoenixAssets.Graph` owns reading/writing)
-  makes the graph shape easy to test in isolation: feed a context and an optional
-  manifest, get a deterministic map back.
   """
 
   require Logger
@@ -71,7 +66,16 @@ defmodule PhoenixAssets.Graph.Builder do
   defp group(entries, kind) do
     entries
     |> Enum.filter(&(&1.kind == kind))
-    |> Map.new(fn entry -> {entry.key, payload(entry)} end)
+    |> Enum.reduce(%{}, fn entry, grouped ->
+      case Map.fetch(grouped, entry.key) do
+        :error ->
+          Map.put(grouped, entry.key, payload(entry))
+
+        {:ok, _} ->
+          raise ArgumentError,
+                "phoenix_assets: duplicate asset graph #{kind} key #{inspect(entry.key)}"
+      end
+    end)
   end
 
   defp payload(%Entry{data: data, source: nil}), do: data

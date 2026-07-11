@@ -53,6 +53,7 @@ defmodule PhoenixAssets.LocalizeTest do
     out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
 
     assert out =~ ~s|export const locales = [] as const|
+    assert out =~ "export const defaultLocale: Locale | null = null"
   end
 
   test "ignores dot-directories when scanning gettext" do

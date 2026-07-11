@@ -1,6 +1,6 @@
 defmodule PhoenixAssets.Generated do
   @moduledoc """
-  The generated-contracts engine: writes plugin-contributed TypeScript to disk.
+  Writes plugin-contributed TypeScript contracts to disk.
 
   Walks the initialised plugins, collects every `PhoenixAssets.GeneratedFile`
   they contribute, and writes each one -- but only when its contents actually
@@ -18,13 +18,6 @@ defmodule PhoenixAssets.Generated do
   Generators must emit byte-identical output for identical inputs (stable
   ordering, no timestamps in the body). The engine relies on this: it is the
   contract that makes both the no-write fast path and the drift check meaningful.
-
-  ## Why
-
-  Hand-maintained frontend contracts drift silently from the backend. Generating
-  them from one source of truth -- and failing CI when the checked-in output is
-  stale -- turns "someone forgot to update the TS type" from a runtime bug into a
-  build error.
 
   ## See also
 
@@ -82,7 +75,14 @@ defmodule PhoenixAssets.Generated do
         |> filter_only(only)
         |> Enum.sort_by(& &1.path)
 
-      {:ok, files}
+      ensure_unique_paths(files)
+    end
+  end
+
+  defp ensure_unique_paths(files) do
+    case Enum.chunk_by(files, & &1.path) |> Enum.find(&(length(&1) > 1)) do
+      nil -> {:ok, files}
+      [%GeneratedFile{path: path} | _] -> {:error, {:duplicate_generated_file, path}}
     end
   end
 

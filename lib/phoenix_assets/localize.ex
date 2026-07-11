@@ -5,8 +5,8 @@ defmodule PhoenixAssets.Localize do
   Emits `locales.ts` -- the `Locale` union, the `locales` tuple, and
   `defaultLocale` -- from either an explicit `locales:` list or, by default, the
   subdirectories of `priv/gettext` (override the scan root with `gettext_dir:`
-  for umbrella or non-standard layouts). This subsumes the common bespoke
-  "scan gettext, write locales.json" build script.
+  for umbrella or non-standard layouts), replacing a separate script that scans
+  gettext directories and writes frontend locale data.
 
   `defaultLocale` resolves in order: the `default_locale:` option, the
   configured Gettext backend's default (`gettext_backend:` option or
@@ -15,10 +15,6 @@ defmodule PhoenixAssets.Localize do
   default is not the alphabetically-first locale -- with locales `de` and `en`,
   the bare fallback picks `de`.
 
-  ## Why
-
-  The set of locales lives in `priv/gettext`; duplicating it in a hand-written
-  frontend constant is exactly the kind of drift this library removes.
   """
 
   use PhoenixAssets.Plugin
@@ -121,8 +117,13 @@ defmodule PhoenixAssets.Localize do
       TS.header(),
       "\nexport const locales = #{JSON.encode!(locales)} as const\n",
       "export type Locale = (typeof locales)[number]\n",
-      "export const defaultLocale: Locale = #{JSON.encode!(default)}\n"
+      render_default_locale(default)
     ]
     |> IO.iodata_to_binary()
   end
+
+  defp render_default_locale(nil), do: "export const defaultLocale: Locale | null = null\n"
+
+  defp render_default_locale(default),
+    do: "export const defaultLocale: Locale = #{JSON.encode!(default)}\n"
 end

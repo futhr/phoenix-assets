@@ -23,6 +23,8 @@ defmodule PhoenixAssets.DevServerTest do
     for n <- 1..5, do: DevServer.log_line("line #{n}", :vite)
 
     assert DevServer.logs(:vite, limit: 2) == ["line 4", "line 5"]
+    assert DevServer.logs(:vite, limit: 0) == []
+    assert_raise ArgumentError, fn -> DevServer.logs(:vite, limit: -1) end
   end
 
   test "log_line/2 is a no-op when no server is running" do

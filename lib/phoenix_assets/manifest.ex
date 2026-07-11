@@ -16,11 +16,6 @@ defmodule PhoenixAssets.Manifest do
   all raise `KeyError` when the requested top-level `key` is absent; transitive
   imports missing from the manifest are skipped.
 
-  ## Why
-
-  Hashed filenames change every build, so HTML must not hard-code them. Reading
-  the manifest is how Phoenix emits correct `<script>`/`<link>` tags in
-  production without coupling to specific hashes.
   """
 
   alias PhoenixAssets.Telemetry
@@ -31,9 +26,12 @@ defmodule PhoenixAssets.Manifest do
   @spec load(Path.t()) :: {:ok, t()} | {:error, term()}
   def load(path) do
     with {:ok, raw} <- File.read(path),
-         {:ok, manifest} <- JSON.decode(raw) do
+         {:ok, manifest} when is_map(manifest) <- JSON.decode(raw) do
       Telemetry.execute([:manifest, :load], %{entries: map_size(manifest)}, %{path: path})
       {:ok, manifest}
+    else
+      {:ok, value} -> {:error, {:invalid_manifest, value}}
+      error -> error
     end
   end
 

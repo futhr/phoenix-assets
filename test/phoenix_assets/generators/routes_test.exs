@@ -20,6 +20,7 @@ defmodule PhoenixAssets.Generators.RoutesTest do
 
     get("/", Stub, :index)
     get("/api/health", Stub, :health)
+    get("/apix/not-an-api-route", Stub, :wrong_prefix)
     get("/api/classes/:new", Stub, :reserved_param)
     get("/api/files/*path", Stub, :file_download)
 
@@ -72,6 +73,7 @@ defmodule PhoenixAssets.Generators.RoutesTest do
 
     assert ts =~ ~s|health: () => "/api/health"|
     assert ts =~ ~s|publicPortfolios: () => "/shapes/portfolios"|
+    refute ts =~ "wrongPrefix"
   end
 
   test "renders path parameters with consistent camelCase argument and template names" do

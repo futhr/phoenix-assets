@@ -28,11 +28,6 @@ defmodule PhoenixAssets.Generators.Routes do
         publicArticles: () => "/shapes/articles",
       } as const
 
-  ## Why
-
-  Apps hand-build these URLs as string literals scattered across the client
-  (`createShapeUrl("/articles")`). Generating them from the router gives one
-  typed source that can't drift from the actual routes.
   """
 
   alias PhoenixAssets.{Context, GeneratedFile}
@@ -65,7 +60,14 @@ defmodule PhoenixAssets.Generators.Routes do
   end
 
   defp endpoint_route?(%{path: path}, prefixes) do
-    Enum.any?(prefixes, &String.starts_with?(path, &1))
+    Enum.any?(prefixes, &path_prefix?(path, &1))
+  end
+
+  defp path_prefix?(path, "/"), do: String.starts_with?(path, "/")
+
+  defp path_prefix?(path, prefix) do
+    prefix = String.trim_trailing(prefix, "/")
+    path == prefix or String.starts_with?(path, prefix <> "/")
   end
 
   defp entry(route) do

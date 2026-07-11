@@ -11,11 +11,6 @@ defmodule PhoenixAssets.Doctor do
   A check that raises is captured and reported as an error rather than crashing
   the run.
 
-  ## Why
-
-  "It compiled" is not "it will serve correctly in production." The doctor turns
-  the asset pipeline's invariants -- manifest present, contracts fresh, tooling
-  installed -- into explicit, enforceable checks.
   """
 
   alias PhoenixAssets.{Context, Engine, Generated, Manifest, Telemetry}
@@ -158,10 +153,18 @@ defmodule PhoenixAssets.Doctor do
   defp manifest_check(ctx) do
     path = Context.manifest_path(ctx)
 
-    if File.exists?(path) do
-      Check.ok("Vite manifest is present")
-    else
-      Check.error("Vite manifest missing at #{path}", "run the production asset build")
+    case Manifest.load(path) do
+      {:ok, _} ->
+        Check.ok("Vite manifest is present and valid")
+
+      {:error, :enoent} ->
+        Check.error("Vite manifest missing at #{path}", "run the production asset build")
+
+      {:error, reason} ->
+        Check.error(
+          "Vite manifest at #{path} is invalid (#{inspect(reason)})",
+          "rebuild the production assets"
+        )
     end
   end
 
@@ -203,9 +206,9 @@ defmodule PhoenixAssets.Doctor do
   defp budget_check(ctx, entry, max_kb) do
     with {:ok, manifest} <- Manifest.load(Context.manifest_path(ctx)),
          {:ok, total} <- entry_weight(ctx, manifest, entry) do
-      kb = div(total, 1024)
+      kb = div(total + 1023, 1024)
 
-      if kb <= max_kb do
+      if total <= max_kb * 1024 do
         Check.ok("bundle #{entry} is #{kb} KiB (budget #{max_kb} KiB)")
       else
         Check.error(

@@ -92,6 +92,14 @@ defmodule PhoenixAssets.ManifestTest do
     assert {:error, _} = Manifest.load(path)
   end
 
+  test "load/1 rejects valid JSON that is not a manifest object" do
+    path = Path.join(System.tmp_dir!(), "m_array_#{System.unique_integer([:positive])}.json")
+    File.write!(path, "[]")
+    on_exit(fn -> File.rm_rf!(path) end)
+
+    assert {:error, {:invalid_manifest, []}} = Manifest.load(path)
+  end
+
   test "css/2 de-duplicates a diamond import graph without looping" do
     diamond = %{
       "src/app.ts" => %{

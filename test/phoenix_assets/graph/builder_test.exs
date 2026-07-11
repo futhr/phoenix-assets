@@ -25,6 +25,15 @@ defmodule PhoenixAssets.Graph.BuilderTest do
     end
   end
 
+  defmodule DuplicatePlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def graph_entries(_, _) do
+      [Entry.new(kind: :route, key: "health", data: %{"path" => "/other"})]
+    end
+  end
+
   @manifest %{
     "src/app.ts" => %{
       "file" => "assets/app-AAA.js",
@@ -105,5 +114,13 @@ defmodule PhoenixAssets.Graph.BuilderTest do
     graph = Graph.build(ctx([{FakePlugin, []}]), manifest: @manifest)
 
     assert Map.keys(graph["entries"]) == ["src/app.ts"]
+  end
+
+  test "rejects duplicate graph keys instead of silently overwriting one" do
+    context = ctx([{FakePlugin, []}, {DuplicatePlugin, []}])
+
+    assert_raise ArgumentError, ~r/duplicate asset graph route key "health"/, fn ->
+      Graph.build(context, manifest: @manifest)
+    end
   end
 end

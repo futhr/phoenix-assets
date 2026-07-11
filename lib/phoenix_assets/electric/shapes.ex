@@ -17,8 +17,7 @@ defmodule PhoenixAssets.Electric.Shapes do
 
   Declarations are validated at compile time: a missing `route:`/`type:`, an
   unknown option, a glob (`*`) segment, or a `params:` list that does not match
-  the route's `:placeholders` is a compile error -- the earliest possible
-  feedback for a drifted declaration. `params:` is optional documentation of
+  the route's `:placeholders` is a compile error. `params:` is optional documentation of
   the route's placeholders; the generated factory always derives its parameters
   from the route itself.
 
@@ -27,11 +26,11 @@ defmodule PhoenixAssets.Electric.Shapes do
   policies and tenancy already live. This DSL exists so the *client* contract
   can be generated from one place and validated against the router.
 
-  ## Why
+  > #### `use PhoenixAssets.Electric.Shapes` {: .info}
+  >
+  > Using this module imports `shape/2` and defines
+  > `__phoenix_assets_shapes__/0` with the validated declarations.
 
-  Hand-built `createShapeUrl("/articles")` strings and hand-written row types
-  drift from the backend. Declaring the shape once lets `PhoenixAssets.Electric`
-  generate a typed `ShapeStream` factory and the doctor confirm the route exists.
   """
 
   alias PhoenixAssets.Generators.TS
@@ -103,6 +102,7 @@ defmodule PhoenixAssets.Electric.Shapes do
       end
 
     route = opts[:route]
+    _ = TS.type_name(opts[:type])
 
     if route |> String.split("/") |> Enum.any?(&String.starts_with?(&1, "*")) do
       compile_error!(env, name, "glob segments (#{route}) are not supported in shape routes")
@@ -121,6 +121,8 @@ defmodule PhoenixAssets.Electric.Shapes do
     end
 
     opts
+  rescue
+    error in ArgumentError -> compile_error!(env, name, Exception.message(error))
   end
 
   @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()

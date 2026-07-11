@@ -2,17 +2,12 @@ defmodule PhoenixAssets.DevServer do
   @moduledoc """
   Tracks supervised dev processes and buffers their output.
 
-  Provides the operator surface over the dev processes the `DevSupervisor`
+  Provides runtime controls for the dev processes the `DevSupervisor`
   runs: query liveness (`status/1`), restart or stop a process, and read a
   recent slice of its output (`logs/2`). Each `MuonTrap.Daemon` is configured to
   route its output here via `log_line/2`, where it is kept in a small per-process
   ring buffer.
 
-  ## Why
-
-  When Vite or Storybook is supervised by Phoenix, developers (and Tidewave) need
-  the same conveniences a terminal gave them: is it up, restart it, show me the
-  last lines. This module is that surface.
   """
 
   use GenServer
@@ -75,7 +70,13 @@ defmodule PhoenixAssets.DevServer do
   """
   @spec logs(atom(), keyword()) :: [String.t()]
   def logs(id, opts \\ []) do
-    GenServer.call(__MODULE__, {:logs, id, Keyword.get(opts, :limit, 50)})
+    limit = Keyword.get(opts, :limit, 50)
+
+    unless is_integer(limit) and limit >= 0 do
+      raise ArgumentError, ":limit must be a non-negative integer, got: #{inspect(limit)}"
+    end
+
+    GenServer.call(__MODULE__, {:logs, id, limit})
   catch
     :exit, _ -> []
   end

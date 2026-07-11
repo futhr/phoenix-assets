@@ -20,13 +20,6 @@ defmodule PhoenixAssets.Generators.Env do
         publicApiBase: "/api",
       } as const
 
-  ## Why
-
-  Frontends need a few backend-provided constants (app name, public API base).
-  Funnelling them through an explicit allow-list -- resolved from config, which
-  the host's `runtime.exs` already populates from the OS environment once at boot
-  -- keeps generation deterministic and avoids leaking unrelated env vars into the
-  client bundle.
   """
 
   alias PhoenixAssets.{Context, GeneratedFile}
@@ -39,7 +32,8 @@ defmodule PhoenixAssets.Generators.Env do
       ctx.config.env_expose
       |> Keyword.get(:expose, [])
       |> Enum.sort_by(fn {key, _} -> key end)
-      |> Enum.uniq_by(fn {key, _} -> TS.camelize(key) end)
+
+    ensure_unique_keys!(exposed)
 
     GeneratedFile.new(
       path: Path.join(ctx.generated_dir, "env.ts"),
@@ -47,6 +41,22 @@ defmodule PhoenixAssets.Generators.Env do
       plugin: :env,
       kind: :env
     )
+  end
+
+  defp ensure_unique_keys!(exposed) do
+    exposed
+    |> Enum.group_by(fn {key, _} -> TS.camelize(key) end)
+    |> Enum.find(fn {_, values} -> length(values) > 1 end)
+    |> case do
+      nil ->
+        :ok
+
+      {generated, values} ->
+        keys = Enum.map(values, fn {key, _} -> key end)
+
+        raise ArgumentError,
+              "phoenix_assets: exposed env keys #{inspect(keys)} both generate #{inspect(generated)}"
+    end
   end
 
   defp render(exposed) do

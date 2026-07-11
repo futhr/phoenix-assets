@@ -27,11 +27,11 @@ defmodule PhoenixAssets.Types.Schema do
   `:calculations`) are checked at generation time against the resource, which
   raises a clear error for unknown names.
 
-  ## Why
+  > #### `use PhoenixAssets.Types.Schema` {: .info}
+  >
+  > Using this module imports `type/2` and defines
+  > `__phoenix_assets_types__/0` with the validated declarations.
 
-  Field exposure is a deliberate, auditable decision (sensitive fields must stay
-  out of wire rows). Declaring it explicitly -- rather than reflecting every
-  attribute -- keeps the generated types faithful to what the API actually serves.
   """
 
   @type_schema NimbleOptions.new!(
@@ -41,6 +41,8 @@ defmodule PhoenixAssets.Types.Schema do
                  expose: [type: {:list, :atom}, default: []],
                  calculations: [type: {:list, :atom}, default: []]
                )
+
+  alias PhoenixAssets.Generators.TS
 
   @doc false
   defmacro __using__(_) do
@@ -88,13 +90,17 @@ defmodule PhoenixAssets.Types.Schema do
   end
 
   defp validate!(env, name, opts) do
-    case NimbleOptions.validate(opts, @type_schema) do
-      {:ok, validated} ->
-        validated
+    validated =
+      case NimbleOptions.validate(opts, @type_schema) do
+        {:ok, validated} -> validated
+        {:error, error} -> compile_error!(env, name, Exception.message(error))
+      end
 
-      {:error, error} ->
-        compile_error!(env, name, Exception.message(error))
-    end
+    _ = TS.type_name(name)
+    validated
+  rescue
+    error in ArgumentError ->
+      compile_error!(env, name, Exception.message(error))
   end
 
   @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()

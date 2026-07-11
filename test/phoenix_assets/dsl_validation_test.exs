@@ -85,6 +85,18 @@ defmodule PhoenixAssets.DSLValidationTest do
         ~r/shape :articles.*declared more than once/s
       )
     end
+
+    test "an invalid generated row type name is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.BadShapeType do
+          use PhoenixAssets.Electric.Shapes
+          shape :articles, route: "/shapes/articles", type: "bad-type"
+        end
+        """,
+        ~r/invalid TypeScript type name/
+      )
+    end
   end
 
   describe "PubSub.Topics" do
@@ -106,6 +118,18 @@ defmodule PhoenixAssets.DSLValidationTest do
         defmodule DSLV.BadPayload do
           use PhoenixAssets.PubSub.Topics
           topic :device, pattern: "device:{id}", events: [updated: [:not, :valid]]
+        end
+        """,
+        ~r/event :updated payload must be a type name/
+      )
+    end
+
+    test "an unknown inline primitive is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.BadPrimitive do
+          use PhoenixAssets.PubSub.Topics
+          topic :device, pattern: "device", events: [updated: %{id: :wat}]
         end
         """,
         ~r/event :updated payload must be a type name/
@@ -213,6 +237,18 @@ defmodule PhoenixAssets.DSLValidationTest do
         end
         """,
         ~r/type "GhostRow".*declared more than once/s
+      )
+    end
+
+    test "an invalid TypeScript alias is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.BadTypeName do
+          use PhoenixAssets.Types.Schema
+          type "bad-name", resource: Some.Resource
+        end
+        """,
+        ~r/invalid TypeScript type name/
       )
     end
   end

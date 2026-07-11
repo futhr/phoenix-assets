@@ -30,6 +30,24 @@ defmodule PhoenixAssets.GeneratedTest do
     end
   end
 
+  defmodule DuplicatePlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def generated_files(_, _) do
+      [GeneratedFile.new(path: "same.ts", contents: "duplicate\n", plugin: :duplicate)]
+    end
+  end
+
+  defmodule SamePathPlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def generated_files(_, _) do
+      [GeneratedFile.new(path: "same.ts", contents: "first\n", plugin: :first)]
+    end
+  end
+
   setup do
     tmp = Path.join(System.tmp_dir!(), "pa_gen_#{System.unique_integer([:positive])}")
     File.mkdir_p!(tmp)
@@ -79,5 +97,11 @@ defmodule PhoenixAssets.GeneratedTest do
     ctx = Context.new(config, env: :test, plugins: [{EscapingPlugin, []}])
 
     assert_raise ArgumentError, ~r/escapes the asset root/, fn -> Generated.generate(ctx) end
+  end
+
+  test "generate/2 rejects two plugins that target the same path", %{tmp: tmp} do
+    config = Config.load!(otp_app: :my_app, asset_root: tmp)
+    ctx = Context.new(config, plugins: [{SamePathPlugin, []}, {DuplicatePlugin, []}])
+    assert {:error, {:duplicate_generated_file, "same.ts"}} = Generated.generate(ctx)
   end
 end

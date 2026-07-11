@@ -95,6 +95,17 @@ defmodule PhoenixAssets.DoctorTest do
     assert result_for(results, :manifest_present).status == :ok
   end
 
+  test "fails the manifest check when the file is not a JSON object" do
+    context = ctx()
+    path = Context.manifest_path(context)
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, "[]")
+
+    {status, results} = Doctor.run(context, production: true)
+    assert status == :error
+    assert result_for(results, :manifest_present).status == :error
+  end
+
   test "in :spa serve_mode the manifest check passes without a server-rendered manifest" do
     config = Config.load!(otp_app: :my_app, asset_root: System.tmp_dir!(), serve_mode: :spa)
     {_, results} = Doctor.run(Context.new(config, env: :test), production: true)

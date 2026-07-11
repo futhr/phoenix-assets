@@ -28,4 +28,10 @@ defmodule PhoenixAssets.Generators.EnvTest do
   test "emits an empty object when nothing is exposed" do
     assert generate([]) =~ "export const env = {"
   end
+
+  test "rejects keys that collide after camelizing" do
+    assert_raise ArgumentError, ~r/both generate "userId"/, fn ->
+      generate(user_id: 1, userId: 2)
+    end
+  end
 end

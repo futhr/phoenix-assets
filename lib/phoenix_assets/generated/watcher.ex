@@ -17,11 +17,6 @@ defmodule PhoenixAssets.Generated.Watcher do
   asset root, not under `lib/`), so it can never trigger itself -- there is no
   feedback loop.
 
-  ## Why
-
-  Editing an Ash resource or a router entry should update the TypeScript the
-  frontend sees, with the same immediacy as editing a Svelte file. This watcher
-  is the Phoenix-side half of that loop; Vite owns the frontend half.
   """
 
   use GenServer
@@ -132,7 +127,8 @@ defmodule PhoenixAssets.Generated.Watcher do
   @spec reload_code(Context.t()) :: :ok
   def reload_code(%Context{endpoint: endpoint}) when not is_nil(endpoint) do
     _ =
-      if Code.ensure_loaded?(Phoenix.CodeReloader) do
+      if Code.ensure_loaded?(Phoenix.CodeReloader) and Code.ensure_loaded?(endpoint) and
+           function_exported?(endpoint, :config, 1) do
         Phoenix.CodeReloader.reload(endpoint)
       end
 

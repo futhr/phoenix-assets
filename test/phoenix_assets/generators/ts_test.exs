@@ -24,6 +24,16 @@ defmodule PhoenixAssets.Generators.TSTest do
     assert TS.type_name(:portfolio_row) == "PortfolioRow"
   end
 
+  test "type names must be valid TypeScript identifiers" do
+    assert_raise ArgumentError, fn -> TS.type_name("bad-name") end
+    assert_raise ArgumentError, fn -> TS.type_name("class") end
+  end
+
+  test "url_template/1 escapes static template-literal syntax" do
+    assert TS.url_template(~S|/api/`${value}/:id|) ==
+             ~S|/api/\`\${value}/${encodeURIComponent(String(id))}|
+  end
+
   test "primitive/1 maps the remaining primitive kinds" do
     assert TS.primitive(:boolean) == "boolean"
     assert TS.primitive(:map) == "Record<string, unknown>"
