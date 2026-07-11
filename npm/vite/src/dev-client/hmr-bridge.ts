@@ -7,7 +7,7 @@ import type { PhoenixAssetsOptions, ResolvedOptions } from "../types"
 /**
  * Bridges Elixir-generated contract changes into Vite's HMR graph.
  *
- * Watches the generated directory (and the locales file) and, on change/add/unlink,
+ * Watches the generated directory and, on change/add/unlink,
  * invalidates only the `$phoenix/*` virtual module backed by the changed file plus
  * the on-disk module itself, then triggers a reload. Events are debounced because
  * `mix phoenix_assets.gen` rewrites several files back-to-back. The plugin never
@@ -26,8 +26,7 @@ export function devClientPlugin(opts: PhoenixAssetsOptions): Plugin {
       if (!options.devClient) return
 
       const generated = path.resolve(options.root, options.generatedDir)
-      const locales = path.resolve(options.root, options.localesDir, "locales.json")
-      const filter = createFilter([`${generated}/**`, locales])
+      const filter = createFilter(`${generated}/**`)
 
       // Backing file (absolute) -> virtual-module name, so a change touches one module.
       const fileToName = new Map<string, string>()

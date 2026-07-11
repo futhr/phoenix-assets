@@ -32,15 +32,25 @@ export function getAuthToken(config: AuthConfig = {}): string | undefined {
   const storageKey = merged.localStorageKey ?? DEFAULT_STORAGE_KEY
 
   if (typeof localStorage !== "undefined") {
-    const token = localStorage.getItem(storageKey)
-    if (token) return token
+    try {
+      const token = localStorage.getItem(storageKey)
+      if (token) return token
+    } catch {
+      // Storage can be disabled by the browser or blocked in a sandboxed frame.
+    }
   }
 
   if (merged.cookieName && typeof document !== "undefined") {
     const match = document.cookie.match(
       new RegExp(`(?:^|; )${escapeRegExp(merged.cookieName)}=([^;]*)`),
     )
-    if (match?.[1]) return decodeURIComponent(match[1])
+    if (match?.[1]) {
+      try {
+        return decodeURIComponent(match[1])
+      } catch {
+        return match[1]
+      }
+    }
   }
 
   return undefined

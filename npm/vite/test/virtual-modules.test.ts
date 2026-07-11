@@ -20,6 +20,7 @@ describe("virtual modules", () => {
     expect(resolveId.call({}, "$phoenix/routes")).toBe("\0phoenix-assets:routes")
     expect(resolveId.call({}, "$phoenix/types")).toBe("\0phoenix-assets:types")
     expect(resolveId.call({}, "$phoenix/localize")).toBe("\0phoenix-assets:localize")
+    expect(resolveId.call({}, "$phoenix/toString")).toBeNull()
     expect(resolveId.call({}, "react")).toBeNull()
   })
 

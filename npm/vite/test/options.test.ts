@@ -13,7 +13,6 @@ describe("resolveOptions", () => {
     expect(o.mode).toBe("app")
     expect(o.root).toBe("/app")
     expect(o.generatedDir).toBe("src/generated")
-    expect(o.localesDir).toBe("src/lib/generated")
     expect(o.gettextDir).toBe("../priv/gettext")
     expect(o.graphOut).toBe("../priv/phoenix_assets/graph.json")
     expect(o.emitGraph).toBe(false)
@@ -26,7 +25,6 @@ describe("resolveOptions", () => {
       {
         mode: "storybook",
         generatedDir: "gen",
-        localesDir: "loc",
         gettextDir: "gt",
         graphOut: "g.json",
         emitGraph: true,
@@ -38,7 +36,6 @@ describe("resolveOptions", () => {
 
     expect(o.mode).toBe("storybook")
     expect(o.generatedDir).toBe("gen")
-    expect(o.localesDir).toBe("loc")
     expect(o.gettextDir).toBe("gt")
     expect(o.graphOut).toBe("g.json")
     expect(o.emitGraph).toBe(true)

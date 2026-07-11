@@ -37,7 +37,14 @@ export function graphEmitterPlugin(opts: PhoenixAssetsOptions): Plugin {
       const graph = { version: 1, generatedBy: "@phoenix-assets/vite", entries }
       const out = path.resolve(options.root, options.graphOut)
       fs.mkdirSync(path.dirname(out), { recursive: true })
-      fs.writeFileSync(out, `${JSON.stringify(graph, null, 2)}\n`)
+      const temporary = `${out}.${process.pid}.tmp`
+
+      try {
+        fs.writeFileSync(temporary, `${JSON.stringify(graph, null, 2)}\n`)
+        fs.renameSync(temporary, out)
+      } finally {
+        fs.rmSync(temporary, { force: true })
+      }
     },
   }
 }

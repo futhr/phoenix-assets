@@ -23,7 +23,7 @@ export function virtualModulesPlugin(opts: PhoenixAssetsOptions): Plugin {
       const prefix = `${options.virtualPrefix}/`
       if (!id.startsWith(prefix)) return null
       const name = id.slice(prefix.length)
-      return name in GENERATED ? RESOLVED_PREFIX + name : null
+      return Object.hasOwn(GENERATED, name) ? RESOLVED_PREFIX + name : null
     },
     load(id) {
       if (!id.startsWith(RESOLVED_PREFIX)) return null

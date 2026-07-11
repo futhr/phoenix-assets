@@ -55,6 +55,24 @@ describe("getAuthToken", () => {
     vi.stubGlobal("document", { cookie: "myXtoken=wrong; my.token=right" })
     expect(getAuthToken({ cookieName: "my.token" })).toBe("right")
   })
+
+  it("falls back to cookies when browser storage is blocked", () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new DOMException("blocked", "SecurityError")
+      },
+    })
+    vi.stubGlobal("document", { cookie: "auth=from-cookie" })
+
+    expect(getAuthToken({ cookieName: "auth" })).toBe("from-cookie")
+  })
+
+  it("returns a malformed percent-encoded cookie without crashing", () => {
+    vi.stubGlobal("localStorage", { getItem: () => null })
+    vi.stubGlobal("document", { cookie: "auth=%invalid" })
+
+    expect(getAuthToken({ cookieName: "auth" })).toBe("%invalid")
+  })
 })
 
 describe("configureShapeAuth", () => {

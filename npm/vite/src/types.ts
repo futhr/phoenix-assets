@@ -5,8 +5,6 @@ export interface PhoenixAssetsOptions {
   mode?: "app" | "storybook" | "test"
   /** Directory (relative to the Vite root) where Elixir writes generated TS contracts. */
   generatedDir?: string
-  /** Directory holding the generated locales.json (re-exported by $phoenix/localize). */
-  localesDir?: string
   /** Gettext directory whose .po files the PO loader transforms. */
   gettextDir?: string
   /** Output path for the build-time asset graph (only when emitGraph is true). */
@@ -24,7 +22,6 @@ export interface ResolvedOptions {
   mode: "app" | "storybook" | "test"
   root: string
   generatedDir: string
-  localesDir: string
   gettextDir: string
   graphOut: string
   emitGraph: boolean
