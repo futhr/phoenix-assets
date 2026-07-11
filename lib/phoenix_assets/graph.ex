@@ -10,16 +10,10 @@ defmodule PhoenixAssets.Graph do
   and written to a JSON file consumed by tooling, the doctor, and the optional
   compiled lookup module.
 
-  ## Why
-
-  Without one graph, this knowledge is scattered across the router, the Svelte
-  routes, the shape declarations, and the manifest. Materialising it once makes
-  provenance and production validation possible.
-
   ## See also
 
     * `PhoenixAssets.Graph.Builder` -- assembles the graph map.
-    * `PhoenixAssets.Graph.Compiled` -- compiles it into a zero-cost lookup module.
+    * `PhoenixAssets.Graph.Compiled` -- embeds it in a lookup module.
   """
 
   alias PhoenixAssets.{CanonicalJSON, Context}

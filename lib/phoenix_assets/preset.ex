@@ -5,7 +5,7 @@ defmodule PhoenixAssets.Preset do
   A preset is a module that lists integrations; at compile time they are resolved
   into an ordered plugin graph and exposed via `plugins/0`. Because resolution
   happens at compile time, a dependency cycle or a missing hard dependency is a
-  *compile error* in the preset module -- the earliest possible feedback.
+  compile error in the preset module.
 
   ## Example
 
@@ -28,14 +28,11 @@ defmodule PhoenixAssets.Preset do
       iex> first
       PhoenixAssets.SvelteKit
 
-  ## Why
-
-  Listing integrations once, with their options, and resolving order
-  deterministically removes the per-project guesswork of "which plugin runs
-  first" and turns ordering bugs into compile errors instead of runtime surprises.
-  Integration modules referenced by a preset must already be compiled when the
-  preset compiles -- in practice they come from a dependency (the stack package),
-  so this is automatic.
+  > #### `use PhoenixAssets.Preset` {: .info}
+  >
+  > Using this module imports `integration/1` and `integration/2`. It defines
+  > `plugins/0` at the end of compilation after resolving dependency and
+  > ordering constraints.
 
   ## See also
 

@@ -24,11 +24,6 @@ defmodule PhoenixAssets.Types.Walker do
   naming the resource and the field, rather than emitting a silently wrong
   contract.
 
-  ## Why
-
-  Hand-maintaining dozens of row types against evolving Ash resources is the
-  single biggest source of frontend/backend drift. Deriving them -- faithfully,
-  with sensitive fields excluded by construction -- removes that whole class of bug.
   """
 
   alias Ash.Resource.Info

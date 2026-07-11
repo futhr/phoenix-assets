@@ -20,11 +20,6 @@ defmodule PhoenixAssets.DevSupervisor do
   Started only in development -- `PhoenixAssets.child_specs/1` includes it only
   when `PhoenixAssets.dev?/0` is true.
 
-  ## Why
-
-  "No shell script should be required to kill Vite." Making the dev processes
-  real supervised children means their lifecycle is the BEAM's lifecycle, with no
-  orphans and no leaked ports.
   """
 
   use Supervisor

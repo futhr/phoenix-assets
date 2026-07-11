@@ -15,10 +15,6 @@ defmodule PhoenixAssets.Storybook do
 
   Preset `integration/2` options provide the defaults; the `:dev` config wins.
 
-  ## Why
-
-  A component workshop that isn't part of the supervised dev lifecycle gets
-  forgotten, runs stale, or leaks its port. Making it a real child closes that gap.
   """
 
   use PhoenixAssets.Plugin

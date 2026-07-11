@@ -8,12 +8,6 @@ defmodule PhoenixAssets.Doctor.Check do
   hint. Checks flagged `production?: true` also run under
   `mix phoenix_assets.doctor --production`.
 
-  ## Why
-
-  Diagnostics live next to the plugins that understand them (the SvelteKit plugin
-  knows what a missing adapter looks like; the Electric plugin knows what a stale
-  shape declaration looks like), while the doctor provides a uniform runner and
-  report.
   """
 
   alias PhoenixAssets.Context

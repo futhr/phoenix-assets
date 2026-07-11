@@ -29,11 +29,6 @@ defmodule PhoenixAssets.Telemetry do
       plugin's `init/2` failed) or `%{reason: :manifest_unreadable, path:, error:}`
       (the Vite manifest existed but could not be read or parsed).
 
-  ## Why
-
-  The dev-intelligence layer and host observability stacks need a stable event
-  surface to attach to. Centralising the prefix and the span/execute wrappers
-  keeps event names consistent across the library.
   """
 
   @prefix :phoenix_assets

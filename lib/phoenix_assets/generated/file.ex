@@ -7,11 +7,6 @@ defmodule PhoenixAssets.GeneratedFile do
   rewriting only when the contents actually change so the Vite HMR graph is not
   triggered by no-op writes.
 
-  ## Why
-
-  Treating generated output as data (a struct) rather than a side effect lets the
-  engine diff it for staleness (`mix phoenix_assets.gen --check`), order it
-  deterministically, and attribute each file to the plugin that produced it.
   """
 
   @type kind ::

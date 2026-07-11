@@ -12,11 +12,6 @@ defmodule PhoenixAssets.Context do
   full `PhoenixAssets.Config` remains available as `:config` for less-common
   knobs.
 
-  ## Why
-
-  Passing one immutable struct (rather than the raw application environment) to
-  plugins keeps them pure and testable: a plugin's output is a function of its
-  context and its own state, with no hidden global reads.
   """
 
   alias PhoenixAssets.Config

@@ -9,11 +9,6 @@ defmodule PhoenixAssets.Engine do
   primitives so plugin initialisation happens exactly once per operation and in
   the resolved order.
 
-  ## Why
-
-  Centralising `init/2` and callback fan-out keeps every subsystem consistent:
-  each plugin's `init/2` runs once per operation, and "ask every plugin for its
-  X" lives in a single function rather than being reimplemented per subsystem.
   """
 
   alias PhoenixAssets.Context

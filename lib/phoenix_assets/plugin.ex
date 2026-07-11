@@ -27,6 +27,12 @@ defmodule PhoenixAssets.Plugin do
   hard ordering edge (the dependency must be present and ordered first);
   `after_plugin/1` declares a soft edge (honoured only if that plugin is present).
 
+  > #### `use PhoenixAssets.Plugin` {: .info}
+  >
+  > Using this module sets the `PhoenixAssets.Plugin` behaviour, imports
+  > `depends_on/1` and `after_plugin/1`, and supplies no-op implementations for
+  > callbacks the plugin does not define.
+
   ## Callbacks
 
   `c:init/2` runs once to build per-plugin state; the collection callbacks
@@ -34,13 +40,6 @@ defmodule PhoenixAssets.Plugin do
   `c:graph_entries/2`, `c:doctor_checks/2`) each answer "what does this plugin
   contribute?" for one kind of declaration. `PhoenixAssets.Engine` initialises
   plugins and fans each callback out across them in resolved order.
-
-  ## Why
-
-  Many host apps repeat the same integration glue (supervise Vite, generate
-  contracts, link Storybook). A narrow, explicit plugin contract lets that glue
-  be written once and composed deterministically via `PhoenixAssets.Preset`,
-  rather than copied per project.
 
   ## See also
 

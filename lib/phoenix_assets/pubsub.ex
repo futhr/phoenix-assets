@@ -8,11 +8,6 @@ defmodule PhoenixAssets.PubSub do
   over every topic/event pair, with payloads typed from `$phoenix/types` or from
   inline field maps.
 
-  ## Why
-
-  Topic strings and event payloads are the seam between backend broadcasts and
-  frontend handlers. Generating them gives the client exhaustive, typed handling
-  (`switch` over `PubSubEvent`) instead of stringly-typed guesswork.
   """
 
   use PhoenixAssets.Plugin

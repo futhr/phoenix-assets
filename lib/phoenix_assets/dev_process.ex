@@ -10,11 +10,6 @@ defmodule PhoenixAssets.DevProcess do
   child-spec construction (`to_child_spec/2`) lives alongside the dev
   supervisor.
 
-  ## Why
-
-  Describing a dev process as data keeps the plugin layer free of supervision
-  concerns: a plugin says *what* to run; the dev supervisor decides *how* to run
-  and tear it down.
   """
 
   @type t :: %__MODULE__{

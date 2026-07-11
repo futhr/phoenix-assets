@@ -8,11 +8,6 @@ defmodule PhoenixAssets.SvelteKit do
   records which `+page.svelte` files exist so the graph can link them to Phoenix
   routes, shapes, and topics.
 
-  ## Why
-
-  Vite is the one dev process every Svelte app runs; supervising it (rather than
-  leaving it to a shell watcher) is the baseline this plugin provides, plus the
-  route/env contracts the frontend imports.
   """
 
   use PhoenixAssets.Plugin

@@ -1,6 +1,6 @@
 defmodule PhoenixAssets.Graph.Compiled do
   @moduledoc """
-  Compiles the asset graph into a module for zero-cost runtime lookups.
+  Embeds the asset graph in a module for in-memory runtime lookups.
 
   `use PhoenixAssets.Graph.Compiled, graph: path` reads `graph.json` at *compile
   time*, embeds it, and defines `graph/0`, `entry!/1`, `page!/1`, and `route!/1`.
@@ -16,11 +16,12 @@ defmodule PhoenixAssets.Graph.Compiled do
 
       MyAppWeb.Generated.Assets.route!("device_show")
 
-  ## Why
+  > #### `use PhoenixAssets.Graph.Compiled` {: .info}
+  >
+  > Using this module reads the configured graph file at compile time, registers
+  > it as an external resource, and defines `graph/0`, `entry!/1`, `page!/1`,
+  > and `route!/1`.
 
-  Reading and decoding JSON on every lookup is wasteful on hot paths. Compiling
-  the graph into pattern data trades a recompile-on-change for allocation-free
-  lookups at runtime.
   """
 
   @doc false

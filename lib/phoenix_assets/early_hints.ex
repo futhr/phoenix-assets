@@ -2,9 +2,8 @@ defmodule PhoenixAssets.EarlyHints do
   @moduledoc """
   An opt-in plug that sends HTTP 103 Early Hints for a Vite entry's assets.
 
-  Browsers start fetching the entry's stylesheets and module chunks while
-  Phoenix is still rendering the response -- the manifest already knows the
-  exact link set, so the hints cost one lookup. Mount it in the pipeline that
+  Early Hints let browsers start fetching the entry's stylesheets and module
+  chunks while Phoenix is still rendering the response. Mount it in the pipeline that
   renders the HTML shell:
 
       pipeline :browser do
@@ -17,11 +16,6 @@ defmodule PhoenixAssets.EarlyHints do
   supports it on HTTP/1 and HTTP/2). In development and on a missing manifest
   the connection passes through untouched.
 
-  ## Why
-
-  Early Hints is the standardised successor to HTTP/2 push for cutting
-  render-blocking latency, and a manifest-driven pipeline can emit them with
-  perfect accuracy -- the same data that renders the tags renders the hints.
   """
 
   @behaviour Plug

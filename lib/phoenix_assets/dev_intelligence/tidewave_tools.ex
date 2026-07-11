@@ -7,12 +7,6 @@ defmodule PhoenixAssets.DevIntelligence.TidewaveTools do
   one dev-intelligence integration the stack ships; the broader overlay, Tower,
   and BeamLens bridges are intentionally out of scope until a host needs them.
 
-  ## Why
-
-  When Vite and Storybook are supervised by Phoenix, the natural question is
-  "what's their state, and can I poke them?" -- exposing that as callable
-  functions makes the supervised processes inspectable from the same runtime tools
-  used for the rest of the app.
   """
 
   alias PhoenixAssets.{Config, Context, DevServer, Doctor}

@@ -1,16 +1,14 @@
 defmodule PhoenixAssets do
   @moduledoc """
-  Phoenix-native asset runtime and generated-contracts engine.
+  Runtime and generated contracts for Phoenix applications built with Vite.
 
-  `phoenix_assets` makes a modern JavaScript frontend first-class inside Phoenix
-  without turning Phoenix into a bundler and without forcing LiveView/HEEx as the
-  UI model. It supervises Vite and Storybook in development, generates typed
-  frontend contracts from Phoenix and Ash, links routes / pages / stories / sync
-  shapes / pubsub topics / locales into one asset graph, and validates the
-  production manifest.
+  `phoenix_assets` supervises Vite and Storybook in development, generates typed
+  frontend contracts from Phoenix and Ash, links routes, pages, stories, sync
+  shapes, PubSub topics, and locales in an asset graph, and validates the
+  production manifest. It does not bundle assets itself or require LiveView as
+  the application's UI layer.
 
-  This module is the public runtime facade. The heavy lifting lives in focused
-  modules:
+  This module provides the runtime API. Related modules include:
 
     * `PhoenixAssets.Config` -- normalized, validated configuration.
     * `PhoenixAssets.Preset` / `PhoenixAssets.Plugin` -- the integration engine.
@@ -19,13 +17,6 @@ defmodule PhoenixAssets do
     * `PhoenixAssets.Graph` -- the asset graph.
     * `PhoenixAssets.DevSupervisor` -- supervised dev processes.
     * `PhoenixAssets.Doctor` -- configuration and production validation.
-
-  ## Why
-
-  A Phoenix app that uses SvelteKit/Vite usually ends up as two loosely-coupled
-  applications: Vite is not supervised, Storybook drifts, generated contracts are
-  ad hoc, and frontend runtime errors are disconnected from Phoenix. This library
-  gives Phoenix one explicit asset runtime and one graph so those seams close.
 
   ## Platform support
 

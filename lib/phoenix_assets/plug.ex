@@ -12,10 +12,6 @@ defmodule PhoenixAssets.Plug do
 
       plug PhoenixAssets.Plug
 
-  ## Why
-
-  A single, predictable status endpoint means tooling does not have to reach into
-  internals to learn the asset pipeline's state.
   """
 
   @behaviour Plug

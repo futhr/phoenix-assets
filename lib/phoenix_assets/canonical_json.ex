@@ -13,11 +13,6 @@ defmodule PhoenixAssets.CanonicalJSON do
   rest of the library's generated output. Structs are rejected: graph payloads
   are plain data, and silently encoding a struct would hide a plugin bug.
 
-  ## Why
-
-  The generated-contracts engine promises byte-identical output for identical
-  input. The graph artifact has to honour the same contract, or tooling that
-  diffs or caches it sees phantom changes.
   """
 
   @doc """

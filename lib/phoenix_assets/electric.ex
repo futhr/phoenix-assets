@@ -11,13 +11,6 @@ defmodule PhoenixAssets.Electric do
   `authHeaders/0`. Also contributes graph entries and a doctor check per shape
   that the route exists in the router.
 
-  ## Why
-
-  This is where shape declarations become the client contract the frontend
-  imports (`import { shapes } from "$phoenix/electric"`), generated from one
-  source so URLs and row types cannot drift from the backend. Auth headers are
-  baked into every factory so a tenant-scoped shape can never be requested
-  unauthenticated by accident -- the secure default a shared client must enforce.
   """
 
   use PhoenixAssets.Plugin

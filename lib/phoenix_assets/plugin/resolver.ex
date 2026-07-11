@@ -9,13 +9,6 @@ defmodule PhoenixAssets.Plugin.Resolver do
   absent fails with `{:missing_dependency, plugin, dependency}`; a cycle fails
   with `{:cycle, modules}`.
 
-  ## Why
-
-  Generation, dev startup, and graph building all walk plugins in the same order;
-  Storybook, for instance, orders itself after SvelteKit (a hard dependency) and
-  Tailwind (a soft edge). Computing one deterministic order up front (and failing
-  loudly on ambiguity) is what makes the whole engine reproducible.
-
   ## See also
 
     * `PhoenixAssets.Preset` -- runs this at compile time so cycles surface as

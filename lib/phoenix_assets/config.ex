@@ -24,13 +24,6 @@ defmodule PhoenixAssets.Config do
       iex> config.asset_root
       "assets"
 
-  ## Why
-
-  Every other subsystem -- the plugin engine, the generators, the manifest
-  server, the dev supervisor -- needs the same handful of paths and runtime
-  choices. Centralising them here means one validation point and one source of
-  truth, surfaced to plugins through `PhoenixAssets.Context`.
-
   ## See also
 
     * `PhoenixAssets.Context` -- the per-run snapshot built from a config.

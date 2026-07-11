@@ -6,10 +6,6 @@ defmodule PhoenixAssets.Tailwind do
   has no dev process of its own; it records the Tailwind Vite patch in the asset
   graph and contributes doctor checks (the CSS entry exists, the plugin is wired).
 
-  ## Why
-
-  Capturing that Tailwind is part of the Vite pipeline -- and validating its entry
-  file -- keeps the asset graph honest about what produces the app's CSS.
   """
 
   use PhoenixAssets.Plugin

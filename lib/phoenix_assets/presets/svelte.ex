@@ -5,7 +5,7 @@ defmodule PhoenixAssets.Presets.Svelte do
   Composes SvelteKit, Tailwind, Storybook, ElectricSQL, Phoenix PubSub,
   localization, and Ash-to-TypeScript types into one ordered plugin graph. This
   is the preset `phoenix_assets` uses when the host application does not set its
-  own `:preset`, so the stack works with zero ceremony:
+  own `:preset`:
 
       # config/config.exs -- nothing to point at; this preset is the default.
       config :phoenix_assets,

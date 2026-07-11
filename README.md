@@ -1,6 +1,6 @@
 # Phoenix Assets
 
-> A supervised, type-safe SvelteKit frontend, first-class inside Phoenix.
+> Supervised SvelteKit tooling and typed frontend contracts for Phoenix.
 
 [![CI](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml/badge.svg)](https://github.com/futhr/phoenix_assets/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/futhr/phoenix_assets/branch/main/graph/badge.svg)](https://codecov.io/gh/futhr/phoenix_assets) [![License: MIT](https://img.shields.io/github/license/futhr/phoenix_assets)](https://opensource.org/licenses/MIT)
 
@@ -47,7 +47,7 @@ Phoenix knows things a PHP or Ruby app never will at build time:
   backend, so they can't drift — and `mix phoenix_assets.gen --check` fails CI
   when the checked-in output is stale.
 - **One asset graph.** Routes, pages, stories, sync shapes, topics, and locales
-  link into a single validated graph (`graph.json`, or a zero-cost compiled
+  link into a single validated graph (`graph.json`, or an embedded
   module) the app can query and the doctor can validate.
 - **Supervised, not unsupervised.** Vite and Storybook run as real OTP children
   (MuonTrap kills the OS process when the BEAM exits; on Linux, cgroups tear down
@@ -65,7 +65,7 @@ Phoenix knows things a PHP or Ruby app never will at build time:
   `:doctor` — so host observability stacks have a stable surface to attach to.
 
 That's the difference between wiring a bundler into a framework and making the
-frontend a first-class, observable, type-checked part of the application.
+frontend observable and type-checked from the Phoenix application.
 
 ---
 

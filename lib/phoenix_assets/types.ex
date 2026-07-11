@@ -16,11 +16,6 @@ defmodule PhoenixAssets.Types do
   appears in one of the resource's field policies -- prompting a deliberate
   `:omit` decision.
 
-  ## Why
-
-  Generated row types are only safe if exposure is deliberate. Pairing a
-  conservative default with a loud field-policy cross-check gives both
-  productivity and a guardrail against leaking gated fields.
   """
 
   use PhoenixAssets.Plugin

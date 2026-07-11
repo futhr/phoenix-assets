@@ -10,11 +10,6 @@ defmodule PhoenixAssets.Graph.Entry do
   within that kind; `data` holds the kind-specific payload; `source` is an
   optional path to the file a developer would open for this entry.
 
-  ## Why
-
-  A uniform entry shape lets unrelated plugins (SvelteKit pages, Electric shapes,
-  PubSub topics, locales) contribute to one graph without the builder knowing
-  each plugin's domain.
   """
 
   @type kind ::

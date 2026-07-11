@@ -7,12 +7,6 @@ defmodule PhoenixAssets.ManifestServer do
   output is constantly changing, so `manifest/0` returns the `:dev` sentinel and
   callers (the components) emit Vite dev-server URLs instead of hashed files.
 
-  ## Why
-
-  Every request that renders an asset tag needs the manifest. Reading it from
-  `:persistent_term` (rather than a GenServer call) keeps that path allocation-
-  and contention-free, while still allowing `reload/0` for the rare case of a
-  manifest refresh.
   """
 
   use GenServer
