@@ -64,8 +64,8 @@ npm/lint                   shared Biome base config + Tailwind v4 linter for hos
   `phoenix_live_view` are `optional: true`. Code must compile and run without them
   (guard Ash use behind `Code.ensure_loaded?/1`; `types.ex`/`walker.ex` must compile
   with no Ash present). Don't add hard deps on these.
-- **Coverage floors:** Elixir 85% (`coveralls.json`, `application.ex` + thin
-  `gen.*` delegates skipped), frontend 80%. `npm/svelte/src/electric/shape-collection.ts`
+- **Coverage floors:** Elixir 85% (`coveralls.json`; thin `gen.*` delegates
+  skipped), frontend 80%. `npm/svelte/src/electric/shape-collection.ts`
   is excluded from coverage (TanStack svelte-db only resolves under browser/svelte
   conditions, not in a Node test runner).
 - **Doc coverage.** `mix doctor` requires 100% moduledoc coverage; keep `@moduledoc`

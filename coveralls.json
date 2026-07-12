@@ -1,6 +1,5 @@
 {
   "skip_files": [
-    "lib/phoenix_assets/application.ex",
     "lib/mix/tasks/phoenix_assets.gen.electric.ex",
     "lib/mix/tasks/phoenix_assets.gen.env.ex",
     "lib/mix/tasks/phoenix_assets.gen.locales.ex",
