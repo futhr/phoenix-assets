@@ -404,6 +404,23 @@ function validateBindings(panel: PanelDefinition, frame: ResultFrame): void {
         "Identifier cannot use a quantitative channel",
       )
   }
+  for (const channel of quantitativeChannels(panel)) {
+    const fieldName = panel.visualization.encodings[channel]
+    const field = fieldName === undefined ? undefined : fields.get(fieldName)
+    if (field && !["integer", "float", "decimal", "duration"].includes(field.type))
+      fail(
+        "invalid_encoding",
+        ["definition", "panels", panel.id, "visualization", "encodings", channel],
+        "Quantitative channel requires a numeric or duration field",
+      )
+  }
+}
+
+function quantitativeChannels(panel: PanelDefinition): Array<"y" | "value" | "size"> {
+  const kind = panel.visualization.kind
+  if (kind === "number" || kind === "gauge" || kind === "heatmap") return ["value", "size"]
+  if (["line", "area", "bar", "scatter", "sparkline"].includes(kind)) return ["y", "size"]
+  return ["size"]
 }
 
 function requiredEncodings(kind: VisualizationDefinition["kind"]): Array<"x" | "y" | "value"> {

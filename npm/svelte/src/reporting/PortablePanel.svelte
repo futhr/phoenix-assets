@@ -4,6 +4,7 @@ import { type ChartDatum, compilePanel } from "./compile.js"
 import type { PanelDefinition, PanelResult } from "./contract.js"
 import DataTable from "./DataTable.svelte"
 import { formatCell } from "./format.js"
+import HeatmapChart from "./HeatmapChart.svelte"
 
 let { panel, result, locale }: { panel: PanelDefinition; result: PanelResult; locale?: string } =
   $props()
@@ -76,6 +77,8 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
       <div class="pa-report-chart" aria-hidden="true"><BarChart data={compiled.data} x={compiled.x} y={compiled.y} {series} seriesLayout={panel.visualization.stack === "normalized" ? "stackExpand" : panel.visualization.stack === "normal" ? "stack" : compiled.series ? "group" : "overlap"} motion="none" /></div>
     {:else if compiled.chartable && compiled.x && compiled.y && compiled.kind === "scatter"}
       <div class="pa-report-chart" aria-hidden="true"><ScatterChart data={compiled.data} x={compiled.x} y={compiled.y} {series} motion="none" /></div>
+    {:else if compiled.chartable && compiled.x && compiled.y && compiled.value && compiled.kind === "heatmap"}
+      <div class="pa-report-chart" aria-hidden="true"><HeatmapChart {compiled} /></div>
     {:else}
       <p class="pa-report-state" role="status">A safe chart is unavailable; the complete table is shown.</p>
       <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} /></div>

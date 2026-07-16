@@ -47,6 +47,26 @@ describe("portable report components", () => {
     expect(target.textContent).not.toContain("A safe chart is unavailable")
     unmount(component)
   })
+
+  it("mounts the shared LayerChart heatmap primitive", () => {
+    const target = document.createElement("div")
+    const panel = panelFixture()
+    panel.visualization.kind = "heatmap"
+    panel.visualization.encodings = { x: "region", y: "period", value: "amount" }
+    panel.table_columns = ["region", "period", "amount"]
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel, result: { state: "ok", frame: heatmapFrameFixture() } },
+    })
+
+    expect(target.querySelector('[data-report-chart="heatmap"]')).not.toBeNull()
+    const fills = [...target.querySelectorAll(".lc-rect")].map((cell) => cell.getAttribute("fill"))
+    expect(fills).toHaveLength(2)
+    expect(new Set(fills).size).toBe(2)
+    expect(fills.every((fill) => fill?.startsWith("color-mix("))).toBe(true)
+    expect(target.textContent).not.toContain("A safe chart is unavailable")
+    unmount(component)
+  })
 })
 
 function panelFixture(): PanelDefinition {
@@ -93,6 +113,48 @@ function frameFixture(): ResultFrame {
       },
     ],
     rows: [["2026-07-16T10:00:00Z", "12.50"]],
+    provenance: {},
+    freshness: {},
+    classification: {},
+    page: { truncated: false },
+  }
+}
+
+function heatmapFrameFixture(): ResultFrame {
+  return {
+    fields: [
+      {
+        name: "region",
+        label: "Region",
+        type: "string",
+        role: "dimension",
+        unit: null,
+        nullable: false,
+        classification: "internal",
+      },
+      {
+        name: "period",
+        label: "Period",
+        type: "string",
+        role: "dimension",
+        unit: null,
+        nullable: false,
+        classification: "internal",
+      },
+      {
+        name: "amount",
+        label: "Amount",
+        type: "float",
+        role: "measure",
+        unit: "SEK",
+        nullable: false,
+        classification: "internal",
+      },
+    ],
+    rows: [
+      ["North", "Q1", 12.5],
+      ["South", "Q1", 9.25],
+    ],
     provenance: {},
     freshness: {},
     classification: {},

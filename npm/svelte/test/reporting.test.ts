@@ -109,6 +109,12 @@ describe("portable reporting contract", () => {
       annotations: [{ text: "Target", field: "missing" }],
     })
     expectContractError(() => decodeReportEnvelope(unknownAnnotation), "unknown_field")
+
+    const nonQuantitative = envelopeFixture()
+    const panel = nonQuantitative.definition.panels[0]
+    if (!panel) throw new Error("fixture must contain a panel")
+    panel.visualization.encodings.y = "evaluated_at"
+    expectContractError(() => decodeReportEnvelope(nonQuantitative), "invalid_encoding")
   })
 
   it("decodes explicit empty, partial, and error states", () => {
