@@ -201,7 +201,9 @@ import { shapes } from "$phoenix/electric"
 
 Portable report consumers import only the shared reporting boundary. It accepts
 the bounded renderer-neutral contract, rejects unknown or renderer-specific
-configuration, and always preserves a semantic table representation:
+configuration, validates kind-specific channels and every field reference, and
+always preserves a semantic table representation. String and object callers are
+held to the same finite, acyclic JSON-only byte and nesting limits:
 
 ```svelte
 <script lang="ts">

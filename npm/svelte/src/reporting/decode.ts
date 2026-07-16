@@ -28,7 +28,7 @@ export function decodeReportEnvelope(
   overrides: Partial<ReportingLimits> = {},
 ): ReportEnvelope {
   const limits = { ...DEFAULT_REPORTING_LIMITS, ...overrides }
-  const value = typeof input === "string" ? parseJson(input, limits) : input
+  const value = decodeInput(input, limits)
   const object = expectObject(value, [])
   exactKeys(object, ["definition", "results", "capability_warnings", "generated_at"], [])
 
@@ -61,8 +61,19 @@ export function decodeResultFrame(
   overrides: Partial<ReportingLimits> = {},
 ): ResultFrame {
   const limits = { ...DEFAULT_REPORTING_LIMITS, ...overrides }
-  const value = typeof input === "string" ? parseJson(input, limits) : input
+  const value = decodeInput(input, limits)
   return decodeFrame(value, [], limits)
+}
+
+function decodeInput(input: string | unknown, limits: ReportingLimits): unknown {
+  const value = typeof input === "string" ? parseJson(input, limits) : input
+  assertJsonValue(value, [], limits.maxDepth, new WeakSet<object>())
+  if (
+    typeof input !== "string" &&
+    encoder.encode(JSON.stringify(value)).byteLength > limits.maxBytes
+  )
+    fail("limit_exceeded", [], "Value exceeds maxBytes")
+  return value
 }
 
 function parseJson(input: string, limits: ReportingLimits): unknown {
@@ -180,6 +191,16 @@ function decodeVisualization(value: unknown, path: Path): VisualizationDefinitio
       channel,
     ])
 
+  const kind = expectEnum(object.kind, VISUALIZATION_KINDS, [...path, "kind"])
+  const requiredChannels = requiredEncodings(kind)
+  const missingChannels = requiredChannels.filter((channel) => encodings[channel] === undefined)
+  if (missingChannels.length > 0)
+    fail(
+      "missing_encodings",
+      [...path, "encodings"],
+      `Missing encodings: ${missingChannels.join(", ")}`,
+    )
+
   const sort =
     object.sort === undefined
       ? []
@@ -223,9 +244,10 @@ function decodeVisualization(value: unknown, path: Path): VisualizationDefinitio
   )
 
   return {
-    kind: expectEnum(object.kind, VISUALIZATION_KINDS, [...path, "kind"]),
+    kind,
     encodings,
-    formats: object.formats === undefined ? {} : expectObject(object.formats, [...path, "formats"]),
+    formats:
+      object.formats === undefined ? {} : expectStringMap(object.formats, [...path, "formats"]),
     sort,
     stack:
       object.stack === undefined
@@ -351,11 +373,11 @@ function validateCell(
           : field.type === "decimal"
             ? typeof value === "string" && DECIMAL.test(value)
             : field.type === "date"
-              ? typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+              ? typeof value === "string" && isRfc3339Date(value)
               : field.type === "time"
-                ? typeof value === "string" && /^\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(value)
+                ? typeof value === "string" && isRfc3339Time(value)
                 : field.type === "datetime"
-                  ? typeof value === "string" && !Number.isNaN(Date.parse(value))
+                  ? typeof value === "string" && isRfc3339DateTime(value)
                   : typeof value === "string"
   if (!valid) fail("invalid_cell", path, `Value does not match ${field.type}`)
   return value
@@ -365,8 +387,10 @@ function validateBindings(panel: PanelDefinition, frame: ResultFrame): void {
   const fields = new Map(frame.fields.map((field) => [field.name, field]))
   const references = [
     ...Object.values(panel.visualization.encodings),
+    ...Object.keys(panel.visualization.formats),
     ...panel.table_columns,
     ...panel.visualization.sort.map((sort) => sort.field),
+    ...panel.visualization.annotations.map((annotation) => annotation.field),
   ]
   for (const reference of references)
     if (reference !== undefined && !fields.has(reference))
@@ -380,6 +404,23 @@ function validateBindings(panel: PanelDefinition, frame: ResultFrame): void {
         "Identifier cannot use a quantitative channel",
       )
   }
+}
+
+function requiredEncodings(kind: VisualizationDefinition["kind"]): Array<"x" | "y" | "value"> {
+  if (kind === "number" || kind === "gauge") return ["value"]
+  if (kind === "table") return []
+  if (kind === "heatmap") return ["x", "y", "value"]
+  return ["x", "y"]
+}
+
+function expectStringMap(value: unknown, path: Path): Record<string, string> {
+  const object = expectObject(value, path)
+  return Object.fromEntries(
+    Object.entries(object).map(([key, item]) => {
+      if (!IDENTIFIER.test(key)) fail("invalid_identifier", [...path, key], "Invalid field name")
+      return [key, expectString(item, [...path, key], 64)]
+    }),
+  )
 }
 
 function expectObject(value: unknown, path: Path): JsonObject {
@@ -417,9 +458,66 @@ function expectBoolean(value: unknown, path: Path): boolean {
 
 function expectDateTime(value: unknown, path: Path): string {
   const dateTime = expectString(value, path, 64)
-  if (Number.isNaN(Date.parse(dateTime)))
-    fail("invalid_datetime", path, "Expected an RFC 3339 datetime")
+  if (!isRfc3339DateTime(dateTime)) fail("invalid_datetime", path, "Expected an RFC 3339 datetime")
   return dateTime
+}
+
+function assertJsonValue(
+  value: unknown,
+  path: Path,
+  depth: number,
+  ancestors: WeakSet<object>,
+): void {
+  if (depth < 0) fail("limit_exceeded", path, "Value exceeds maxDepth")
+  if (value === null || typeof value === "string" || typeof value === "boolean") return
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) fail("invalid_json_value", path, "Number must be finite")
+    return
+  }
+  if (typeof value !== "object")
+    fail("invalid_json_value", path, "Value is not representable as JSON")
+  if (ancestors.has(value)) fail("invalid_json_value", path, "Cyclic values are not allowed")
+  const prototype = Object.getPrototypeOf(value)
+  if (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null)
+    fail("invalid_json_value", path, "Only plain JSON objects are allowed")
+  ancestors.add(value)
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertJsonValue(item, [...path, index], depth - 1, ancestors))
+  } else {
+    Object.entries(value).forEach(([key, item]) =>
+      assertJsonValue(item, [...path, key], depth - 1, ancestors),
+    )
+  }
+  ancestors.delete(value)
+}
+
+function isRfc3339Date(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return false
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  )
+}
+
+function isRfc3339Time(value: string): boolean {
+  const match = /^(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec(value)
+  return (
+    match !== null && Number(match[1]) <= 23 && Number(match[2]) <= 59 && Number(match[3]) <= 59
+  )
+}
+
+function isRfc3339DateTime(value: string): boolean {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2}(?:\.\d+)?)(Z|[+-]\d{2}:\d{2})$/.exec(value)
+  if (!match || !isRfc3339Date(match[1] ?? "") || !isRfc3339Time(match[2] ?? "")) return false
+  if (match[3] !== "Z") {
+    const offset = /^[+-](\d{2}):(\d{2})$/.exec(match[3] ?? "")
+    if (!offset || Number(offset[1]) > 23 || Number(offset[2]) > 59) return false
+  }
+  return !Number.isNaN(Date.parse(value))
 }
 
 function expectEnum<const T extends readonly string[]>(

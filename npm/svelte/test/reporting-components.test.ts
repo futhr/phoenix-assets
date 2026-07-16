@@ -35,6 +35,18 @@ describe("portable report components", () => {
     expect(target.textContent).toContain("This panel is unavailable")
     unmount(failed)
   })
+
+  it("mounts the canonical LayerChart renderer for a valid line panel", () => {
+    const target = document.createElement("div")
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel: panelFixture(), result: { state: "ok", frame: frameFixture() } },
+    })
+
+    expect(target.querySelector(".pa-report-chart")).not.toBeNull()
+    expect(target.textContent).not.toContain("A safe chart is unavailable")
+    unmount(component)
+  })
 })
 
 function panelFixture(): PanelDefinition {

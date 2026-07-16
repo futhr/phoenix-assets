@@ -56,7 +56,7 @@ export type VisualizationDefinition = {
   encodings: Partial<
     Record<"x" | "y" | "series" | "value" | "label" | "color_group" | "size", string>
   >
-  formats: Record<string, unknown>
+  formats: Record<string, string>
   sort: Array<{ field: string; direction: "asc" | "desc" }>
   stack: "none" | "normal" | "normalized"
   annotations: Array<{ text: string; field?: string }>
@@ -102,6 +102,7 @@ export type ReportingLimits = {
   maxFields: number
   maxRows: number
   maxCellBytes: number
+  maxDepth: number
 }
 
 export const DEFAULT_REPORTING_LIMITS: ReportingLimits = {
@@ -110,6 +111,7 @@ export const DEFAULT_REPORTING_LIMITS: ReportingLimits = {
   maxFields: 64,
   maxRows: 10_000,
   maxCellBytes: 8_192,
+  maxDepth: 64,
 }
 
 export class ReportingContractError extends Error {

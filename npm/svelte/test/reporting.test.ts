@@ -41,6 +41,14 @@ describe("portable reporting contract", () => {
       () => decodeResultFrame(JSON.stringify(frameFixture()), { maxBytes: 10 }),
       "limit_exceeded",
     )
+
+    const invalidDate = frameFixture()
+    firstRow(invalidDate)[0] = "2026-02-31T10:00:00Z"
+    expectContractError(() => decodeResultFrame(invalidDate), "invalid_cell")
+
+    const nonJson = frameFixture()
+    nonJson.provenance.callback = () => undefined
+    expectContractError(() => decodeResultFrame(nonJson), "invalid_json_value")
   })
 
   it("compiles only safe, closed chart data", () => {
@@ -72,7 +80,7 @@ describe("portable reporting contract", () => {
     const visualization = fixture.definition.panels[0]?.visualization
     if (!visualization) throw new Error("fixture must contain visualization")
     Object.assign(visualization, {
-      formats: {},
+      formats: { amount: "currency" },
       sort: [{ field: "evaluated_at", direction: "asc" }],
       stack: "normal",
       annotations: [{ text: "Latest", field: "amount" }],
@@ -83,6 +91,24 @@ describe("portable reporting contract", () => {
     expect(decoded.definition.id).toBeNull()
     expect(decoded.definition.parameters).toEqual([])
     expect(decoded.definition.panels[0]?.visualization).toMatchObject({ stack: "normal" })
+  })
+
+  it("requires kind channels and binds format and annotation fields", () => {
+    const missingChannel = envelopeFixture()
+    delete missingChannel.definition.panels[0]?.visualization.encodings.y
+    expectContractError(() => decodeReportEnvelope(missingChannel), "missing_encodings")
+
+    const unknownFormat = envelopeFixture()
+    Object.assign(unknownFormat.definition.panels[0]?.visualization, {
+      formats: { missing: "number" },
+    })
+    expectContractError(() => decodeReportEnvelope(unknownFormat), "unknown_field")
+
+    const unknownAnnotation = envelopeFixture()
+    Object.assign(unknownAnnotation.definition.panels[0]?.visualization, {
+      annotations: [{ text: "Target", field: "missing" }],
+    })
+    expectContractError(() => decodeReportEnvelope(unknownAnnotation), "unknown_field")
   })
 
   it("decodes explicit empty, partial, and error states", () => {

@@ -51,6 +51,7 @@ export function compilePanel(panel: PanelDefinition, frame: ResultFrame): Compil
 function requiredEncodings(kind: VisualizationKind): Array<"x" | "y" | "value"> {
   if (kind === "number" || kind === "gauge") return ["value"]
   if (kind === "table") return []
+  if (kind === "heatmap") return ["x", "y", "value"]
   return ["x", "y"]
 }
 
@@ -60,7 +61,13 @@ function chartValue(value: unknown, field: ResultField): boolean | number | stri
     return value as string
   if (field.type === "decimal") {
     const number = Number(value)
-    return Number.isFinite(number) && Number.isSafeInteger(number * 1_000_000)
+    const significantDigits = String(value)
+      .replace("-", "")
+      .replace(".", "")
+      .replace(/^0+/, "").length
+    return Number.isFinite(number) &&
+      Math.abs(number) <= Number.MAX_SAFE_INTEGER &&
+      significantDigits <= 15
       ? number
       : Number.POSITIVE_INFINITY
   }
