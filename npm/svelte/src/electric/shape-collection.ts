@@ -1,7 +1,7 @@
 import type { Row } from "@electric-sql/client"
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
 import { createCollection } from "@tanstack/svelte-db"
-import { type AuthConfig, authHeaders, createShapeUrl } from "./url"
+import { type AuthConfig, authHeaders, createShapeUrl } from "./url.js"
 
 /**
  * A TanStack DB collection backed by an ElectricSQL shape.

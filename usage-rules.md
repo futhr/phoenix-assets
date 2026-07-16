@@ -91,6 +91,11 @@ Rules to rely on:
   shape clients at your app's token key. `createShapeCollection` (TanStack DB)
   lives behind the `@phoenix-assets/svelte/collection` subpath so the main
   barrel stays free of the optional `@tanstack/*` peers.
+- `@phoenix-assets/svelte/reporting` — strict portable-report decoding, the
+  closed LayerChart-backed compiler/components, evidence states, and accessible
+  table twins. Pass only the renderer-neutral contract. Product code supplies
+  semantic CSS tokens and domain chrome; it does not import LayerChart directly
+  or persist renderer option bags.
 
 ## Linting & formatting (host apps)
 

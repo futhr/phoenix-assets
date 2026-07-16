@@ -1,6 +1,6 @@
 import { type Row, Shape, ShapeStream } from "@electric-sql/client"
 import { createSubscriber } from "svelte/reactivity"
-import { type AuthConfig, authHeaders, createShapeUrl } from "./url"
+import { type AuthConfig, authHeaders, createShapeUrl } from "./url.js"
 
 /**
  * A reactive view of an ElectricSQL shape, idiomatic for Svelte 5.

@@ -12,6 +12,7 @@ erl_crash.dump
 node_modules/
 /npm/*/dist/
 /npm/*/coverage/
+/npm/*/.svelte-kit/
 *.tsbuildinfo
 
 # AI agents

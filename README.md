@@ -101,7 +101,7 @@ runtime helpers, and shared frontend lint tooling.
 |---------|------|------------|
 | `phoenix_assets` | `lib/` | Runtime + generated-contracts engine, dev supervision, manifest, graph, doctor, and the built-in SvelteKit + Tailwind + Storybook + ElectricSQL + PubSub + localization + Ash-types stack. Hex. |
 | `@phoenix-assets/vite` | `npm/vite/` | Vite plugin, `$phoenix/*` virtual modules, dev/HMR bridge, graph emitter. npm. |
-| `@phoenix-assets/svelte` | `npm/svelte/` | Typed Electric / PubSub / localization runtime helpers. npm. |
+| `@phoenix-assets/svelte` | `npm/svelte/` | Typed Electric / PubSub / localization helpers plus the closed portable-report decoder, accessible tables, and shared LayerChart 2 components. npm. |
 | `@phoenix-assets/lint` | `npm/lint/` | Shared Biome base config + Tailwind v4 arbitrary-value linter for host apps. npm. |
 
 ---
@@ -198,6 +198,26 @@ import { routes } from "$phoenix/routes"
 import type { Article } from "$phoenix/types"
 import { shapes } from "$phoenix/electric"
 ```
+
+Portable report consumers import only the shared reporting boundary. It accepts
+the bounded renderer-neutral contract, rejects unknown or renderer-specific
+configuration, and always preserves a semantic table representation:
+
+```svelte
+<script lang="ts">
+  import { decodeReportEnvelope, PortableReport } from "@phoenix-assets/svelte/reporting"
+
+  let { payload } = $props()
+  const envelope = decodeReportEnvelope(payload)
+</script>
+
+<PortableReport {envelope} />
+```
+
+`layerchart` is an internal exact dependency of this subpath. Host applications
+must not pass LayerChart options through storage/network data or install another
+generic chart stack for portable report kinds. Hosts supply semantic CSS tokens,
+localized chrome, and domain evidence around the shared components.
 
 ### Render assets
 

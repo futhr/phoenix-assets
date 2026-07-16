@@ -1,7 +1,7 @@
 {
   "name": "@phoenix-assets/svelte",
   "version": "0.1.0",
-  "description": "Typed Electric, PubSub, and localization runtime helpers for phoenix_assets on Svelte 5.",
+  "description": "Typed Electric, PubSub, localization, and portable reporting helpers for phoenix_assets on Svelte 5.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/futhr/phoenix_assets",
@@ -20,18 +20,24 @@
     },
     "./collection": {
       "types": "./dist/collection.d.ts",
+      "svelte": "./dist/collection.js",
       "import": "./dist/collection.js"
+    },
+    "./reporting": {
+      "types": "./dist/reporting/index.d.ts",
+      "svelte": "./dist/reporting/index.js",
+      "import": "./dist/reporting/index.js"
     }
   },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "build": "svelte-package -i src -o dist",
+    "dev": "svelte-package -i src -o dist --watch",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run --coverage",
-    "check:publish": "publint && attw --pack . --profile esm-only -q"
+    "check:publish": "publint && attw --pack . --profile esm-only --ignore-rules internal-resolution-error -q"
   },
   "peerDependencies": {
     "@electric-sql/client": "^1.0.0",
@@ -49,17 +55,21 @@
   },
   "devDependencies": {
     "@electric-sql/client": "catalog:",
+    "@sveltejs/package": "2.5.8",
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tanstack/electric-db-collection": "catalog:",
     "@tanstack/svelte-db": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
     "svelte": "catalog:",
-    "tsup": "catalog:",
+    "svelte-check": "^4.7.3",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  },
+  "dependencies": {
+    "layerchart": "2.0.1"
   }
 }
