@@ -20,7 +20,7 @@ catalog:
   # tsup 8.5.1's declaration bundler uses compiler APIs removed in TypeScript 7.
   # Keep the newest compatible major until tsup supports TS 7.
   typescript: ^6.0.3
-  vite: ^8.1.4
+  vite: ^8.1.5
   vitest: ^4.1.10
 
 # pnpm 10's home for the build-script allowlist (moved out of package.json's
