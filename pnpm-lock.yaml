@@ -13,8 +13,8 @@ catalogs:
       specifier: ^7.2.0
       version: 7.2.0
     '@tanstack/electric-db-collection':
-      specifier: ^0.3.12
-      version: 0.3.12
+      specifier: ^0.3.14
+      version: 0.3.14
     '@tanstack/svelte-db':
       specifier: ^0.1.91
       version: 0.1.91
@@ -101,7 +101,7 @@ importers:
         version: 7.2.0(svelte@5.56.4(@typescript-eslint/types@8.60.1))(vite@8.1.4(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
       '@tanstack/electric-db-collection':
         specifier: 'catalog:'
-        version: 0.3.12(typescript@6.0.3)
+        version: 0.3.14(typescript@6.0.3)
       '@tanstack/svelte-db':
         specifier: 'catalog:'
         version: 0.1.91(svelte@5.56.4(@typescript-eslint/types@8.60.1))(typescript@6.0.3)
@@ -1009,8 +1009,13 @@ packages:
     peerDependencies:
       typescript: '>=4.7'
 
-  '@tanstack/electric-db-collection@0.3.12':
-    resolution: {integrity: sha512-jxVcWdNfdBS1W9CLhP98tNIo/pZd5l5JT/dN2YXYBsnvIDyQ4mV1EEzH/VGVfhZSLnL4fkWDBpoT79omW5Funw==}
+  '@tanstack/db@0.6.16':
+    resolution: {integrity: sha512-6tZ4sAyh7g4G5awO4Q4D/UQVPoPEBsqqDBImjCZNTRJznrpwGqFJZxozov197k8ty8QxZC++eGcbo+BBKF3nzw==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/electric-db-collection@0.3.14':
+    resolution: {integrity: sha512-r0tknthqxwetQ/ofGTFnNfyO7JgCkLEA4TtTpmi9XsXd6z0YHS2FB1YC5zBt27QcqCkaSfCZeSPsYFRicCdilA==}
 
   '@tanstack/pacer-lite@0.2.2':
     resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
@@ -2439,11 +2444,18 @@ snapshots:
       '@tanstack/pacer-lite': 0.2.2
       typescript: 6.0.3
 
-  '@tanstack/electric-db-collection@0.3.12(typescript@6.0.3)':
+  '@tanstack/db@0.6.16(typescript@6.0.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.18(typescript@6.0.3)
+      '@tanstack/pacer-lite': 0.2.2
+      typescript: 6.0.3
+
+  '@tanstack/electric-db-collection@0.3.14(typescript@6.0.3)':
     dependencies:
       '@electric-sql/client': 1.5.24
       '@standard-schema/spec': 1.1.0
-      '@tanstack/db': 0.6.14(typescript@6.0.3)
+      '@tanstack/db': 0.6.16(typescript@6.0.3)
       '@tanstack/store': 0.9.3
       debug: 4.4.3
     transitivePeerDependencies:
