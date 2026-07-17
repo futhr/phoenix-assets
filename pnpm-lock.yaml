@@ -16,8 +16,8 @@ catalogs:
       specifier: ^0.3.12
       version: 0.3.12
     '@tanstack/svelte-db':
-      specifier: ^0.1.91
-      version: 0.1.91
+      specifier: ^0.1.93
+      version: 0.1.93
     '@types/node':
       specifier: ^26.1.1
       version: 26.1.1
@@ -104,7 +104,7 @@ importers:
         version: 0.3.12(typescript@6.0.3)
       '@tanstack/svelte-db':
         specifier: 'catalog:'
-        version: 0.1.91(svelte@5.56.4(@typescript-eslint/types@8.60.1))(typescript@6.0.3)
+        version: 0.1.93(svelte@5.56.4(@typescript-eslint/types@8.60.1))(typescript@6.0.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.10(vitest@4.1.10)
@@ -1009,6 +1009,11 @@ packages:
     peerDependencies:
       typescript: '>=4.7'
 
+  '@tanstack/db@0.6.16':
+    resolution: {integrity: sha512-6tZ4sAyh7g4G5awO4Q4D/UQVPoPEBsqqDBImjCZNTRJznrpwGqFJZxozov197k8ty8QxZC++eGcbo+BBKF3nzw==}
+    peerDependencies:
+      typescript: '>=4.7'
+
   '@tanstack/electric-db-collection@0.3.12':
     resolution: {integrity: sha512-jxVcWdNfdBS1W9CLhP98tNIo/pZd5l5JT/dN2YXYBsnvIDyQ4mV1EEzH/VGVfhZSLnL4fkWDBpoT79omW5Funw==}
 
@@ -1019,8 +1024,8 @@ packages:
   '@tanstack/store@0.9.3':
     resolution: {integrity: sha512-8reSzl/qGWGGVKhBoxXPMWzATSbZLZFWhwBAFO9NAyp0TxzfBP0mIrGb8CP8KrQTmvzXlR/vFPPUrHTLBGyFyw==}
 
-  '@tanstack/svelte-db@0.1.91':
-    resolution: {integrity: sha512-DcpkOKC7R5XuqgWeFcyXZG/W0MGwNZq3pZrGxVY2k8VsdqyVOHGDUel2Zwb08dafIF1WEe2GXLHtwYbyU5GBHQ==}
+  '@tanstack/svelte-db@0.1.93':
+    resolution: {integrity: sha512-cqUhnmWvyWYrN1gdz7kKDLqo94zasAZKlAYFJNpHQebj7JeydWrabY+Pqw5pfx1oM4NHSWWVTi/pMvCoNI+V+A==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -2439,6 +2444,13 @@ snapshots:
       '@tanstack/pacer-lite': 0.2.2
       typescript: 6.0.3
 
+  '@tanstack/db@0.6.16(typescript@6.0.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.18(typescript@6.0.3)
+      '@tanstack/pacer-lite': 0.2.2
+      typescript: 6.0.3
+
   '@tanstack/electric-db-collection@0.3.12(typescript@6.0.3)':
     dependencies:
       '@electric-sql/client': 1.5.24
@@ -2454,9 +2466,9 @@ snapshots:
 
   '@tanstack/store@0.9.3': {}
 
-  '@tanstack/svelte-db@0.1.91(svelte@5.56.4(@typescript-eslint/types@8.60.1))(typescript@6.0.3)':
+  '@tanstack/svelte-db@0.1.93(svelte@5.56.4(@typescript-eslint/types@8.60.1))(typescript@6.0.3)':
     dependencies:
-      '@tanstack/db': 0.6.14(typescript@6.0.3)
+      '@tanstack/db': 0.6.16(typescript@6.0.3)
       svelte: 5.56.4(@typescript-eslint/types@8.60.1)
     transitivePeerDependencies:
       - typescript
