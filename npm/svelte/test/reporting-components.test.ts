@@ -1,8 +1,9 @@
-import { mount, unmount } from "svelte"
+import { mount, tick, unmount } from "svelte"
 import { describe, expect, it } from "vitest"
 import type { PanelDefinition, ResultFrame } from "../src/reporting/contract"
 import DataTable from "../src/reporting/DataTable.svelte"
 import PortablePanel from "../src/reporting/PortablePanel.svelte"
+import PortableReport from "../src/reporting/PortableReport.svelte"
 
 describe("portable report components", () => {
   it("renders exact values in a semantic table", () => {
@@ -67,7 +68,72 @@ describe("portable report components", () => {
     expect(target.textContent).not.toContain("A safe chart is unavailable")
     unmount(component)
   })
+
+  it("keeps labelled relationships unique across multiple report instances", () => {
+    const target = document.createElement("div")
+    const first = mount(PortableReport, { target, props: { envelope: envelopeFixture() } })
+    const second = mount(PortableReport, { target, props: { envelope: envelopeFixture() } })
+
+    const ids = [...target.querySelectorAll<HTMLElement>("[id]")].map((element) => element.id)
+    expect(new Set(ids).size).toBe(ids.length)
+
+    for (const element of target.querySelectorAll<HTMLElement>("[aria-labelledby]")) {
+      const reference = element.getAttribute("aria-labelledby")
+      expect(reference).not.toBeNull()
+      expect(target.querySelectorAll(`#${reference}`).length).toBe(1)
+    }
+
+    for (const element of target.querySelectorAll<HTMLElement>("[aria-describedby]")) {
+      const reference = element.getAttribute("aria-describedby")
+      expect(reference).not.toBeNull()
+      expect(target.querySelectorAll(`#${reference}`).length).toBe(1)
+    }
+
+    unmount(first)
+    unmount(second)
+  })
+
+  it("exposes a keyboard-focusable table alternative with synchronized state", async () => {
+    const target = document.createElement("div")
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel: panelFixture(), result: { state: "ok", frame: frameFixture() } },
+    })
+    const button = target.querySelector("button")
+
+    expect(button?.tabIndex).toBe(0)
+    expect(button?.getAttribute("aria-expanded")).toBe("false")
+    expect(target.querySelector("table")).toBeNull()
+
+    button?.click()
+    await tick()
+
+    expect(button?.getAttribute("aria-expanded")).toBe("true")
+    const controlledId = button?.getAttribute("aria-controls")
+    expect(controlledId).not.toBeNull()
+    expect(target.querySelector(`#${controlledId} table caption`)?.textContent).toBe("Revenue")
+    expect(target.textContent).toContain("12.50 SEK")
+    unmount(component)
+  })
 })
+
+function envelopeFixture() {
+  return {
+    definition: {
+      schema_version: "1.0",
+      id: "report-1",
+      title: "Revenue report",
+      description: "Authorized settled revenue.",
+      panels: [panelFixture()],
+      layout: {},
+      parameters: [],
+      provenance: {},
+    },
+    results: { trend: { state: "ok" as const, frame: frameFixture() } },
+    capability_warnings: [],
+    generated_at: "2026-07-17T12:00:00Z",
+  }
+}
 
 function panelFixture(): PanelDefinition {
   return {

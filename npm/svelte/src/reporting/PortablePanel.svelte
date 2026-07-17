@@ -13,8 +13,10 @@ const frame = $derived(
   result.state === "ok" || result.state === "partial" ? result.frame : undefined,
 )
 const compiled = $derived(frame ? compilePanel(panel, frame) : undefined)
-const summaryId = $derived(`pa-report-summary-${panel.id}`)
-const tableId = $derived(`pa-report-table-${panel.id}`)
+const instanceId = $props.id()
+const titleId = `pa-report-panel-title-${instanceId}`
+const summaryId = `pa-report-summary-${instanceId}`
+const tableId = `pa-report-table-${instanceId}`
 const palette = [
   "var(--pa-report-series-1, #2563eb)",
   "var(--pa-report-series-2, #dc2626)",
@@ -38,10 +40,10 @@ const scalarField = $derived(compiled?.value ? compiled.fields.get(compiled.valu
 const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.value] : undefined)
 </script>
 
-<section class="pa-report-panel" aria-labelledby={`${panel.id}-title`} aria-describedby={summaryId}>
+<section class="pa-report-panel" aria-labelledby={titleId} aria-describedby={summaryId}>
   <header>
     <div>
-      <h2 id={`${panel.id}-title`}>{panel.title}</h2>
+      <h2 id={titleId}>{panel.title}</h2>
       <p id={summaryId}>{panel.description}</p>
     </div>
     {#if result.state === "ok" || result.state === "partial"}

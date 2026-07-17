@@ -3,11 +3,13 @@ import type { ReportEnvelope } from "./contract.js"
 import PortablePanel from "./PortablePanel.svelte"
 
 let { envelope, locale }: { envelope: ReportEnvelope; locale?: string } = $props()
+const instanceId = $props.id()
+const titleId = `pa-report-title-${instanceId}`
 </script>
 
-<article class="pa-report" aria-labelledby="pa-report-title">
+<article class="pa-report" aria-labelledby={titleId}>
   <header>
-    <h1 id="pa-report-title">{envelope.definition.title}</h1>
+    <h1 id={titleId}>{envelope.definition.title}</h1>
     <p>{envelope.definition.description}</p>
   </header>
   {#if envelope.capability_warnings.length > 0}
