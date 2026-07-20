@@ -250,7 +250,10 @@ function frameFixture() {
         classification: "internal",
       },
     ],
-    rows: [["2026-07-16T10:00:00Z", "12.50"]] as unknown[][],
+    rows: [
+      ["2026-07-16T10:00:00Z", "12.50"],
+      ["2026-07-17T10:00:00Z", "13.25"],
+    ] as unknown[][],
     provenance: { query_ref: "metric:settled-revenue:v1", execution_id: "execution-1" },
     freshness: { watermark: "2026-07-16T09:59:00Z", stale: false },
     classification: { highest: "internal", redactions: [] },

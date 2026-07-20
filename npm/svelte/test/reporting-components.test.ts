@@ -49,6 +49,21 @@ describe("portable report components", () => {
     unmount(component)
   })
 
+  it("uses the complete table when a line has only one point", () => {
+    const target = document.createElement("div")
+    const frame = frameFixture()
+    frame.rows = frame.rows.slice(0, 1)
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel: panelFixture(), result: { state: "ok", frame } },
+    })
+
+    expect(target.querySelector(".pa-report-chart")).toBeNull()
+    expect(target.textContent).toContain("A safe chart is unavailable")
+    expect(target.querySelector("table")).not.toBeNull()
+    unmount(component)
+  })
+
   it("mounts the shared LayerChart heatmap primitive", () => {
     const target = document.createElement("div")
     const panel = panelFixture()
@@ -216,7 +231,10 @@ function frameFixture(): ResultFrame {
         classification: "internal",
       },
     ],
-    rows: [["2026-07-16T10:00:00Z", "12.50"]],
+    rows: [
+      ["2026-07-16T10:00:00Z", "12.50"],
+      ["2026-07-17T10:00:00Z", "13.25"],
+    ],
     provenance: {},
     freshness: {},
     classification: {},

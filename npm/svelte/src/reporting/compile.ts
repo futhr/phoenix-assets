@@ -12,7 +12,7 @@ export type CompiledPanel = {
   seriesValues: string[]
   value?: string
   chartable: boolean
-  fallbackReason?: "missing_encoding" | "unsafe_numeric_value"
+  fallbackReason?: "insufficient_data" | "missing_encoding" | "unsafe_numeric_value"
 }
 
 export function compilePanel(panel: PanelDefinition, frame: ResultFrame): CompiledPanel {
@@ -31,6 +31,8 @@ export function compilePanel(panel: PanelDefinition, frame: ResultFrame): Compil
       return field !== undefined && datum[field] === Number.POSITIVE_INFINITY
     }),
   )
+  const insufficient =
+    ["line", "area", "sparkline"].includes(panel.visualization.kind) && data.length < 2
 
   return {
     kind: panel.visualization.kind,
@@ -42,9 +44,10 @@ export function compilePanel(panel: PanelDefinition, frame: ResultFrame): Compil
     seriesValues:
       series === undefined ? [] : [...new Set(data.map((datum) => String(datum[series])))],
     value,
-    chartable: !missing && !unsafe,
+    chartable: !missing && !unsafe && !insufficient,
     ...(missing ? { fallbackReason: "missing_encoding" as const } : {}),
     ...(unsafe ? { fallbackReason: "unsafe_numeric_value" as const } : {}),
+    ...(insufficient ? { fallbackReason: "insufficient_data" as const } : {}),
   }
 }
 
