@@ -93,6 +93,44 @@ describe("portable report components", () => {
     unmount(second)
   })
 
+  it("honors portable panel order, columns, spans, and localized renderer messages", () => {
+    const target = document.createElement("div")
+    const envelope = envelopeFixture()
+    const secondPanel = { ...panelFixture(), id: "summary", title: "Summary" }
+    envelope.definition.panels.push(secondPanel)
+    envelope.results.summary = { state: "error" }
+    envelope.capability_warnings.push({ code: "narrow_layout" })
+    envelope.definition.layout = {
+      columns: 8,
+      order: ["summary", "trend"],
+      spans: { summary: 8, trend: 4 },
+    }
+    const component = mount(PortableReport, {
+      target,
+      props: {
+        envelope,
+        messages: {
+          accessibleFallback: "Anpassad tabellvy används.",
+          panelUnavailable: "Panelen är inte tillgänglig.",
+        },
+      },
+    })
+
+    const grid = target.querySelector<HTMLElement>(".pa-report-grid")
+    const wrappers = [...target.querySelectorAll<HTMLElement>(".pa-report-grid-panel")]
+    expect(grid?.style.getPropertyValue("--pa-report-columns")).toBe("8")
+    expect(wrappers.map((wrapper) => wrapper.querySelector("h2")?.textContent)).toEqual([
+      "Summary",
+      "Revenue",
+    ])
+    expect(
+      wrappers.map((wrapper) => wrapper.style.getPropertyValue("--pa-report-panel-span")),
+    ).toEqual(["8", "4"])
+    expect(target.textContent).toContain("Anpassad tabellvy används.")
+    expect(target.textContent).toContain("Panelen är inte tillgänglig.")
+    unmount(component)
+  })
+
   it("exposes a keyboard-focusable table alternative with synchronized state", async () => {
     const target = document.createElement("div")
     const component = mount(PortablePanel, {

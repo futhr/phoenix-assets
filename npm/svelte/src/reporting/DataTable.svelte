@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { ResultFrame } from "./contract.js"
+import { DEFAULT_REPORTING_MESSAGES, type ReportingMessages, type ResultFrame } from "./contract.js"
 import { formatCell } from "./format.js"
 
 let {
@@ -7,12 +7,15 @@ let {
   columns,
   caption,
   locale,
+  messages: messageOverrides,
 }: {
   frame: ResultFrame
   columns?: string[]
   caption: string
   locale?: string
+  messages?: Partial<ReportingMessages>
 } = $props()
+const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
 
 const fieldIndexes = $derived(
   (columns?.length ? columns : frame.fields.map((field) => field.name))
@@ -28,7 +31,7 @@ const fieldIndexes = $derived(
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard scrolling for an overflow region) -->
-<div class="pa-report-table-wrap" role="region" aria-label={`${caption} data table`} tabindex="0">
+<div class="pa-report-table-wrap" role="region" aria-label={messages.tableRegion(caption)} tabindex="0">
   <table class="pa-report-table">
     <caption>{caption}</caption>
     <thead>
@@ -46,7 +49,7 @@ const fieldIndexes = $derived(
           {/each}
         </tr>
       {:else}
-        <tr><td colspan={fieldIndexes.length || 1}>No rows</td></tr>
+        <tr><td colspan={fieldIndexes.length || 1}>{messages.noRows}</td></tr>
       {/each}
     </tbody>
   </table>

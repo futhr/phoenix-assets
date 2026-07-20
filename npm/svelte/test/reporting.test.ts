@@ -93,6 +93,24 @@ describe("portable reporting contract", () => {
     expect(decoded.definition.panels[0]?.visualization).toMatchObject({ stack: "normal" })
   })
 
+  it("validates the closed portable layout vocabulary", () => {
+    const fixture = envelopeFixture()
+    fixture.definition.layout = { columns: 8, order: ["trend"], spans: { trend: 4 } } as never
+    expect(decodeReportEnvelope(fixture).definition.layout).toEqual({
+      columns: 8,
+      order: ["trend"],
+      spans: { trend: 4 },
+    })
+
+    const oversizedSpan = envelopeFixture()
+    oversizedSpan.definition.layout = { columns: 4, spans: { trend: 5 } } as never
+    expectContractError(() => decodeReportEnvelope(oversizedSpan), "invalid_integer")
+
+    const unknownPanel = envelopeFixture()
+    unknownPanel.definition.layout = { order: ["missing"] } as never
+    expectContractError(() => decodeReportEnvelope(unknownPanel), "unknown_panel")
+  })
+
   it("requires kind channels and binds format and annotation fields", () => {
     const missingChannel = envelopeFixture()
     delete missingChannel.definition.panels[0]?.visualization.encodings.y

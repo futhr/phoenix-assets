@@ -74,13 +74,47 @@ export type PanelDefinition = {
   empty_message: string
 }
 
+export type ReportLayout = {
+  columns?: number
+  order?: string[]
+  spans?: Record<string, number>
+}
+
+export type ReportingMessages = {
+  accessibleFallback: string
+  viewTable: string
+  hideTable: string
+  panelUnavailable: string
+  partialResult: string
+  chartUnavailable: string
+  stateLabel: string
+  watermarkLabel: string
+  truncatedLabel: string
+  tableRegion: (caption: string) => string
+  noRows: string
+}
+
+export const DEFAULT_REPORTING_MESSAGES: ReportingMessages = {
+  accessibleFallback: "Some panels use an accessible fallback on this device.",
+  viewTable: "View as table",
+  hideTable: "Hide table",
+  panelUnavailable: "This panel is unavailable.",
+  partialResult: "This result is partial. Review its evidence before use.",
+  chartUnavailable: "A safe chart is unavailable; the complete table is shown.",
+  stateLabel: "State",
+  watermarkLabel: "Watermark",
+  truncatedLabel: "Truncated",
+  tableRegion: (caption) => `${caption} data table`,
+  noRows: "No rows",
+}
+
 export type ReportDefinition = {
   schema_version: string
   id: string | null
   title: string
   description: string
   panels: PanelDefinition[]
-  layout: Record<string, unknown>
+  layout: ReportLayout
   parameters: unknown[]
   provenance: Record<string, unknown>
 }

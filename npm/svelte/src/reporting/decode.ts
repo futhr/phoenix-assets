@@ -10,6 +10,7 @@ import {
   type ReportEnvelope,
   ReportingContractError,
   type ReportingLimits,
+  type ReportLayout,
   type ResultField,
   type ResultFrame,
   VISUALIZATION_KINDS,
@@ -130,12 +131,51 @@ function decodeDefinition(value: unknown, path: Path, limits: ReportingLimits): 
     title: expectString(object.title, [...path, "title"], 512),
     description: expectString(object.description, [...path, "description"], 4_096),
     panels,
-    layout: expectObject(object.layout, [...path, "layout"]),
+    layout: decodeLayout(object.layout, [...path, "layout"], panels),
     parameters:
       object.parameters === undefined
         ? []
         : expectArray(object.parameters, [...path, "parameters"]),
     provenance: expectObject(object.provenance, [...path, "provenance"]),
+  }
+}
+
+function decodeLayout(value: unknown, path: Path, panels: PanelDefinition[]): ReportLayout {
+  const object = expectObject(value, path)
+  exactKeys(object, ["columns", "order", "spans"], path, ["columns", "order", "spans"])
+  const panelIds = new Set(panels.map((panel) => panel.id))
+  const columns =
+    object.columns === undefined
+      ? undefined
+      : expectInteger(object.columns, [...path, "columns"], 1, 12)
+  const order =
+    object.order === undefined
+      ? undefined
+      : expectArray(object.order, [...path, "order"]).map((id, index) =>
+          expectIdentifier(id, [...path, "order", index]),
+        )
+  if (order !== undefined) {
+    unique(order, [...path, "order"], "panel id")
+    for (const [index, id] of order.entries())
+      if (!panelIds.has(id))
+        fail("unknown_panel", [...path, "order", index], "Layout references an unknown panel")
+  }
+  const rawSpans =
+    object.spans === undefined ? undefined : expectObject(object.spans, [...path, "spans"])
+  const spans =
+    rawSpans === undefined
+      ? undefined
+      : Object.fromEntries(
+          Object.entries(rawSpans).map(([id, span]) => {
+            if (!panelIds.has(id))
+              fail("unknown_panel", [...path, "spans", id], "Layout references an unknown panel")
+            return [id, expectInteger(span, [...path, "spans", id], 1, columns ?? 12)]
+          }),
+        )
+  return {
+    ...(columns === undefined ? {} : { columns }),
+    ...(order === undefined ? {} : { order }),
+    ...(spans === undefined ? {} : { spans }),
   }
 }
 
@@ -470,6 +510,12 @@ function expectIdentifier(value: unknown, path: Path): string {
 
 function expectBoolean(value: unknown, path: Path): boolean {
   if (typeof value !== "boolean") return fail("expected_boolean", path, "Expected a boolean")
+  return value
+}
+
+function expectInteger(value: unknown, path: Path, minimum: number, maximum: number): number {
+  if (!Number.isInteger(value) || typeof value !== "number" || value < minimum || value > maximum)
+    return fail("invalid_integer", path, `Expected an integer from ${minimum} to ${maximum}`)
   return value
 }
 

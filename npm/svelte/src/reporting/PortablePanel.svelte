@@ -1,14 +1,29 @@
 <script lang="ts">
 import { AreaChart, BarChart, LineChart, ScatterChart } from "layerchart"
 import { type ChartDatum, compilePanel } from "./compile.js"
-import type { PanelDefinition, PanelResult } from "./contract.js"
+import {
+  DEFAULT_REPORTING_MESSAGES,
+  type PanelDefinition,
+  type PanelResult,
+  type ReportingMessages,
+} from "./contract.js"
 import DataTable from "./DataTable.svelte"
 import { formatCell } from "./format.js"
 import HeatmapChart from "./HeatmapChart.svelte"
 
-let { panel, result, locale }: { panel: PanelDefinition; result: PanelResult; locale?: string } =
-  $props()
+let {
+  panel,
+  result,
+  locale,
+  messages: messageOverrides,
+}: {
+  panel: PanelDefinition
+  result: PanelResult
+  locale?: string
+  messages?: Partial<ReportingMessages>
+} = $props()
 let tableVisible = $state(false)
+const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
 const frame = $derived(
   result.state === "ok" || result.state === "partial" ? result.frame : undefined,
 )
@@ -18,12 +33,12 @@ const titleId = `pa-report-panel-title-${instanceId}`
 const summaryId = `pa-report-summary-${instanceId}`
 const tableId = `pa-report-table-${instanceId}`
 const palette = [
-  "var(--pa-report-series-1, #2563eb)",
-  "var(--pa-report-series-2, #dc2626)",
-  "var(--pa-report-series-3, #059669)",
-  "var(--pa-report-series-4, #7c3aed)",
-  "var(--pa-report-series-5, #d97706)",
-  "var(--pa-report-series-6, #0891b2)",
+  "var(--pa-report-series-1, currentColor)",
+  "var(--pa-report-series-2, currentColor)",
+  "var(--pa-report-series-3, currentColor)",
+  "var(--pa-report-series-4, currentColor)",
+  "var(--pa-report-series-5, currentColor)",
+  "var(--pa-report-series-6, currentColor)",
 ]
 const series = $derived.by(() => {
   const seriesField = compiled?.series
@@ -48,7 +63,7 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
     </div>
     {#if result.state === "ok" || result.state === "partial"}
       <button type="button" aria-controls={tableId} aria-expanded={tableVisible} onclick={() => tableVisible = !tableVisible}>
-        {tableVisible ? "Hide table" : "View as table"}
+        {tableVisible ? messages.hideTable : messages.viewTable}
       </button>
     {/if}
   </header>
@@ -56,10 +71,10 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
   {#if result.state === "empty"}
     <p class="pa-report-state" role="status">{panel.empty_message}</p>
   {:else if result.state === "error"}
-    <p class="pa-report-state pa-report-error" role="alert">This panel is unavailable.</p>
+    <p class="pa-report-state pa-report-error" role="alert">{messages.panelUnavailable}</p>
   {:else if compiled && frame}
     {#if result.state === "partial"}
-      <p class="pa-report-state pa-report-warning" role="status">This result is partial. Review its evidence before use.</p>
+      <p class="pa-report-state pa-report-warning" role="status">{messages.partialResult}</p>
     {/if}
 
     {#if compiled.kind === "number" && scalarField && scalarValue !== undefined}
@@ -82,20 +97,20 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
     {:else if compiled.chartable && compiled.x && compiled.y && compiled.value && compiled.kind === "heatmap"}
       <div class="pa-report-chart" aria-hidden="true"><HeatmapChart {compiled} /></div>
     {:else}
-      <p class="pa-report-state" role="status">A safe chart is unavailable; the complete table is shown.</p>
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} /></div>
+      <p class="pa-report-state" role="status">{messages.chartUnavailable}</p>
+      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
     {/if}
 
     {#if tableVisible && compiled.kind !== "table"}
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} /></div>
+      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
     {:else if compiled.kind === "table"}
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} /></div>
+      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
     {/if}
 
     <footer>
-      <span>State: {result.state}</span>
-      {#if typeof frame.freshness.watermark === "string"}<span>Watermark: {frame.freshness.watermark}</span>{/if}
-      {#if frame.page.truncated === true}<strong>Truncated</strong>{/if}
+      <span>{messages.stateLabel}: {result.state}</span>
+      {#if typeof frame.freshness.watermark === "string"}<span>{messages.watermarkLabel}: {frame.freshness.watermark}</span>{/if}
+      {#if frame.page.truncated === true}<strong>{messages.truncatedLabel}</strong>{/if}
     </footer>
   {/if}
 </section>
@@ -108,9 +123,9 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
   button:focus-visible { outline: 2px solid var(--pa-report-focus, currentColor); outline-offset: 2px; }
   .pa-report-chart { min-height: 18rem; } .pa-report-sparkline { min-height: 5rem; }
   .pa-report-number { font-size: clamp(2rem, 8vw, 4rem); font-variant-numeric: tabular-nums; }
-  .pa-report-gauge { display: grid; gap: 0.5rem; font-size: 1.5rem; font-variant-numeric: tabular-nums; } progress { width: 100%; accent-color: var(--pa-report-series-1, #2563eb); }
+  .pa-report-gauge { display: grid; gap: 0.5rem; font-size: 1.5rem; font-variant-numeric: tabular-nums; } progress { width: 100%; accent-color: var(--pa-report-series-1, currentColor); }
   .pa-report-state { padding: 0.75rem; background: var(--pa-report-state-surface, color-mix(in srgb, currentColor 8%, transparent)); border-radius: 0.5rem; }
-  .pa-report-warning { border-inline-start: 0.25rem solid var(--pa-report-warning, #d97706); } .pa-report-error { border-inline-start: 0.25rem solid var(--pa-report-error, #dc2626); }
+  .pa-report-warning { border-inline-start: 0.25rem solid var(--pa-report-warning, currentColor); } .pa-report-error { border-inline-start: 0.25rem solid var(--pa-report-error, currentColor); }
   footer { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.875rem; color: var(--pa-report-muted, color-mix(in srgb, currentColor 70%, transparent)); }
   @media (max-width: 30rem) { header { display: grid; } .pa-report-chart { min-height: 14rem; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; } }
