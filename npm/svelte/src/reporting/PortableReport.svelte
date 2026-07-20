@@ -44,10 +44,11 @@ const orderedPanels = $derived.by(() => {
 </article>
 
 <style>
-  .pa-report { display: grid; gap: 1.5rem; min-width: 0; color: var(--pa-report-foreground, currentColor); }
+  .pa-report { container-type: inline-size; display: grid; gap: 1.5rem; min-width: 0; color: var(--pa-report-foreground, currentColor); }
   header h1, header p { margin: 0; } header p { margin-block-start: 0.375rem; color: var(--pa-report-muted, color-mix(in srgb, currentColor 70%, transparent)); }
   .pa-report-grid { display: grid; grid-template-columns: repeat(var(--pa-report-columns, 12), minmax(0, 1fr)); gap: var(--pa-report-grid-gap, 1rem); }
   .pa-report-grid-panel { min-width: 0; grid-column: span var(--pa-report-panel-span, 6); }
   .pa-report-warning { padding: 0.75rem; border-inline-start: 0.25rem solid var(--pa-report-warning, currentColor); background: var(--pa-report-state-surface, color-mix(in srgb, currentColor 8%, transparent)); }
+  @container (max-width: 48rem) { .pa-report-grid-panel { grid-column: 1 / -1; } }
   @media (max-width: 48rem) { .pa-report-grid-panel { grid-column: 1 / -1; } }
 </style>

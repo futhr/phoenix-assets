@@ -53,6 +53,26 @@ const series = $derived.by(() => {
 })
 const scalarField = $derived(compiled?.value ? compiled.fields.get(compiled.value) : undefined)
 const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.value] : undefined)
+const hasPrimaryVisualization = $derived.by(() => {
+  if (!compiled) return false
+  if (compiled.kind === "number") return scalarField !== undefined && scalarValue !== undefined
+  if (compiled.kind === "gauge") return scalarField !== undefined && typeof scalarValue === "number"
+
+  if (["line", "sparkline", "area", "bar", "scatter"].includes(compiled.kind)) {
+    return compiled.chartable && compiled.x !== undefined && compiled.y !== undefined
+  }
+
+  if (compiled.kind === "heatmap") {
+    return (
+      compiled.chartable &&
+      compiled.x !== undefined &&
+      compiled.y !== undefined &&
+      compiled.value !== undefined
+    )
+  }
+
+  return false
+})
 </script>
 
 <section class="pa-report-panel" aria-labelledby={titleId} aria-describedby={summaryId}>
@@ -61,7 +81,7 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
       <h2 id={titleId}>{panel.title}</h2>
       <p id={summaryId}>{panel.description}</p>
     </div>
-    {#if result.state === "ok" || result.state === "partial"}
+    {#if (result.state === "ok" || result.state === "partial") && hasPrimaryVisualization}
       <button type="button" aria-controls={tableId} aria-expanded={tableVisible} onclick={() => tableVisible = !tableVisible}>
         {tableVisible ? messages.hideTable : messages.viewTable}
       </button>
@@ -96,15 +116,15 @@ const scalarValue = $derived(compiled?.value ? compiled.data.at(-1)?.[compiled.v
       <div class="pa-report-chart" aria-hidden="true"><ScatterChart data={compiled.data} x={compiled.x} y={compiled.y} {series} motion="none" /></div>
     {:else if compiled.chartable && compiled.x && compiled.y && compiled.value && compiled.kind === "heatmap"}
       <div class="pa-report-chart" aria-hidden="true"><HeatmapChart {compiled} /></div>
+    {:else if compiled.kind === "table"}
+      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
     {:else}
       <p class="pa-report-state" role="status">{messages.chartUnavailable}</p>
       <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
     {/if}
 
-    {#if tableVisible && compiled.kind !== "table"}
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
-    {:else if compiled.kind === "table"}
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
+    {#if hasPrimaryVisualization}
+      <div id={tableId} hidden={!tableVisible}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
     {/if}
 
     <footer>

@@ -49,6 +49,63 @@ describe("portable report components", () => {
     unmount(component)
   })
 
+  it.each([
+    "area",
+    "bar",
+    "scatter",
+    "sparkline",
+  ] as const)("mounts the governed %s visualization with a hidden semantic table twin", (kind) => {
+    const target = document.createElement("div")
+    const panel = panelFixture()
+    panel.visualization.kind = kind
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel, result: { state: "ok", frame: frameFixture() } },
+    })
+
+    expect(target.querySelector(".pa-report-chart")).not.toBeNull()
+    expect(target.querySelector("button")?.getAttribute("aria-expanded")).toBe("false")
+    expect(target.querySelector("[id][hidden] table caption")?.textContent).toBe("Revenue")
+    unmount(component)
+  })
+
+  it.each([
+    "number",
+    "gauge",
+  ] as const)("renders the governed %s visualization with its table twin", (kind) => {
+    const target = document.createElement("div")
+    const panel = panelFixture()
+    panel.visualization.kind = kind
+    panel.visualization.encodings = { value: "amount" }
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel, result: { state: "ok", frame: frameFixture() } },
+    })
+
+    expect(target.textContent).toContain("13.25 SEK")
+    expect(target.querySelector(kind === "gauge" ? "progress" : ".pa-report-number")).not.toBeNull()
+    expect(target.querySelector("[id][hidden] table caption")?.textContent).toBe("Revenue")
+    unmount(component)
+  })
+
+  it("renders a table visualization exactly once without a fallback warning", () => {
+    const target = document.createElement("div")
+    const panel = panelFixture()
+    panel.visualization.kind = "table"
+    const component = mount(PortablePanel, {
+      target,
+      props: { panel, result: { state: "ok", frame: frameFixture() } },
+    })
+
+    expect(target.querySelectorAll("table")).toHaveLength(1)
+    expect(target.querySelectorAll("[id]").length).toBe(
+      new Set([...target.querySelectorAll<HTMLElement>("[id]")].map((element) => element.id)).size,
+    )
+    expect(target.textContent).not.toContain("A safe chart is unavailable")
+    expect(target.querySelector("button")).toBeNull()
+    unmount(component)
+  })
+
   it("uses the complete table when a line has only one point", () => {
     const target = document.createElement("div")
     const frame = frameFixture()
@@ -61,6 +118,10 @@ describe("portable report components", () => {
     expect(target.querySelector(".pa-report-chart")).toBeNull()
     expect(target.textContent).toContain("A safe chart is unavailable")
     expect(target.querySelector("table")).not.toBeNull()
+    expect(target.querySelector("button")).toBeNull()
+    expect(target.querySelectorAll("[id]").length).toBe(
+      new Set([...target.querySelectorAll<HTMLElement>("[id]")].map((element) => element.id)).size,
+    )
     unmount(component)
   })
 
@@ -156,14 +217,15 @@ describe("portable report components", () => {
 
     expect(button?.tabIndex).toBe(0)
     expect(button?.getAttribute("aria-expanded")).toBe("false")
-    expect(target.querySelector("table")).toBeNull()
+    const controlledId = button?.getAttribute("aria-controls")
+    expect(controlledId).not.toBeNull()
+    expect(target.querySelector(`#${controlledId}`)?.hasAttribute("hidden")).toBe(true)
 
     button?.click()
     await tick()
 
     expect(button?.getAttribute("aria-expanded")).toBe("true")
-    const controlledId = button?.getAttribute("aria-controls")
-    expect(controlledId).not.toBeNull()
+    expect(target.querySelector(`#${controlledId}`)?.hasAttribute("hidden")).toBe(false)
     expect(target.querySelector(`#${controlledId} table caption`)?.textContent).toBe("Revenue")
     expect(target.textContent).toContain("12.50 SEK")
     unmount(component)
