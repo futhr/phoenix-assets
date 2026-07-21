@@ -260,6 +260,12 @@ module.
 
 Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/futhr/phoenix_assets/blob/main/CONTRIBUTING.md) for guidelines.
 
+## Fleet library lockstep
+
+Changes to `phoenix_assets`, `ash_oaskit`, or `doc_shell` are validated across
+all consuming fleet platforms. A version bump moves consumers together, and any
+consumer `override:` pin is updated in the same change.
+
 ---
 
 ## License
