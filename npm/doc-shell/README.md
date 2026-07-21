@@ -1,0 +1,26 @@
+# @phoenix-assets/doc-shell
+
+Renderer-neutral Svelte documentation UI for the versioned `doc-shell/v1`
+artifact contract. The same `DocShellPresentation` value can come from the Hex
+package's `StaticGenerator`, a host's `GraphProjector`, or another source.
+
+```svelte
+<script lang="ts">
+  import { DocShell, type DocShellPresentation } from "@phoenix-assets/doc-shell"
+  import "@phoenix-assets/doc-shell/theme.css"
+
+  let { presentation }: { presentation: DocShellPresentation } = $props()
+</script>
+
+<DocShell {presentation} currentId="intro" currentPath="/docs/intro" />
+```
+
+The package contains no app aliases. Customize its neutral defaults using the
+`DocShellTheme` prop or the documented `--doc-*` CSS custom properties. Search
+uses Fuse.js by default and accepts a replacement callback for graph/vector
+search. Navigation is similarly host-controlled through a `navigate` callback.
+
+The recursive AST renderer dispatches all fourteen directives plus Shiki and
+Mermaid code fences. `ApiReference` renders tag-grouped OpenAPI operations,
+recursive schemas and examples, and a collapsible try-it panel with a lazy JSON
+viewer. All assets are bundled; `pnpm check:offline` rejects CDN references.

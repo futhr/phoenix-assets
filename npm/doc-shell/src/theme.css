@@ -1,0 +1,23 @@
+:where(.doc-shell) {
+  --doc-accent: #2563eb;
+  --doc-background: #ffffff;
+  --doc-border: #dbe2ea;
+  --doc-foreground: #172033;
+  --doc-muted: #64748b;
+  --doc-surface: #f5f7fa;
+  --doc-radius: 0.5rem;
+  color: var(--doc-foreground);
+  background: var(--doc-background);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+:where(.doc-shell) *,
+:where(.doc-shell) *::before,
+:where(.doc-shell) *::after {
+  box-sizing: border-box;
+}
+:where(.doc-shell) button,
+:where(.doc-shell) input,
+:where(.doc-shell) textarea {
+  font: inherit;
+}

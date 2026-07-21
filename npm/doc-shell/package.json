@@ -1,0 +1,63 @@
+{
+  "name": "@phoenix-assets/doc-shell",
+  "version": "0.1.0",
+  "description": "Renderer-neutral Svelte documentation shell for DocShell artifacts.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/futhr/phoenix_assets",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "directory": "npm/doc-shell"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./theme.css": "./dist/theme.css"
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "svelte-package -i src -o dist",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run --coverage",
+    "check:offline": "node scripts/check-offline.mjs",
+    "check:stories": "node scripts/check-stories.mjs",
+    "check:publish": "publint && attw --pack . --profile esm-only --ignore-rules internal-resolution-error no-resolution -q"
+  },
+  "peerDependencies": {
+    "@phoenix-assets/svelte": "^0.1.0",
+    "@phoenix-assets/vite": "^0.1.0",
+    "svelte": "^5.7.0"
+  },
+  "dependencies": {
+    "fuse.js": "^7.1.0",
+    "mermaid": "^11.12.0",
+    "shiki": "^3.17.0"
+  },
+  "devDependencies": {
+    "@phoenix-assets/svelte": "workspace:*",
+    "@phoenix-assets/vite": "workspace:*",
+    "@sveltejs/package": "2.5.8",
+    "@sveltejs/vite-plugin-svelte": "catalog:",
+    "@storybook/addon-svelte-csf": "^5.1.2",
+    "@vitest/coverage-v8": "catalog:",
+    "happy-dom": "catalog:",
+    "svelte": "catalog:",
+    "svelte-check": "^4.7.3",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

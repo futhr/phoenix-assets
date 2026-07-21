@@ -1,0 +1,70 @@
+import { describe, expect, it } from "vitest"
+import {
+  directiveNames,
+  extractText,
+  extractToc,
+  flattenOperations,
+  groupOperations,
+  headingId,
+  isDirective,
+  preCodeInfo,
+  schemaFrom,
+  typeLabel,
+} from "../src/index.js"
+
+describe("DocShell contract helpers", () => {
+  it("extracts stable headings and code fences", () => {
+    const heading = { tag: "h2", content: ["Hello ", { tag: "em", content: "World" }] }
+    expect(extractText(heading.content)).toBe("Hello World")
+    expect(headingId(heading.content)).toBe("hello-world")
+    expect(extractToc([heading])).toEqual([{ id: "hello-world", level: 2, text: "Hello World" }])
+    expect(
+      preCodeInfo({
+        tag: "pre",
+        content: [{ tag: "code", attrs: { class: "language-elixir" }, content: "ok" }],
+      }),
+    ).toEqual({ code: "ok", language: "elixir" })
+    expect(preCodeInfo({ tag: "pre", content: "plain" })).toBeUndefined()
+    expect(preCodeInfo({ tag: "pre", content: ["plain"] })).toBeUndefined()
+    expect(extractText()).toBe("")
+    expect(
+      extractToc(["text", { tag: "div", content: [{ tag: "h3", content: "Nested" }] }]),
+    ).toEqual([{ id: "nested", level: 3, text: "Nested" }])
+  })
+
+  it("publishes the complete directive registry", () => {
+    expect(directiveNames).toHaveLength(14)
+    expect(isDirective("callout")).toBe(true)
+    expect(isDirective("script")).toBe(false)
+  })
+
+  it("flattens and groups OpenAPI operations", () => {
+    const operations = flattenOperations({
+      paths: { "/users": { get: { operationId: "users", tags: ["Accounts"] } } },
+    })
+    const operation = operations[0]
+    if (!operation) throw new Error("expected operation")
+    expect(operations[0]).toMatchObject({ id: "users", method: "GET", path: "/users" })
+    expect(groupOperations(operations)).toEqual({ Accounts: operations })
+    expect(flattenOperations({})).toEqual([])
+    expect(groupOperations([{ ...operation, tags: [] }])).toEqual({
+      default: [{ ...operation, tags: [] }],
+    })
+  })
+
+  it("labels recursive schema variants", () => {
+    expect(typeLabel({ type: "array", items: { type: "string" } })).toBe("string[]")
+    expect(typeLabel({ oneOf: [{ type: "string" }] })).toBe("oneOf")
+    expect(typeLabel({ type: "number", nullable: true })).toBe("number?")
+    expect(typeLabel({ anyOf: [] })).toBe("anyOf")
+    expect(typeLabel({ allOf: [] })).toBe("allOf")
+    expect(typeLabel({})).toBe("object")
+    expect(schemaFrom({ "application/json": { schema: { type: "string" } } })).toEqual({
+      type: "string",
+    })
+    expect(schemaFrom({ "application/vnd.api+json": { schema: { type: "number" } } })).toEqual({
+      type: "number",
+    })
+    expect(schemaFrom()).toBeUndefined()
+  })
+})
