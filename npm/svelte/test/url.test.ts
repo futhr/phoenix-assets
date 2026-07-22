@@ -82,9 +82,9 @@ describe("configureShapeAuth", () => {
   })
 
   it("makes getAuthToken read from the app-configured localStorage key", () => {
-    configureShapeAuth({ localStorageKey: "refpath_cloud_token" })
+    configureShapeAuth({ localStorageKey: "host_auth_token" })
     vi.stubGlobal("localStorage", {
-      getItem: (key: string) => (key === "refpath_cloud_token" ? "tok2" : null),
+      getItem: (key: string) => (key === "host_auth_token" ? "tok2" : null),
     })
     expect(getAuthToken()).toBe("tok2")
   })
