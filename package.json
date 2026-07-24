@@ -19,7 +19,7 @@
     "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.5.3",
     "knip": "^6.26.0",
-    "publint": "^0.3.21",
+    "publint": "^0.3.22",
     "typescript": "catalog:"
   }
 }
