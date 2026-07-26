@@ -284,9 +284,14 @@ describe("portable report components", () => {
 
   it("exposes a keyboard-focusable table alternative with synchronized state", async () => {
     const target = document.createElement("div")
+    const viewed: string[] = []
     const component = mount(PortablePanel, {
       target,
-      props: { panel: panelFixture(), result: { state: "ok", frame: frameFixture() } },
+      props: {
+        panel: panelFixture(),
+        result: { state: "ok", frame: frameFixture() },
+        onTableView: (panelId) => viewed.push(panelId),
+      },
     })
     const button = target.querySelector("button")
 
@@ -303,6 +308,7 @@ describe("portable report components", () => {
     expect(target.querySelector(`#${controlledId}`)?.hasAttribute("hidden")).toBe(false)
     expect(target.querySelector(`#${controlledId} table caption`)?.textContent).toBe("Revenue")
     expect(target.textContent).toContain("12.50 SEK")
+    expect(viewed).toEqual(["trend"])
     unmount(component)
   })
 })

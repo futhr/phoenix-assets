@@ -17,6 +17,7 @@ let {
   locale,
   messages: messageOverrides,
   onDrill,
+  onTableView,
 }: {
   panel: PanelDefinition
   result: PanelResult
@@ -27,6 +28,7 @@ let {
     actionId: string,
     selection: Record<string, unknown>,
   ) => void | Promise<void>
+  onTableView?: (panelId: string) => void | Promise<void>
 } = $props()
 let tableVisible = $state(false)
 const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
@@ -85,6 +87,10 @@ const drill = (row: unknown[]) => {
   const selection = Object.fromEntries(frame.fields.map((field, index) => [field.name, row[index]]))
   return onDrill(panel.id, drillActionId, selection)
 }
+const toggleTable = () => {
+  tableVisible = !tableVisible
+  if (tableVisible) return onTableView?.(panel.id)
+}
 </script>
 
 <section class="pa-report-panel" aria-labelledby={titleId} aria-describedby={summaryId}>
@@ -94,7 +100,7 @@ const drill = (row: unknown[]) => {
       <p>{panel.description}</p>
     </div>
     {#if (result.state === "ok" || result.state === "partial") && hasPrimaryVisualization}
-      <button type="button" aria-controls={tableId} aria-expanded={tableVisible} onclick={() => tableVisible = !tableVisible}>
+      <button type="button" aria-controls={tableId} aria-expanded={tableVisible} onclick={toggleTable}>
         {tableVisible ? messages.hideTable : messages.viewTable}
       </button>
     {/if}
