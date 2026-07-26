@@ -46,6 +46,10 @@ describe("portable report components", () => {
 
     expect(target.querySelector(".pa-report-chart")).not.toBeNull()
     expect(target.textContent).not.toContain("A safe chart is unavailable")
+    const panel = target.querySelector("section")
+    const summaryId = panel?.getAttribute("aria-describedby")
+    expect(summaryId).not.toBeNull()
+    expect(target.querySelector(`#${summaryId}`)?.textContent).toBe("Settled revenue trend.")
     unmount(component)
   })
 

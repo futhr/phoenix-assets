@@ -79,7 +79,7 @@ const hasPrimaryVisualization = $derived.by(() => {
   <header>
     <div>
       <h2 id={titleId}>{panel.title}</h2>
-      <p id={summaryId}>{panel.description}</p>
+      <p>{panel.description}</p>
     </div>
     {#if (result.state === "ok" || result.state === "partial") && hasPrimaryVisualization}
       <button type="button" aria-controls={tableId} aria-expanded={tableVisible} onclick={() => tableVisible = !tableVisible}>
@@ -87,6 +87,8 @@ const hasPrimaryVisualization = $derived.by(() => {
       </button>
     {/if}
   </header>
+
+  <p id={summaryId} class="pa-report-summary">{panel.visualization.summary_template}</p>
 
   {#if result.state === "empty"}
     <p class="pa-report-state" role="status">{panel.empty_message}</p>
@@ -139,6 +141,7 @@ const hasPrimaryVisualization = $derived.by(() => {
   .pa-report-panel { display: grid; gap: 1rem; min-width: 0; padding: var(--pa-report-panel-padding, 1rem); border: 1px solid var(--pa-report-border, color-mix(in srgb, currentColor 20%, transparent)); border-radius: var(--pa-report-radius, 0.75rem); background: var(--pa-report-surface, transparent); color: var(--pa-report-foreground, currentColor); }
   header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
   h2, p { margin: 0; } h2 { font-size: 1rem; } header p { margin-block-start: 0.25rem; color: var(--pa-report-muted, color-mix(in srgb, currentColor 70%, transparent)); }
+  .pa-report-summary { color: var(--pa-report-muted, color-mix(in srgb, currentColor 70%, transparent)); }
   button { min-height: 2.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--pa-report-border, currentColor); border-radius: 0.5rem; background: var(--pa-report-control, transparent); color: inherit; font: inherit; }
   button:focus-visible { outline: 2px solid var(--pa-report-focus, currentColor); outline-offset: 2px; }
   .pa-report-chart { min-height: 18rem; } .pa-report-sparkline { min-height: 5rem; }
