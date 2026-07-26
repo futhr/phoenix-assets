@@ -18,6 +18,14 @@ let {
   onRowAction?: (row: unknown[]) => void | Promise<void>
 } = $props()
 const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
+const pageSize = 200
+let page = $state(0)
+const pageCount = $derived(Math.max(1, Math.ceil(frame.rows.length / pageSize)))
+const visibleRows = $derived(frame.rows.slice(page * pageSize, (page + 1) * pageSize))
+
+$effect(() => {
+  if (page >= pageCount) page = pageCount - 1
+})
 
 const fieldIndexes = $derived(
   (columns?.length ? columns : frame.fields.map((field) => field.name))
@@ -45,7 +53,7 @@ const fieldIndexes = $derived(
       </tr>
     </thead>
     <tbody>
-      {#each frame.rows as row}
+      {#each visibleRows as row}
         <tr>
           {#each fieldIndexes as { field, index }}
             <td>{formatCell(row[index], field, locale)}</td>
@@ -59,6 +67,13 @@ const fieldIndexes = $derived(
       {/each}
     </tbody>
   </table>
+  {#if pageCount > 1}
+    <nav class="pa-report-pagination" aria-label={`${caption} table pages`}>
+      <button type="button" disabled={page === 0} onclick={() => page--}>{messages.previousPage}</button>
+      <span aria-live="polite">{messages.pageStatus(page + 1, pageCount)}</span>
+      <button type="button" disabled={page === pageCount - 1} onclick={() => page++}>{messages.nextPage}</button>
+    </nav>
+  {/if}
 </div>
 
 <style>
@@ -69,5 +84,7 @@ const fieldIndexes = $derived(
   th { font-weight: 600; }
   button { min-height: 2.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--pa-report-border, currentColor); border-radius: 0.5rem; background: var(--pa-report-control, transparent); color: inherit; font: inherit; white-space: nowrap; }
   button:focus-visible { outline: 2px solid var(--pa-report-focus, currentColor); outline-offset: 2px; }
+  button:disabled { opacity: 0.5; }
+  .pa-report-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; padding: 0.75rem; }
   .pa-report-table-wrap:focus-visible { outline: 2px solid var(--pa-report-focus, currentColor); outline-offset: 2px; }
 </style>

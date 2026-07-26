@@ -40,6 +40,24 @@ describe("portable report components", () => {
     unmount(component)
   })
 
+  it("pages governed tables beyond two hundred rows", async () => {
+    const target = document.createElement("div")
+    const frame = frameFixture()
+    frame.rows = Array.from({ length: 201 }, (_, index) => ["2026-07-16T10:00:00Z", String(index)])
+    const component = mount(DataTable, {
+      target,
+      props: { frame, columns: ["amount"], caption: "Revenue" },
+    })
+
+    expect(target.querySelectorAll("tbody tr")).toHaveLength(200)
+    expect(target.textContent).toContain("Page 1 of 2")
+    target.querySelectorAll<HTMLButtonElement>("nav button")[1]?.click()
+    await tick()
+    expect(target.querySelectorAll("tbody tr")).toHaveLength(1)
+    expect(target.textContent).toContain("Page 2 of 2")
+    unmount(component)
+  })
+
   it("renders explicit empty and error states without creating a chart", () => {
     const target = document.createElement("div")
     const empty = mount(PortablePanel, {

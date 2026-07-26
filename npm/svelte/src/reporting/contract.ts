@@ -91,6 +91,9 @@ export type ReportingMessages = {
   watermarkLabel: string
   truncatedLabel: string
   drillRow: string
+  previousPage: string
+  nextPage: string
+  pageStatus: (page: number, pages: number) => string
   tableRegion: (caption: string) => string
   noRows: string
 }
@@ -106,6 +109,9 @@ export const DEFAULT_REPORTING_MESSAGES: ReportingMessages = {
   watermarkLabel: "Watermark",
   truncatedLabel: "Truncated",
   drillRow: "Open details",
+  previousPage: "Previous page",
+  nextPage: "Next page",
+  pageStatus: (page, pages) => `Page ${page} of ${pages}`,
   tableRegion: (caption) => `${caption} data table`,
   noRows: "No rows",
 }
