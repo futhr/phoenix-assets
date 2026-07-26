@@ -90,6 +90,7 @@ export type ReportingMessages = {
   stateLabel: string
   watermarkLabel: string
   truncatedLabel: string
+  drillRow: string
   tableRegion: (caption: string) => string
   noRows: string
 }
@@ -104,6 +105,7 @@ export const DEFAULT_REPORTING_MESSAGES: ReportingMessages = {
   stateLabel: "State",
   watermarkLabel: "Watermark",
   truncatedLabel: "Truncated",
+  drillRow: "Open details",
   tableRegion: (caption) => `${caption} data table`,
   noRows: "No rows",
 }

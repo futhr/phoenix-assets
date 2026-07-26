@@ -8,12 +8,14 @@ let {
   caption,
   locale,
   messages: messageOverrides,
+  onRowAction,
 }: {
   frame: ResultFrame
   columns?: string[]
   caption: string
   locale?: string
   messages?: Partial<ReportingMessages>
+  onRowAction?: (row: unknown[]) => void | Promise<void>
 } = $props()
 const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
 
@@ -39,6 +41,7 @@ const fieldIndexes = $derived(
         {#each fieldIndexes as { field }}
           <th scope="col">{field.label}{field.unit && field.unit !== "count" ? ` (${field.unit})` : ""}</th>
         {/each}
+        {#if onRowAction}<th scope="col">{messages.drillRow}</th>{/if}
       </tr>
     </thead>
     <tbody>
@@ -47,6 +50,9 @@ const fieldIndexes = $derived(
           {#each fieldIndexes as { field, index }}
             <td>{formatCell(row[index], field, locale)}</td>
           {/each}
+          {#if onRowAction}
+            <td><button type="button" onclick={() => onRowAction(row)}>{messages.drillRow}</button></td>
+          {/if}
         </tr>
       {:else}
         <tr><td colspan={fieldIndexes.length || 1}>{messages.noRows}</td></tr>
@@ -61,5 +67,7 @@ const fieldIndexes = $derived(
   caption { padding: 0.5rem; text-align: start; font-weight: 600; }
   th, td { padding: 0.5rem 0.75rem; border-block-end: 1px solid var(--pa-report-border, color-mix(in srgb, currentColor 20%, transparent)); text-align: start; white-space: nowrap; }
   th { font-weight: 600; }
+  button { min-height: 2.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--pa-report-border, currentColor); border-radius: 0.5rem; background: var(--pa-report-control, transparent); color: inherit; font: inherit; white-space: nowrap; }
+  button:focus-visible { outline: 2px solid var(--pa-report-focus, currentColor); outline-offset: 2px; }
   .pa-report-table-wrap:focus-visible { outline: 2px solid var(--pa-report-focus, currentColor); outline-offset: 2px; }
 </style>

@@ -16,11 +16,17 @@ let {
   result,
   locale,
   messages: messageOverrides,
+  onDrill,
 }: {
   panel: PanelDefinition
   result: PanelResult
   locale?: string
   messages?: Partial<ReportingMessages>
+  onDrill?: (
+    panelId: string,
+    actionId: string,
+    selection: Record<string, unknown>,
+  ) => void | Promise<void>
 } = $props()
 let tableVisible = $state(false)
 const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
@@ -73,6 +79,12 @@ const hasPrimaryVisualization = $derived.by(() => {
 
   return false
 })
+const drillActionId = $derived(panel.visualization.interaction.drill_action_id)
+const drill = (row: unknown[]) => {
+  if (!drillActionId || !frame || !onDrill) return
+  const selection = Object.fromEntries(frame.fields.map((field, index) => [field.name, row[index]]))
+  return onDrill(panel.id, drillActionId, selection)
+}
 </script>
 
 <section class="pa-report-panel" aria-labelledby={titleId} aria-describedby={summaryId}>
@@ -119,14 +131,14 @@ const hasPrimaryVisualization = $derived.by(() => {
     {:else if compiled.chartable && compiled.x && compiled.y && compiled.value && compiled.kind === "heatmap"}
       <div class="pa-report-chart" aria-hidden="true"><HeatmapChart {compiled} /></div>
     {:else if compiled.kind === "table"}
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
+      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} onRowAction={drillActionId && onDrill ? drill : undefined} /></div>
     {:else}
       <p class="pa-report-state" role="status">{messages.chartUnavailable}</p>
-      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
+      <div id={tableId}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} onRowAction={drillActionId && onDrill ? drill : undefined} /></div>
     {/if}
 
     {#if hasPrimaryVisualization}
-      <div id={tableId} hidden={!tableVisible}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} /></div>
+      <div id={tableId} hidden={!tableVisible}><DataTable {frame} columns={panel.table_columns} caption={panel.title} {locale} {messages} onRowAction={drillActionId && onDrill ? drill : undefined} /></div>
     {/if}
 
     <footer>

@@ -20,6 +20,26 @@ describe("portable report components", () => {
     unmount(component)
   })
 
+  it("emits the complete governed row from an accessible drill action", () => {
+    const target = document.createElement("div")
+    const rows: unknown[][] = []
+    const component = mount(DataTable, {
+      target,
+      props: {
+        frame: frameFixture(),
+        columns: ["amount"],
+        caption: "Revenue",
+        onRowAction: (row) => rows.push(row),
+      },
+    })
+
+    target.querySelector<HTMLButtonElement>("tbody button")?.click()
+
+    expect(rows).toEqual([["2026-07-16T10:00:00Z", "12.50"]])
+    expect(target.querySelector("thead")?.textContent).toContain("Open details")
+    unmount(component)
+  })
+
   it("renders explicit empty and error states without creating a chart", () => {
     const target = document.createElement("div")
     const empty = mount(PortablePanel, {
@@ -208,6 +228,39 @@ describe("portable report components", () => {
     ).toEqual(["8", "4"])
     expect(target.textContent).toContain("Anpassad tabellvy används.")
     expect(target.textContent).toContain("Panelen är inte tillgänglig.")
+    unmount(component)
+  })
+
+  it("propagates governed drill actions with a field-keyed row selection", () => {
+    const target = document.createElement("div")
+    const envelope = envelopeFixture()
+    const panel = envelope.definition.panels[0]
+    if (!panel) throw new Error("expected fixture panel")
+    panel.visualization.interaction = {
+      selection: "point",
+      drill_action_id: "open_detail",
+    }
+    const drills: unknown[] = []
+    const component = mount(PortableReport, {
+      target,
+      props: {
+        envelope,
+        onDrill: (panelId, actionId, selection) => drills.push({ panelId, actionId, selection }),
+      },
+    })
+
+    target.querySelector<HTMLButtonElement>("tbody button")?.click()
+
+    expect(drills).toEqual([
+      {
+        panelId: "trend",
+        actionId: "open_detail",
+        selection: {
+          evaluated_at: "2026-07-16T10:00:00Z",
+          amount: "12.50",
+        },
+      },
+    ])
     unmount(component)
   })
 

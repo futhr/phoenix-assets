@@ -10,7 +10,17 @@ let {
   envelope,
   locale,
   messages: messageOverrides,
-}: { envelope: ReportEnvelope; locale?: string; messages?: Partial<ReportingMessages> } = $props()
+  onDrill,
+}: {
+  envelope: ReportEnvelope
+  locale?: string
+  messages?: Partial<ReportingMessages>
+  onDrill?: (
+    panelId: string,
+    actionId: string,
+    selection: Record<string, unknown>,
+  ) => void | Promise<void>
+} = $props()
 const instanceId = $props.id()
 const titleId = `pa-report-title-${instanceId}`
 const messages = $derived({ ...DEFAULT_REPORTING_MESSAGES, ...messageOverrides })
@@ -37,7 +47,7 @@ const orderedPanels = $derived.by(() => {
   <div class="pa-report-grid" style={`--pa-report-columns: ${columns}`}>
     {#each orderedPanels as panel (panel.id)}
       <div class="pa-report-grid-panel" style={`--pa-report-panel-span: ${envelope.definition.layout.spans?.[panel.id] ?? Math.min(6, columns)}`}>
-        <PortablePanel {panel} result={envelope.results[panel.id]!} {locale} {messages} />
+        <PortablePanel {panel} result={envelope.results[panel.id]!} {locale} {messages} {onDrill} />
       </div>
     {/each}
   </div>
