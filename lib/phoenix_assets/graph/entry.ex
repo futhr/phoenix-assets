@@ -13,7 +13,16 @@ defmodule PhoenixAssets.Graph.Entry do
   """
 
   @type kind ::
-          :page | :route | :electric_shape | :pubsub_topic | :entry | :locale | :story | atom()
+          :page
+          | :route
+          | :electric_shape
+          | :command
+          | :session
+          | :pubsub_topic
+          | :entry
+          | :locale
+          | :story
+          | atom()
 
   @type t :: %__MODULE__{
           kind: kind(),

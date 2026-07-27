@@ -1,0 +1,210 @@
+defmodule PhoenixAssets.Commands.Definitions do
+  @moduledoc """
+  DSL for declaring the server mutations that drive generated TypeScript clients.
+
+  Reads are shapes; everything that changes state is a *command*. A host module
+  `use`s this and declares each mutation with the endpoint that serves it, the
+  request body it accepts, the payload it returns, and — the part that makes the
+  contract worth having — the exact error codes it can answer with:
+
+      defmodule MyApp.Assets.Commands do
+        use PhoenixAssets.Commands.Definitions
+
+        command :publish_article,
+          route: "/api/articles/:id/publish",
+          method: :post,
+          params: [id: :string],
+          body: [note: :string],
+          result: "ArticleRow",
+          errors: [:already_published, :article_not_found]
+      end
+
+  The generated client returns a discriminated result, so a caller cannot read
+  the payload without handling failure, and an error code the server stops
+  sending becomes a TypeScript error at every call site that still matches on it.
+
+  Options per `command/2`:
+
+    * `:route` (required) -- the Phoenix route, `:placeholders` allowed.
+    * `:method` -- `:post` (default), `:put`, `:patch` or `:delete`.
+    * `:params` -- keyword list of `{placeholder, :string | :integer}`; must
+      match the route's placeholders exactly. Untyped placeholders default to
+      `string | number`.
+    * `:body` -- a TypeScript type name, or a keyword list of
+      `{field, type}` rendered as an interface. Field names are emitted
+      verbatim, so they match the JSON the controller actually reads.
+    * `:result` -- the TypeScript type of the success payload; omit for a
+      command that returns nothing meaningful.
+    * `:errors` -- the error codes the endpoint answers with. Any other code
+      the server returns degrades to `"unknown_error"` at runtime.
+
+  Declarations are validated at compile time: a missing `:route`, an unknown
+  option, a glob segment, a `:params` list that does not match the route, an
+  unsupported body field type or a duplicate name is a compile error.
+
+  > #### `use PhoenixAssets.Commands.Definitions` {: .info}
+  >
+  > Using this module imports `command/2` and defines
+  > `__phoenix_assets_commands__/0` with the validated declarations.
+
+  """
+
+  alias PhoenixAssets.Generators.TS
+
+  @methods [:post, :put, :patch, :delete]
+  @param_types [:string, :integer]
+  @body_types [:string, :integer, :float, :boolean, :map, :list, :any]
+
+  @command_schema NimbleOptions.new!(
+                    route: [
+                      type: :string,
+                      required: true,
+                      doc: "the Phoenix route serving the command (`:placeholders` allowed)"
+                    ],
+                    method: [type: {:in, @methods}, default: :post],
+                    params: [type: :keyword_list, doc: "typed route placeholders"],
+                    body: [
+                      type: {:or, [:string, :atom, :keyword_list]},
+                      doc: "a TypeScript type name, or inline `{field, type}` pairs"
+                    ],
+                    result: [
+                      type: {:or, [:string, :atom]},
+                      doc: "the TypeScript type of the success payload"
+                    ],
+                    errors: [type: {:list, :atom}, default: []]
+                  )
+
+  @doc false
+  defmacro __using__(_) do
+    quote do
+      import PhoenixAssets.Commands.Definitions, only: [command: 2]
+      Module.register_attribute(__MODULE__, :phoenix_assets_commands, accumulate: true)
+      @before_compile PhoenixAssets.Commands.Definitions
+    end
+  end
+
+  @doc "Declares a command: `route:`, `method:`, `params:`, `body:`, `result:`, `errors:`."
+  defmacro command(name, opts) do
+    quote do
+      @phoenix_assets_commands {unquote(name), unquote(opts)}
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    commands =
+      env.module
+      |> Module.get_attribute(:phoenix_assets_commands)
+      |> List.wrap()
+      |> Enum.reverse()
+      |> Enum.map(fn {name, opts} -> {name, validate!(env, name, opts)} end)
+
+    ensure_unique_names!(env, commands)
+
+    quote do
+      @doc "Returns the declared commands as `{name, opts}` pairs."
+      def __phoenix_assets_commands__, do: unquote(Macro.escape(commands))
+    end
+  end
+
+  @doc "The HTTP methods a command may declare."
+  @spec methods() :: [atom()]
+  def methods, do: @methods
+
+  defp ensure_unique_names!(env, commands) do
+    names = Enum.map(commands, fn {name, _} -> name end)
+
+    case names -- Enum.uniq(names) do
+      [] -> :ok
+      [dup | _] -> compile_error!(env, dup, "declared more than once")
+    end
+  end
+
+  defp validate!(env, name, opts) do
+    opts =
+      case NimbleOptions.validate(opts, @command_schema) do
+        {:ok, validated} -> validated
+        {:error, error} -> compile_error!(env, name, Exception.message(error))
+      end
+
+    route = opts[:route]
+
+    if route |> String.split("/") |> Enum.any?(&String.starts_with?(&1, "*")) do
+      compile_error!(env, name, "glob segments (#{route}) are not supported in command routes")
+    end
+
+    validate_params!(env, name, route, opts[:params])
+    validate_body!(env, name, opts[:body])
+    validate_result!(env, name, opts[:result])
+
+    opts
+  rescue
+    error in ArgumentError -> compile_error!(env, name, Exception.message(error))
+  end
+
+  defp validate_result!(_, _, nil), do: :ok
+
+  defp validate_result!(env, name, result) do
+    _ = TS.type_name(result)
+    :ok
+  rescue
+    error in ArgumentError -> compile_error!(env, name, Exception.message(error))
+  end
+
+  defp validate_params!(_, _, _, nil), do: :ok
+
+  defp validate_params!(env, name, route, params) do
+    placeholders = route |> TS.path_params() |> Enum.sort()
+    declared = params |> Keyword.keys() |> Enum.map(&to_string/1) |> Enum.sort()
+
+    if declared != placeholders do
+      compile_error!(
+        env,
+        name,
+        "params #{inspect(declared)} do not match the route's placeholders " <>
+          "#{inspect(placeholders)} (#{route})"
+      )
+    end
+
+    Enum.each(params, fn {field, type} ->
+      unless type in @param_types do
+        compile_error!(
+          env,
+          name,
+          "param #{inspect(field)} has unsupported type #{inspect(type)} " <>
+            "(expected one of #{inspect(@param_types)})"
+        )
+      end
+    end)
+  end
+
+  defp validate_body!(_, _, nil), do: :ok
+
+  defp validate_body!(env, name, body) when is_binary(body) or is_atom(body) do
+    _ = TS.type_name(body)
+    :ok
+  rescue
+    error in ArgumentError -> compile_error!(env, name, Exception.message(error))
+  end
+
+  defp validate_body!(env, name, body) when is_list(body) do
+    if body == [] do
+      compile_error!(env, name, "body must declare at least one field, or name a type")
+    end
+
+    Enum.each(body, fn {field, type} ->
+      unless type in @body_types do
+        compile_error!(
+          env,
+          name,
+          "body field #{inspect(field)} has unsupported type #{inspect(type)} " <>
+            "(expected one of #{inspect(@body_types)})"
+        )
+      end
+    end)
+  end
+
+  @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()
+  defp compile_error!(env, name, message),
+    do: PhoenixAssets.DSL.compile_error!(env, "command", name, message)
+end

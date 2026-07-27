@@ -7,10 +7,12 @@
   exception_moduledoc_required: true,
   failed: false,
   ignore_modules: [
+    PhoenixAssets.Commands.Definitions,
     PhoenixAssets.Electric.Shapes,
     PhoenixAssets.Plugin,
     PhoenixAssets.Preset,
     PhoenixAssets.PubSub.Topics,
+    PhoenixAssets.Session.Fields,
     PhoenixAssets.Types.Schema
   ],
   ignore_paths: [~r(^test/)],

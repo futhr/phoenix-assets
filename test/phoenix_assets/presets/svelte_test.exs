@@ -17,6 +17,8 @@ defmodule PhoenixAssets.Presets.SvelteTest do
     PhoenixAssets.Tailwind,
     PhoenixAssets.Storybook,
     PhoenixAssets.Electric,
+    PhoenixAssets.Commands,
+    PhoenixAssets.Session,
     PhoenixAssets.PubSub,
     PhoenixAssets.Localize,
     PhoenixAssets.Types

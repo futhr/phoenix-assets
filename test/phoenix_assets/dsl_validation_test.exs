@@ -252,4 +252,154 @@ defmodule PhoenixAssets.DSLValidationTest do
       )
     end
   end
+
+  describe "Commands.Definitions" do
+    test "a command without a route is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandNoRoute do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, method: :post
+        end
+        """,
+        ~r/command :publish.*required :route option not found/s
+      )
+    end
+
+    test "an unsupported method is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandBadMethod do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/publish", method: :get
+        end
+        """,
+        ~r/command :publish.*invalid value for :method/s
+      )
+    end
+
+    test "params must match the route placeholders exactly" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandParamDrift do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/articles/:id/publish", params: [article_id: :string]
+        end
+        """,
+        ~r/command :publish.*do not match the route's placeholders/s
+      )
+    end
+
+    test "an unsupported param type is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandBadParamType do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/articles/:id", params: [id: :uuid]
+        end
+        """,
+        ~r/command :publish.*param :id has unsupported type :uuid/s
+      )
+    end
+
+    test "an unsupported body field type is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandBadBodyType do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/publish", body: [note: :struct]
+        end
+        """,
+        ~r/command :publish.*body field :note has unsupported type :struct/s
+      )
+    end
+
+    test "an empty inline body is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandEmptyBody do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/publish", body: []
+        end
+        """,
+        ~r/command :publish.*at least one field/s
+      )
+    end
+
+    test "a glob route is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandGlob do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/*rest"
+        end
+        """,
+        ~r/command :publish.*glob segments/s
+      )
+    end
+
+    test "a duplicate command name is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandDup do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/publish"
+          command :publish, route: "/api/publish-again"
+        end
+        """,
+        ~r/command :publish.*declared more than once/s
+      )
+    end
+  end
+
+  describe "Session.Fields" do
+    test "an unsupported field type is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.SessionBadType do
+          use PhoenixAssets.Session.Fields
+          field :user_id, :uuid
+        end
+        """,
+        ~r/session field :user_id.*unsupported type :uuid/s
+      )
+    end
+
+    test "values on a non-string field is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.SessionBadValues do
+          use PhoenixAssets.Session.Fields
+          field :seats, :integer, values: ["one"]
+        end
+        """,
+        ~r/session field :seats.*only valid for a :string field/s
+      )
+    end
+
+    test "a duplicate field is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.SessionDup do
+          use PhoenixAssets.Session.Fields
+          field :user_id, :string
+          field :user_id, :string
+        end
+        """,
+        ~r/session field :user_id.*declared more than once/s
+      )
+    end
+
+    test "a projection with no fields is a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.SessionEmpty do
+          use PhoenixAssets.Session.Fields
+          route "/api/session"
+        end
+        """,
+        ~r/session field :session.*at least one field/s
+      )
+    end
+  end
 end

@@ -18,6 +18,8 @@ defmodule PhoenixAssets.Presets.Svelte do
 
       config :phoenix_assets, :stack,
         shapes: MyApp.Assets.ElectricShapes,
+        commands: MyApp.Assets.Commands,
+        session: MyApp.Assets.Session,
         topics: MyApp.Assets.PubSubTopics,
         types: MyApp.Assets.Types
 
@@ -37,6 +39,8 @@ defmodule PhoenixAssets.Presets.Svelte do
   integration(PhoenixAssets.Tailwind)
   integration(PhoenixAssets.Storybook)
   integration(PhoenixAssets.Electric)
+  integration(PhoenixAssets.Commands)
+  integration(PhoenixAssets.Session)
   integration(PhoenixAssets.PubSub)
   integration(PhoenixAssets.Localize)
   integration(PhoenixAssets.Types)
