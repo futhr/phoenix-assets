@@ -41,12 +41,18 @@ niceties (CSP nonces, Subresource Integrity, module preloading), and keeps dev
 and prod in sync. `phoenix_assets` does all of that, and goes deeper — because
 Phoenix knows things a PHP or Ruby app never will at build time:
 
-- **Typed contracts from five sources of truth.** Routes, Ash resources,
-  ElectricSQL shapes, Phoenix.PubSub topics, and gettext locales are generated to
-  TypeScript and exposed as `$phoenix/*` virtual modules. The types come from the
+- **Typed contracts from seven sources of truth.** Routes, Ash resources,
+  ElectricSQL shapes, server commands, the session projection, Phoenix.PubSub
+  topics, and gettext locales are generated to TypeScript and exposed as
+  `$phoenix/*` virtual modules. The types come from the
   backend, so they can't drift — and `mix phoenix_assets.gen --check` fails CI
   when the checked-in output is stale.
-- **One asset graph.** Routes, pages, stories, sync shapes, topics, and locales
+- **Both halves of the boundary.** Shapes type what can be read; commands type
+  what can be changed — request body, success payload, and the exact error codes
+  the endpoint answers with, as a discriminated result the caller cannot ignore.
+  The session contract types who is asking, so neither side re-derives the
+  authenticated context by hand.
+- **One asset graph.** Routes, pages, stories, sync shapes, commands, topics, and locales
   link into a single validated graph (`graph.json`, or an embedded
   module) the app can query and the doctor can validate.
 - **Supervised, not unsupervised.** Vite and Storybook run as real OTP children

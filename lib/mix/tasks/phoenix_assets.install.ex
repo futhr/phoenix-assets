@@ -86,7 +86,7 @@ if Code.ensure_loaded?(Igniter.Mix.Task) do
 
         3. Declare your stack and generate the typed contracts:
 
-               config :phoenix_assets, :stack, shapes: ..., topics: ..., types: ...
+               config :phoenix_assets, :stack, shapes: ..., commands: ..., session: ..., topics: ..., types: ...
                mix phoenix_assets.gen
 
         4. Validate before shipping:  mix phoenix_assets.doctor --production

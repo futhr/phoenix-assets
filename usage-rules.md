@@ -50,6 +50,30 @@ defmodule MyApp.Assets.ElectricShapes do
         type: "PortfolioRow", params: [:user_id]
 end
 
+defmodule MyApp.Assets.Commands do
+  use PhoenixAssets.Commands.Definitions
+  # Reads are shapes; everything that changes state is a command. Declaring the
+  # error codes is the point: the generated client returns a discriminated
+  # result, so a call site cannot read the payload without handling failure.
+  command :publish_portfolio,
+    route: "/api/portfolios/:id/publish",
+    method: :post,
+    params: [id: :string],
+    body: [note: :string],
+    result: "PortfolioRow",
+    errors: [:already_published, :portfolio_not_found]
+end
+
+defmodule MyApp.Assets.Session do
+  use PhoenixAssets.Session.Fields
+  # Who is asking, declared once, so neither side re-derives it by hand.
+  route "/api/session"
+  field :user_id, :string
+  field :organization_id, :string
+  field :role, :string, values: ["owner", "admin", "member"]
+  field :platform_admin, :boolean
+end
+
 defmodule MyApp.Assets.PubSubTopics do
   use PhoenixAssets.PubSub.Topics
   topic :portfolio, pattern: "portfolio:{id}",
@@ -66,8 +90,8 @@ end
 
 `mix phoenix_assets.gen` writes typed TypeScript into `assets/src/generated/`:
 `routes.ts` (endpoint helpers for `/shapes/*` and `/api/*` — **page routes are
-SvelteKit's, never generated**), `env.ts`, `electric.ts`, `pubsub.ts`,
-`locales.ts`, `types.ts`. The frontend imports them through `$phoenix/*` virtual
+SvelteKit's, never generated**), `env.ts`, `electric.ts`, `commands.ts`,
+`session.ts`, `pubsub.ts`, `locales.ts`, `types.ts`. The frontend imports them through `$phoenix/*` virtual
 modules (`$phoenix/routes`, `$phoenix/electric`, …) provided by the Vite plugin.
 
 Rules to rely on:
@@ -75,6 +99,10 @@ Rules to rely on:
 - **Generation is deterministic** and content-gated (no write when output is
   byte-identical). `mix phoenix_assets.gen --check` fails on drift — wire it into
   `assets.deploy` as a CI gate.
+- **A command result is a value, never an exception.** `runCommand` resolves to
+  `{ ok: true, data }` or `{ ok: false, error, status }`; a network failure and
+  an error code this build does not know both degrade to `"unknown_error"`
+  rather than escaping as an untyped string or a rejected promise.
 - **Sensitive and non-public Ash fields are excluded** from generated row types
   automatically (`sensitive?: true` and `public?: false` never reach the client).
   A doctor check warns when an exposed field is also field-policy-gated.
@@ -87,7 +115,9 @@ Rules to rely on:
   modules, HMR bridge, PO loader, graph emitter. Add it to `vite.config.js`.
 - `@phoenix-assets/svelte` — typed runtime helpers: `createShapeStore`,
   `authHeaders`/`createShapeUrl` (used by the generated `$phoenix/electric`
-  client), `matchEvent`, `resolveLocale`, and `configureShapeAuth` to point the
+  client), `runCommand` (used by the generated `$phoenix/commands` client), the
+  event modifiers (`debounce`, `throttle`, `once`, `stopPropagation`,
+  `preventDefault`, `self`), `matchEvent`, `resolveLocale`, and `configureShapeAuth` to point the
   shape clients at your app's token key. `createShapeCollection` (TanStack DB)
   lives behind the `@phoenix-assets/svelte/collection` subpath so the main
   barrel stays free of the optional `@tanstack/*` peers.
