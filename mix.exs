@@ -74,6 +74,10 @@ defmodule PhoenixAssets.MixProject do
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test, runtime: false},
       {:simple_sat, "~> 0.1", only: :test},
+      # The install-task test drives igniter's Phoenix generator, which is only
+      # compiled when phx_new resolves as a dependency -- a globally installed
+      # archive does not satisfy it.
+      {:phx_new, "~> 1.7", only: :test, runtime: false},
       {:doctor, "~> 0.22", only: :dev, runtime: false}
     ]
   end
