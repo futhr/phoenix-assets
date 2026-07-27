@@ -31,10 +31,13 @@ defmodule PhoenixAssets.Commands.Definitions do
       match the route's placeholders exactly. Untyped placeholders default to
       `string | number`.
     * `:body` -- a TypeScript type name, or a keyword list of
-      `{field, type}` rendered as an interface. Field names are emitted
-      verbatim, so they match the JSON the controller actually reads.
-    * `:result` -- the TypeScript type of the success payload; omit for a
-      command that returns nothing meaningful.
+      `{field, type}` rendered as an interface. A field type is a scalar
+      (`:string`, `:map`, ...) or another TypeScript type name. Field names are
+      emitted verbatim, so they match the JSON the controller actually reads.
+    * `:result` -- the TypeScript type of the success payload, or a keyword
+      list of `{key, type}` when the endpoint wraps it (`result: [job:
+      "VideoRenderJobRow"]` describes `{"job": {...}}`). Omit for a command
+      that returns nothing meaningful.
     * `:errors` -- the error codes the endpoint answers with. Any other code
       the server returns degrades to `"unknown_error"` at runtime.
 
@@ -68,8 +71,8 @@ defmodule PhoenixAssets.Commands.Definitions do
                       doc: "a TypeScript type name, or inline `{field, type}` pairs"
                     ],
                     result: [
-                      type: {:or, [:string, :atom]},
-                      doc: "the TypeScript type of the success payload"
+                      type: {:or, [:string, :atom, :keyword_list]},
+                      doc: "the TypeScript type of the success payload, or `{key, type}` pairs"
                     ],
                     errors: [type: {:list, :atom}, default: []]
                   )
@@ -144,6 +147,14 @@ defmodule PhoenixAssets.Commands.Definitions do
 
   defp validate_result!(_, _, nil), do: :ok
 
+  defp validate_result!(env, name, result) when is_list(result) do
+    if result == [] do
+      compile_error!(env, name, "result must declare at least one key, or name a type")
+    end
+
+    Enum.each(result, fn {key, type} -> validate_field_type!(env, name, "result", key, type) end)
+  end
+
   defp validate_result!(env, name, result) do
     _ = TS.type_name(result)
     :ok
@@ -192,16 +203,32 @@ defmodule PhoenixAssets.Commands.Definitions do
       compile_error!(env, name, "body must declare at least one field, or name a type")
     end
 
-    Enum.each(body, fn {field, type} ->
-      unless type in @body_types do
-        compile_error!(
-          env,
-          name,
-          "body field #{inspect(field)} has unsupported type #{inspect(type)} " <>
-            "(expected one of #{inspect(@body_types)})"
-        )
-      end
-    end)
+    Enum.each(body, fn {field, type} -> validate_field_type!(env, name, "body", field, type) end)
+  end
+
+  # A field is either a scalar this generator knows how to render, or -- written
+  # as a string -- the name of a type the generated module imports from
+  # `$phoenix/types`. An unknown atom is a typo, not a type name.
+  defp validate_field_type!(_, _, _, _, type) when type in @body_types, do: :ok
+
+  defp validate_field_type!(env, name, kind, field, type) when is_binary(type) do
+    _ = TS.type_name(type)
+    :ok
+  rescue
+    ArgumentError -> unsupported_field_type!(env, name, kind, field, type)
+  end
+
+  defp validate_field_type!(env, name, kind, field, type),
+    do: unsupported_field_type!(env, name, kind, field, type)
+
+  @spec unsupported_field_type!(Macro.Env.t(), term(), String.t(), term(), term()) :: no_return()
+  defp unsupported_field_type!(env, name, kind, field, type) do
+    compile_error!(
+      env,
+      name,
+      "#{kind} field #{inspect(field)} has unsupported type #{inspect(type)} " <>
+        "(expected one of #{inspect(@body_types)}, or a TypeScript type name as a string)"
+    )
   end
 
   @spec compile_error!(Macro.Env.t(), term(), String.t()) :: no_return()

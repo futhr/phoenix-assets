@@ -29,6 +29,14 @@ defmodule PhoenixAssets.CommandsTest do
       body: "ImportPayload",
       result: "ImportReceipt"
     )
+
+    command(:sync_article,
+      route: "/api/articles/:id/sync",
+      method: :patch,
+      body: [source: "ArticleSource", force: :boolean],
+      result: [article: "ArticleRow", warnings: :list],
+      errors: [:sync_failed]
+    )
   end
 
   defmodule EmptyDeclarations do
@@ -68,7 +76,8 @@ defmodule PhoenixAssets.CommandsTest do
     # ArticleRow/ImportPayload/ImportReceipt come from $phoenix/types; an inline
     # body renders its own interface and must not be imported.
     assert out =~
-             ~s|import type { ArticleRow, ImportPayload, ImportReceipt } from "$phoenix/types"|
+             ~s|import type { ArticleRow, ArticleSource, ImportPayload, ImportReceipt } | <>
+               ~s|from "$phoenix/types"|
 
     refute out =~ "PublishArticleBody } from"
   end
@@ -133,6 +142,24 @@ defmodule PhoenixAssets.CommandsTest do
 
     names = Regex.scan(~r/^  (\w+): \(/m, first) |> Enum.map(&List.last/1)
     assert names == Enum.sort(names)
+  end
+
+  test "renders a wrapper interface when the endpoint nests its payload" do
+    out = render()
+
+    assert out =~
+             "export interface SyncArticleData {\n  article: ArticleRow\n  warnings: unknown[]\n}"
+
+    assert out =~ "Promise<CommandResult<SyncArticleData, SyncArticleError>>"
+  end
+
+  test "imports the types named inside inline body and result shapes" do
+    out = render()
+
+    assert out =~ "ArticleSource"
+
+    assert out =~
+             "export interface SyncArticleBody {\n  source: ArticleSource\n  force: boolean\n}"
   end
 
   test "a nil commands module contributes no files, entries, or checks" do

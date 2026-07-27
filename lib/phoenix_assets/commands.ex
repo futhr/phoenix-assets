@@ -106,38 +106,50 @@ defmodule PhoenixAssets.Commands do
   # own interface here, so it is not imported.
   defp referenced_types(commands) do
     commands
-    |> Enum.flat_map(fn {_, opts} ->
-      Enum.filter([opts[:result], named_body(opts)], & &1)
-    end)
-    |> Enum.map(&TS.type_name/1)
+    |> Enum.flat_map(&command_type_names/1)
     |> Enum.uniq()
     |> Enum.sort()
   end
 
-  defp named_body(opts) do
-    case opts[:body] do
-      body when is_binary(body) or is_atom(body) -> body
-      _ -> nil
-    end
+  defp command_type_names({_, opts}) do
+    [opts[:body], opts[:result]]
+    |> Enum.flat_map(&type_names/1)
+    |> Enum.map(&TS.type_name/1)
+  end
+
+  # A named type must resolve in `$phoenix/types`; an inline shape renders its
+  # own interface here, but the types of its fields still have to be imported.
+  defp type_names(nil), do: []
+  defp type_names(value) when is_binary(value) or is_atom(value), do: [value]
+
+  defp type_names(fields) when is_list(fields) do
+    fields
+    |> Enum.map(fn {_, type} -> type end)
+    |> Enum.filter(&is_binary/1)
   end
 
   defp render_declarations({name, opts}) do
     prefix = TS.pascalize(name)
 
     [
-      render_body_interface(prefix, opts[:body]),
+      render_interface(prefix, "Body", opts[:body]),
+      render_interface(prefix, "Data", opts[:result]),
       "\nexport type #{prefix}Error = #{error_union(opts[:errors])}\n",
       "\nconst #{constant_name(name)}: readonly #{prefix}Error[] = #{error_list(opts[:errors])}\n"
     ]
   end
 
-  defp render_body_interface(prefix, body) when is_list(body) do
-    fields = Enum.map_join(body, "", fn {field, type} -> "  #{field}: #{@body_types[type]}\n" end)
+  defp render_interface(prefix, suffix, fields) when is_list(fields) do
+    rendered =
+      Enum.map_join(fields, "", fn {field, type} -> "  #{field}: #{field_type(type)}\n" end)
 
-    "\nexport interface #{prefix}Body {\n#{fields}}\n"
+    "\nexport interface #{prefix}#{suffix} {\n#{rendered}}\n"
   end
 
-  defp render_body_interface(_, _), do: []
+  defp render_interface(_, _, _), do: []
+
+  defp field_type(type) when is_binary(type), do: TS.type_name(type)
+  defp field_type(type), do: @body_types[type]
 
   # A command with no declared codes still has a failure arm: `never` keeps the
   # union honest -- every failure is `unknown_error` and the caller still has to
@@ -156,16 +168,20 @@ defmodule PhoenixAssets.Commands do
     prefix = TS.pascalize(name)
     fname = name |> TS.camelize() |> TS.object_key()
     method = opts[:method] |> to_string() |> String.upcase()
-    result = opts[:result] && TS.type_name(opts[:result])
+    result = result_type(prefix, opts[:result])
 
     args = command_args(prefix, opts)
 
     "  #{fname}: (#{Enum.map_join(args, ", ", & &1.signature)}): " <>
-      "Promise<CommandResult<#{result || "null"}, #{prefix}Error>> =>\n" <>
+      "Promise<CommandResult<#{result}, #{prefix}Error>> =>\n" <>
       "    runCommand({ path: #{JSON.encode!(opts[:route])}, method: #{JSON.encode!(method)}" <>
       Enum.map_join(args, "", & &1.request) <>
       ", ...options }, #{constant_name(name)}),\n"
   end
+
+  defp result_type(_, nil), do: "null"
+  defp result_type(prefix, result) when is_list(result), do: "#{prefix}Data"
+  defp result_type(_, result), do: TS.type_name(result)
 
   defp command_args(prefix, opts) do
     params_arg(opts) ++ body_arg(prefix, opts) ++ [options_arg()]

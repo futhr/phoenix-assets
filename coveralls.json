@@ -1,10 +1,12 @@
 {
   "skip_files": [
+    "lib/mix/tasks/phoenix_assets.gen.commands.ex",
     "lib/mix/tasks/phoenix_assets.gen.electric.ex",
     "lib/mix/tasks/phoenix_assets.gen.env.ex",
     "lib/mix/tasks/phoenix_assets.gen.locales.ex",
     "lib/mix/tasks/phoenix_assets.gen.pubsub.ex",
     "lib/mix/tasks/phoenix_assets.gen.routes.ex",
+    "lib/mix/tasks/phoenix_assets.gen.session.ex",
     "lib/mix/tasks/phoenix_assets.gen.types.ex",
     "test/"
   ],
