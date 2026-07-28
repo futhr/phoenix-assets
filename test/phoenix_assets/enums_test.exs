@@ -81,6 +81,28 @@ defmodule PhoenixAssets.EnumsTest do
     assert [_] = Enums.generated_files(context, state)
   end
 
+  test "discovers enums from configured dependency applications" do
+    app = :phoenix_assets_enum_fixture
+
+    assert :ok =
+             :application.load(
+               {:application, app,
+                [
+                  description: ~c"phoenix_assets enum fixture",
+                  vsn: ~c"1",
+                  modules: [QuotaLevel]
+                ]}
+             )
+
+    on_exit(fn -> :application.unload(app) end)
+
+    context = ctx(enums: [apps: [app], locales: ["en"]])
+    {:ok, state} = Enums.init([], context)
+
+    assert %{"en" => %{"quota_level" => _}} =
+             decode(hd(Enums.generated_files(context, state)))
+  end
+
   test "generates nothing when no enum modules are found" do
     context = ctx()
     {:ok, state} = Enums.init([only: []], context)

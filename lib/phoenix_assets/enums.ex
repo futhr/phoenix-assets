@@ -23,6 +23,16 @@ defmodule PhoenixAssets.Enums do
   in each. An enum that defines neither still emits its values, humanized.
 
   Set `only:` to a list of modules to bypass discovery.
+
+  A host can also discover enums owned by reusable dependency applications:
+
+      config :phoenix_assets, :stack,
+        enums: [
+          gettext_backend: MyAppWeb.Gettext,
+          apps: [:my_shared_domain]
+        ]
+
+  The host application is always included; `apps:` only adds to it.
   """
 
   use PhoenixAssets.Plugin
@@ -91,9 +101,18 @@ defmodule PhoenixAssets.Enums do
   # picked up without a registry to forget to update.
   defp modules(%{only: only}) when is_list(only), do: Enum.sort_by(only, &group_name/1)
 
-  defp modules(%{otp_app: otp_app}) do
+  defp modules(%{otp_app: otp_app} = state) do
+    [otp_app | Map.get(state, :apps, [])]
+    |> Enum.uniq()
+    |> Enum.flat_map(&application_modules/1)
+    |> Enum.uniq()
+    |> Enum.filter(&enum_module?/1)
+    |> Enum.sort_by(&group_name/1)
+  end
+
+  defp application_modules(otp_app) do
     case :application.get_key(otp_app, :modules) do
-      {:ok, modules} -> modules |> Enum.filter(&enum_module?/1) |> Enum.sort_by(&group_name/1)
+      {:ok, modules} -> modules
       :undefined -> []
     end
   end
