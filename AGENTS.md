@@ -47,7 +47,7 @@ Useful narrower commands: `mix test`, `MIX_ENV=test mix coveralls.html`,
 
 ```
 lib/phoenix_assets/        engine (Plugin/Preset/Resolver/Engine), Config/Context,
-                           generators, Graph, Manifest, Doctor, Dev*, the 9 stack
+                           generators, Graph, Manifest, Doctor, Dev*, the 10 stack
                            plugins and their declaration DSLs, Presets.Svelte
 lib/mix/tasks/             phoenix_assets.install/.gen/.doctor/.clean/.graph, plus
                            eight gen.<contract> delegates that forward to gen --only

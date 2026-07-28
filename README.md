@@ -105,7 +105,7 @@ runtime helpers, the documentation shell, and shared frontend lint tooling.
 
 | Package | Path | What it is |
 |---------|------|------------|
-| `phoenix_assets` | `lib/` | Runtime + generated-contracts engine, dev supervision, manifest, graph, doctor, and the built-in SvelteKit + Tailwind + Storybook + ElectricSQL + commands + session + PubSub + localization + Ash-types stack. |
+| `phoenix_assets` | `lib/` | Runtime + generated-contracts engine, dev supervision, manifest, graph, doctor, and the built-in SvelteKit + Tailwind + Storybook + ElectricSQL + commands + session + PubSub + localization + Ash-types + typespec stack. |
 | `@phoenix-assets/vite` | `npm/vite/` | Vite plugin, `$phoenix/*` virtual modules, dev/HMR bridge, graph emitter. |
 | `@phoenix-assets/svelte` | `npm/svelte/` | Typed Electric / PubSub / localization helpers plus the closed portable-report decoder, accessible tables, and shared LayerChart 2 components. |
 | `@phoenix-assets/doc-shell` | `npm/doc-shell/` | Renderer-neutral Svelte documentation UI for the `doc-shell/v1` artifact contract. |

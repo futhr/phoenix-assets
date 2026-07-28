@@ -3,9 +3,10 @@ defmodule PhoenixAssets.Presets.Svelte do
   The built-in default preset: the full Svelte stack.
 
   Composes SvelteKit, Tailwind, Storybook, ElectricSQL, server commands, the
-  session projection, Phoenix PubSub, localization, and Ash-to-TypeScript types
-  into one ordered plugin graph. This is the preset `phoenix_assets` uses when
-  the host application does not set its own `:preset`:
+  session projection, Phoenix PubSub, localization, Ash-to-TypeScript types, and
+  typespec-derived contracts into one ordered plugin graph. This is the preset
+  `phoenix_assets` uses when the host application does not set its own
+  `:preset`:
 
       # config/config.exs -- nothing to point at; this preset is the default.
       config :phoenix_assets,
@@ -44,4 +45,5 @@ defmodule PhoenixAssets.Presets.Svelte do
   integration(PhoenixAssets.PubSub)
   integration(PhoenixAssets.Localize)
   integration(PhoenixAssets.Types)
+  integration(PhoenixAssets.Typespec)
 end

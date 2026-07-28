@@ -85,7 +85,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
   test "the default preset resolves the full Svelte stack", %{ctx: ctx} do
     mods = Enum.map(ctx.plugins, fn {module, _} -> module end)
 
-    assert length(mods) == 9
+    assert length(mods) == 10
     assert PhoenixAssets.SvelteKit in mods
     assert PhoenixAssets.Electric in mods
     assert PhoenixAssets.Commands in mods
@@ -95,7 +95,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
 
   test "initialises every plugin without error", %{ctx: ctx} do
     assert {:ok, initialized} = Engine.init_plugins(ctx)
-    assert length(initialized) == 9
+    assert length(initialized) == 10
   end
 
   test "generates all six contracts and excludes sensitive/private fields", %{

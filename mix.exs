@@ -146,7 +146,8 @@ defmodule PhoenixAssets.MixProject do
           PhoenixAssets.Session,
           PhoenixAssets.PubSub,
           PhoenixAssets.Localize,
-          PhoenixAssets.Types
+          PhoenixAssets.Types,
+          PhoenixAssets.Typespec
         ],
         "Declarations (DSL)": [
           PhoenixAssets.Electric.Shapes,

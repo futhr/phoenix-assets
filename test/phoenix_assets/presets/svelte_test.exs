@@ -21,7 +21,8 @@ defmodule PhoenixAssets.Presets.SvelteTest do
     PhoenixAssets.Session,
     PhoenixAssets.PubSub,
     PhoenixAssets.Localize,
-    PhoenixAssets.Types
+    PhoenixAssets.Types,
+    PhoenixAssets.Typespec
   ]
 
   test "the default preset composes the full Svelte stack" do

@@ -116,6 +116,16 @@ defmodule MyApp.Assets.Types do
 end
 ```
 
+Types the backend already declares as Elixir typespecs — a streaming protocol,
+a job-status union — need no DSL at all. Point at the module:
+
+```elixir
+config :phoenix_assets, :stack,
+  typespecs: [
+    [source: MyApp.Stream.Part, output: "stream-part.ts", root_name: "StreamPart"]
+  ]
+```
+
 ## Generated contracts
 
 `mix phoenix_assets.gen` writes typed TypeScript into `assets/src/generated/`:
