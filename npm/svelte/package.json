@@ -55,14 +55,14 @@
   },
   "devDependencies": {
     "@electric-sql/client": "catalog:",
-    "@sveltejs/package": "2.5.8",
+    "@sveltejs/package": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tanstack/electric-db-collection": "catalog:",
     "@tanstack/svelte-db": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
     "svelte": "catalog:",
-    "svelte-check": "^4.7.3",
+    "svelte-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
@@ -70,6 +70,6 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
-    "layerchart": "2.0.1"
+    "layerchart": "2.0.2"
   }
 }

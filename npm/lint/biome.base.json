@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "ignoreUnknown": true,
@@ -41,9 +41,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
-      "a11y": { "noSvgWithoutTitle": "off" },
+      "preset": "recommended",
+      "a11y": { "preset": "recommended", "noSvgWithoutTitle": "off" },
       "correctness": {
+        "preset": "recommended",
         "noUnusedImports": "warn",
         "noUnusedVariables": "warn",
         "noUndeclaredDependencies": "off",
@@ -51,6 +52,7 @@
         "noUnreachable": "error"
       },
       "suspicious": {
+        "preset": "recommended",
         "useAwait": "off",
         "noExplicitAny": "off",
         "noAssignInExpressions": "off",
@@ -58,23 +60,27 @@
         "useErrorMessage": "warn"
       },
       "complexity": {
+        "preset": "recommended",
         "noForEach": "warn",
         "useFlatMap": "warn",
         "useOptionalChain": "warn",
         "noExcessiveCognitiveComplexity": { "level": "warn", "options": { "maxAllowedComplexity": 50 } }
       },
       "performance": {
+        "preset": "recommended",
         "noBarrelFile": "error",
         "noReExportAll": "error",
         "noAccumulatingSpread": "error"
       },
       "style": {
+        "preset": "recommended",
         "useConst": "warn",
         "useTemplate": "warn",
         "noNonNullAssertion": "off",
         "useNamingConvention": "off"
       },
       "nursery": {
+        "preset": "none",
         "noFloatingPromises": "warn"
       }
     }

@@ -2,25 +2,28 @@ packages:
   - "npm/*"
 
 # One catalog entry per shared tool; packages reference them with "catalog:"
-# so versions cannot drift between npm/vite, npm/svelte, and npm/lint.
-# Peer ranges stay wide and hand-written in each package.json — only dev-tool
-# versions are catalogued. `pnpm publish` rewrites "catalog:" to the resolved
-# range automatically.
+# so versions cannot drift between npm/vite, npm/svelte, npm/doc-shell, and
+# npm/lint. Peer ranges stay wide and hand-written in each package.json — only
+# dev-tool versions are catalogued. `pnpm publish` rewrites "catalog:" to the
+# resolved range automatically.
 catalog:
   "@electric-sql/client": ^1.5.24
+  "@sveltejs/package": ^2.5.8
   "@sveltejs/vite-plugin-svelte": ^7.2.0
-  "@tanstack/electric-db-collection": ^0.3.12
-  "@tanstack/svelte-db": ^0.1.91
-  "@types/node": ^26.1.1
+  "@tanstack/electric-db-collection": ^0.3.15
+  "@tanstack/svelte-db": ^0.1.94
+  "@types/node": ^26.1.2
   "@vitest/coverage-v8": ^4.1.10
-  happy-dom: ^20.10.6
-  svelte: ^5.56.7
-  tailwindcss: ^4.3.2
+  happy-dom: ^20.11.1
+  svelte: ^5.56.8
+  svelte-check: ^4.7.4
+  tailwindcss: ^4.3.3
   tsup: ^8.5.1
-  # tsup 8.5.1's declaration bundler uses compiler APIs removed in TypeScript 7.
-  # Keep the newest compatible major until tsup supports TS 7.
+  # tsup's declaration bundler uses compiler APIs removed in TypeScript 7, and
+  # 8.5.1 is still the newest release. Keep the newest compatible TS major and
+  # re-check with `npm view tsup version` before touching this.
   typescript: ^6.0.3
-  vite: ^8.1.4
+  vite: ^8.1.5
   vitest: ^4.1.10
 
 # pnpm 10's home for the build-script allowlist (moved out of package.json's
