@@ -1,8 +1,10 @@
 # @phoenix-assets/doc-shell
 
 Renderer-neutral Svelte documentation UI for the versioned `doc-shell/v1`
-artifact contract. The same `DocShellPresentation` value can come from the Hex
-package's `StaticGenerator`, a host's `GraphProjector`, or another source.
+artifact contract. It renders whatever produced the artifact and knows nothing
+about the producer — the `doc_shell` Hex package, a host's own projector, or a
+build step that writes the JSON by hand all yield the same
+`DocShellPresentation`.
 
 ```svelte
 <script lang="ts">

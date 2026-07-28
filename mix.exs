@@ -112,11 +112,13 @@ defmodule PhoenixAssets.MixProject do
         Reference: ["usage-rules.md", "CHANGELOG.md"]
       ],
       nest_modules_by_prefix: [
+        PhoenixAssets.Commands,
         PhoenixAssets.Generators,
         PhoenixAssets.Graph,
         PhoenixAssets.Doctor,
         PhoenixAssets.Plugin,
         PhoenixAssets.Presets,
+        PhoenixAssets.Session,
         PhoenixAssets.DevIntelligence
       ],
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
@@ -140,12 +142,16 @@ defmodule PhoenixAssets.MixProject do
           PhoenixAssets.Tailwind,
           PhoenixAssets.Storybook,
           PhoenixAssets.Electric,
+          PhoenixAssets.Commands,
+          PhoenixAssets.Session,
           PhoenixAssets.PubSub,
           PhoenixAssets.Localize,
           PhoenixAssets.Types
         ],
         "Declarations (DSL)": [
           PhoenixAssets.Electric.Shapes,
+          PhoenixAssets.Commands.Definitions,
+          PhoenixAssets.Session.Fields,
           PhoenixAssets.PubSub.Topics,
           PhoenixAssets.Types.Schema
         ],
@@ -154,6 +160,7 @@ defmodule PhoenixAssets.MixProject do
           PhoenixAssets.Generators.Routes,
           PhoenixAssets.Generators.Env,
           PhoenixAssets.Generators.TS,
+          PhoenixAssets.Generators.Typespec,
           PhoenixAssets.Types.Walker
         ],
         "Asset graph": [

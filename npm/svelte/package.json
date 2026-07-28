@@ -11,7 +11,9 @@
     "directory": "npm/svelte"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {

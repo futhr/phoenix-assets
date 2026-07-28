@@ -21,6 +21,8 @@ into one asset graph, and validates the production manifest.
 
   config :phoenix_assets, :stack,
     shapes: MyApp.Assets.ElectricShapes,
+    commands: MyApp.Assets.Commands,
+    session: MyApp.Assets.Session,
     topics: MyApp.Assets.PubSubTopics,
     types: MyApp.Assets.Types
   ```
@@ -126,6 +128,9 @@ Rules to rely on:
   table twins. Pass only the renderer-neutral contract. Product code supplies
   semantic CSS tokens and domain chrome; it does not import LayerChart directly
   or persist renderer option bags.
+- `@phoenix-assets/doc-shell` — the renderer-neutral documentation UI for the
+  `doc-shell/v1` artifact contract. Only needed if you render docs in-app; theme
+  it through the `--doc-*` custom properties rather than app aliases.
 
 ## Linting & formatting (host apps)
 

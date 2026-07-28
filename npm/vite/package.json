@@ -11,7 +11,9 @@
     "directory": "npm/vite"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {

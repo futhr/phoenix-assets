@@ -1,7 +1,7 @@
 # Contributing
 
-Thanks for helping out. This repo is one Elixir package plus three npm packages
-(`npm/vite`, `npm/svelte`, `npm/lint`) in a pnpm workspace.
+Thanks for helping out. This repo is one Elixir package plus four npm packages
+(`npm/vite`, `npm/svelte`, `npm/doc-shell`, `npm/lint`) in a pnpm workspace.
 
 ## Setup
 
@@ -25,14 +25,18 @@ mix check
 
 It runs compile (warnings as errors), formatter, `credo --strict`, `doctor`
 (documentation coverage), `mix_audit`, `dialyzer`, ExUnit with coverage (≥85%),
-and the frontend: Biome (strict lint+format), `tsc`, and Vitest with coverage
-(≥80%). Because it drives the frontend tools, `mix check` needs Node + pnpm on
-PATH. To auto-fix the cheap stuff first: `mix format` and `pnpm format`.
+and the frontend: Biome (strict lint+format), `tsc`, Vitest with coverage (≥80%),
+knip, and the package-export checks. Because it drives the frontend tools,
+`mix check` needs Node + pnpm on PATH. To auto-fix the cheap stuff first:
+`mix format` and `pnpm format`.
 
 Coverage reports for local inspection: `MIX_ENV=test mix coveralls.html` (Elixir)
 and `pnpm -r test` (frontend lcov under `npm/*/coverage/`).
 
 ## Conventions
+
+The short version; [`AGENTS.md`](AGENTS.md) has the full map and the gotchas
+behind each one.
 
 - Public modules need a `@moduledoc`; tests and fixtures use `@moduledoc false`.
 - Unused variables are a bare `_` (credo enforces it); no dynamic atom creation.
@@ -56,6 +60,5 @@ mix git_ops.release   # --initial for the first release
 1. Branch from `main`.
 2. Make the change; run `mix check` until green.
 3. Open a PR explaining the *why*; reference issues (`Closes #123`).
-4. CI runs `mix check` + the production build — it must be green to merge.
-
-See [`AGENTS.md`](AGENTS.md) for a deeper map of the repo and its gotchas.
+4. CI runs `mix check` on Elixir 1.20/OTP 29, plus a compile-and-test leg on the
+   supported floor (1.18/OTP 27). Both must be green to merge.

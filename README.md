@@ -100,15 +100,16 @@ types.
 ## Packages
 
 One Elixir package ships the runtime, the (internal) plugin engine, and the
-built-in Svelte stack. Three npm packages provide the Vite plugin, the Svelte
-runtime helpers, and shared frontend lint tooling.
+built-in Svelte stack. Four npm packages provide the Vite plugin, the Svelte
+runtime helpers, the documentation shell, and shared frontend lint tooling.
 
 | Package | Path | What it is |
 |---------|------|------------|
-| `phoenix_assets` | `lib/` | Runtime + generated-contracts engine, dev supervision, manifest, graph, doctor, and the built-in SvelteKit + Tailwind + Storybook + ElectricSQL + PubSub + localization + Ash-types stack. Hex. |
-| `@phoenix-assets/vite` | `npm/vite/` | Vite plugin, `$phoenix/*` virtual modules, dev/HMR bridge, graph emitter. npm. |
-| `@phoenix-assets/svelte` | `npm/svelte/` | Typed Electric / PubSub / localization helpers plus the closed portable-report decoder, accessible tables, and shared LayerChart 2 components. npm. |
-| `@phoenix-assets/lint` | `npm/lint/` | Shared Biome base config + Tailwind v4 arbitrary-value linter for host apps. npm. |
+| `phoenix_assets` | `lib/` | Runtime + generated-contracts engine, dev supervision, manifest, graph, doctor, and the built-in SvelteKit + Tailwind + Storybook + ElectricSQL + commands + session + PubSub + localization + Ash-types stack. |
+| `@phoenix-assets/vite` | `npm/vite/` | Vite plugin, `$phoenix/*` virtual modules, dev/HMR bridge, graph emitter. |
+| `@phoenix-assets/svelte` | `npm/svelte/` | Typed Electric / PubSub / localization helpers plus the closed portable-report decoder, accessible tables, and shared LayerChart 2 components. |
+| `@phoenix-assets/doc-shell` | `npm/doc-shell/` | Renderer-neutral Svelte documentation UI for the `doc-shell/v1` artifact contract. |
+| `@phoenix-assets/lint` | `npm/lint/` | Shared Biome base config + Tailwind v4 arbitrary-value linter for host apps. |
 
 ---
 
@@ -124,7 +125,8 @@ runtime helpers, and shared frontend lint tooling.
 
 ## Usage
 
-> Runs in production on the author's platforms. Installed directly from GitHub.
+> Runs in production on the author's platforms. Packaged for Hex, but not
+> published there yet — install it from GitHub.
 
 The full Svelte stack is the default — there's no preset module to write.
 
@@ -150,6 +152,8 @@ config :phoenix_assets,
 
 config :phoenix_assets, :stack,
   shapes: MyApp.Assets.ElectricShapes,
+  commands: MyApp.Assets.Commands,
+  session: MyApp.Assets.Session,
   topics: MyApp.Assets.PubSubTopics,
   types: MyApp.Assets.Types
 
@@ -166,7 +170,10 @@ children = [...] ++ PhoenixAssets.child_specs()
 
 `:otp_app` is the only required option; the full reference is `PhoenixAssets.Config`.
 Sub-configs: `:dev`, `:build` (`vite_manifest`, `asset_graph`, `asset_url`,
-`budgets`, `allow_source_maps`), `:env` (`expose:`), and `:stack`.
+`budgets`, `allow_source_maps`), `:env` (`expose:`), `:dev_intelligence`
+(`tidewave:`), and `:stack`. Set `serve_mode: :spa` if you ship an
+adapter-static SvelteKit build that serves its own `index.html`; the default
+`:ssr` renders HTML from the Vite manifest.
 
 ### Declare & generate contracts
 
@@ -236,8 +243,10 @@ localized chrome, and domain evidence around the shared components.
 
 In development these point at the Vite dev server; in production they emit the
 hashed file with its stylesheet links, module preloads, and Subresource Integrity
-from the manifest. Set `config :phoenix_assets, :build, asset_url:` for a CDN, or
-add `plug PhoenixAssets.EarlyHints, entry: "src/app.ts"` for HTTP 103 Early Hints.
+from the manifest. `Components.speculation_rules/1` emits a Speculation
+Rules prefetch block for the page routes in the asset graph. Set
+`config :phoenix_assets, :build, asset_url:` for a CDN, or add
+`plug PhoenixAssets.EarlyHints, entry: "src/app.ts"` for HTTP 103 Early Hints.
 
 ### Ship
 
