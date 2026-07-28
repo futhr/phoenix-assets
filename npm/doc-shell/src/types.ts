@@ -1,9 +1,21 @@
+// The `doc-shell/v1` contract, as its producers actually emit it. Two exist and
+// they do not agree on every key: `doc_shell`'s StaticGenerator emits `kind`,
+// `meta`, and `tokens`; a host's GraphProjector emits none of the three. A field
+// only one producer sends is therefore optional here — that is the contract, not
+// an oversight. Keys both producers always send stay required, even when the
+// value is null.
+//
+// `test/conformance.test.ts` holds both producers' real output against these
+// types. Move one side without the other and it fails.
+
 export type DocAstNode = string | DocAstElement
 
 export interface DocAstElement {
   tag: string
   attrs?: Record<string, string>
   content?: DocAstNode[] | string
+  /** Parser metadata (source line, and so on). Opaque to the renderer. */
+  meta?: Record<string, unknown>
 }
 
 export interface NavigationItem {
@@ -11,6 +23,10 @@ export interface NavigationItem {
   title: string
   path: string
   children?: NavigationItem[]
+  /** Entry class, e.g. `"module"` or `"guide"`. StaticGenerator only. */
+  kind?: string | null
+  /** Producer-defined extras. StaticGenerator only; opaque to the renderer. */
+  meta?: Record<string, unknown>
 }
 
 export interface SearchEntry {
@@ -18,8 +34,18 @@ export interface SearchEntry {
   title: string
   content: string
   path: string
-  audience?: string
-  locale?: string
+  /** Null when the producer does not scope entries by audience. */
+  audience: string | null
+  /** Null when the producer does not scope entries by locale. */
+  locale: string | null
+  /** Entry class, mirroring `NavigationItem.kind`. StaticGenerator only. */
+  kind?: string | null
+  /**
+   * Pre-split content tokens. StaticGenerator only, and nothing here reads
+   * them — `Search.svelte` indexes `title` and `content` through Fuse. Declared
+   * so the type describes the payload honestly; a producer may omit them.
+   */
+  tokens?: string[]
 }
 
 export interface Backlink {

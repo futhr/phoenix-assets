@@ -3,7 +3,16 @@ import type { DocShellPresentation, OpenApiDocument, OperationEntry } from "./ty
 export const presentation: DocShellPresentation = {
   schema_version: "doc-shell/v1",
   navigation: [{ id: "intro", title: "Introduction", path: "/docs/intro" }],
-  search: [{ id: "intro", title: "Introduction", content: "Start here", path: "/docs/intro" }],
+  search: [
+    {
+      id: "intro",
+      title: "Introduction",
+      content: "Start here",
+      path: "/docs/intro",
+      audience: null,
+      locale: null,
+    },
+  ],
   content: {
     intro: [
       { tag: "h2", content: "Start here" },
