@@ -59,6 +59,17 @@ describe("DocShell contract helpers", () => {
     expect(typeLabel({ anyOf: [] })).toBe("anyOf")
     expect(typeLabel({ allOf: [] })).toBe("allOf")
     expect(typeLabel({})).toBe("object")
+  })
+
+  // OpenAPI 3.1 drops `nullable` for a JSON Schema type array. AshOaskit emits
+  // both dialects, and reading only the 3.0 shape mislabelled every nullable
+  // field in a 3.1 spec -- and made the array branch unreachable.
+  it("labels OpenAPI 3.1 type arrays as well as 3.0 nullable", () => {
+    expect(typeLabel({ type: ["string", "null"] })).toBe("string?")
+    expect(typeLabel({ type: ["array", "null"], items: { type: ["string"] } })).toBe("string[]?")
+    expect(typeLabel({ type: ["array"], items: { type: "number" } })).toBe("number[]")
+    expect(typeLabel({ type: ["string", "number"] })).toBe("string | number")
+    expect(typeLabel({ type: ["null"] })).toBe("object?")
     expect(schemaFrom({ "application/json": { schema: { type: "string" } } })).toEqual({
       type: "string",
     })

@@ -65,3 +65,25 @@ callers to the same JSON-only byte and nesting limits. `layerchart` is an
 internal exact dependency of this subpath — pass the contract, not renderer
 options, and supply your own semantic CSS tokens and domain chrome around the
 shared components.
+
+**Two entrypoints, two strictness levels.** Know which one you are using:
+
+| | |
+|---|---|
+| `decodeReportEnvelope` / `safeDecodeReportEnvelope` | the **wire boundary**. Untrusted input, every field validated, unknown keys rejected. Anything arriving from a server goes through it. |
+| `PortablePanel` | takes a `PanelDefinition` **value** and renders it, with no runtime validation — by then it is your own data. |
+
+`safeDecodeReportEnvelope` returns `{ state: "ready", envelope }` or
+`{ state: "invalid", code, path }` instead of throwing, which is what you want
+behind an error card. A non-contract failure still throws.
+
+For a chart the client composes locally — no wire form, no `query_ref`, because
+you already have the frame — use `composePanel`. It fills the governed defaults,
+including an accessible table twin derived from the encodings. Its output is
+deliberately not wire-valid; if a panel needs to travel, the owning domain issues
+it.
+
+Overriding `messages` is a `Partial`, so a key added in a later release falls
+back to English rather than breaking your build. Assert against
+`REPORTING_MESSAGE_KEYS` in your own test if you would rather find out at build
+time.

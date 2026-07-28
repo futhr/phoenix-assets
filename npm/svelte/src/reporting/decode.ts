@@ -24,6 +24,37 @@ const encoder = new TextEncoder()
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_.:-]{0,255}$/
 const DECIMAL = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/
 
+/** The outcome of {@link safeDecodeReportEnvelope}. */
+export type DecodedEnvelope =
+  | { state: "ready"; envelope: ReportEnvelope }
+  | { state: "invalid"; code: string; path: ReadonlyArray<string | number> }
+
+/**
+ * {@link decodeReportEnvelope} as a value rather than an exception.
+ *
+ * A rejected envelope is an ordinary outcome — the report renders an error card
+ * instead of a chart — so every host wrapped the throwing decoder in the same
+ * try/catch and pulled the same `code` out of the same error class. This is that
+ * wrapper, so the error path is the library's to keep correct rather than
+ * something each app re-derives.
+ *
+ * A non-contract error (a bug in here) still throws: swallowing it would turn a
+ * defect into a shrug.
+ */
+export function safeDecodeReportEnvelope(
+  input: string | unknown,
+  overrides: Partial<ReportingLimits> = {},
+): DecodedEnvelope {
+  try {
+    return { state: "ready", envelope: decodeReportEnvelope(input, overrides) }
+  } catch (error) {
+    if (error instanceof ReportingContractError) {
+      return { state: "invalid", code: error.code, path: error.path }
+    }
+    throw error
+  }
+}
+
 export function decodeReportEnvelope(
   input: string | unknown,
   overrides: Partial<ReportingLimits> = {},

@@ -33,11 +33,25 @@ export const schemaFrom = (
 ): JsonSchema | undefined =>
   content?.["application/json"]?.schema ?? content?.["application/vnd.api+json"]?.schema
 
+/**
+ * Splits a schema's type into its non-null names and whether null is allowed,
+ * across both OpenAPI dialects: 3.0's `{type, nullable}` and 3.1's type array.
+ */
+const typeOf = (schema: JsonSchema): { names: string[]; nullable: boolean } => {
+  const declared = Array.isArray(schema.type) ? schema.type : schema.type ? [schema.type] : []
+  const names = declared.filter((name) => name !== "null")
+  return { names, nullable: schema.nullable === true || declared.includes("null") }
+}
+
 export const typeLabel = (schema: JsonSchema): string => {
   if (schema.oneOf) return "oneOf"
   if (schema.anyOf) return "anyOf"
   if (schema.allOf) return "allOf"
-  const type =
-    schema.type === "array" ? `${schema.items?.type ?? "object"}[]` : (schema.type ?? "object")
-  return schema.nullable ? `${type}?` : type
+
+  const { names, nullable } = typeOf(schema)
+  const label = names.includes("array")
+    ? `${schema.items ? (typeOf(schema.items).names[0] ?? "object") : "object"}[]`
+    : names.join(" | ") || "object"
+
+  return nullable ? `${label}?` : label
 }

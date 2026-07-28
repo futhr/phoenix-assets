@@ -74,7 +74,12 @@ export interface DocShellTheme {
 }
 
 export interface JsonSchema {
-  type?: string
+  /**
+   * OpenAPI 3.0 writes a single type plus `nullable`; 3.1 writes a JSON Schema
+   * type array, `["string", "null"]`. AshOaskit emits both dialects, so both
+   * shapes reach `typeLabel`.
+   */
+  type?: string | string[]
   format?: string
   description?: string
   enum?: unknown[]

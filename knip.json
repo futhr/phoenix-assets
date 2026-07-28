@@ -5,8 +5,7 @@
     "npm/svelte": { "project": "src/**/*.{ts,svelte}" },
     "npm/doc-shell": {
       "entry": ["src/**/*.stories.svelte", "test/**/*.ts"],
-      "project": ["src/**/*.{ts,svelte}", "test/**/*.ts", "*.{ts,js}"],
-      "ignoreDependencies": ["@phoenix-assets/svelte", "@phoenix-assets/vite"]
+      "project": ["src/**/*.{ts,svelte}", "test/**/*.ts", "*.{ts,js}"]
     },
     "npm/lint": { "project": "*.{ts,svelte,css}" }
   }

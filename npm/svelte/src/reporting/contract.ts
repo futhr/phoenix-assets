@@ -98,6 +98,32 @@ export type ReportingMessages = {
   noRows: string
 }
 
+/**
+ * Every key a host may override. Overrides are a `Partial`, so a key added here
+ * silently falls back to its English default in an app that has not caught up —
+ * which is exactly what happened when drill and pagination chrome landed. Assert
+ * against this in your own test to find out at build time instead:
+ *
+ *     expect(Object.keys(messages).sort()).toEqual([...REPORTING_MESSAGE_KEYS].sort())
+ */
+export const REPORTING_MESSAGE_KEYS = [
+  "accessibleFallback",
+  "viewTable",
+  "hideTable",
+  "panelUnavailable",
+  "partialResult",
+  "chartUnavailable",
+  "stateLabel",
+  "watermarkLabel",
+  "truncatedLabel",
+  "drillRow",
+  "previousPage",
+  "nextPage",
+  "pageStatus",
+  "tableRegion",
+  "noRows",
+] as const satisfies ReadonlyArray<keyof ReportingMessages>
+
 export const DEFAULT_REPORTING_MESSAGES: ReportingMessages = {
   accessibleFallback: "Some panels use an accessible fallback on this device.",
   viewTable: "View as table",
