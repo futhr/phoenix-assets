@@ -38,13 +38,16 @@ defmodule PhoenixAssets.DoctorTest do
     def init(_, _), do: {:error, :boom}
   end
 
-  defp ctx(plugins \\ []) do
+  defp ctx(plugins \\ [], opts \\ []) do
     tmp = Path.join(System.tmp_dir!(), "doc_#{System.unique_integer([:positive])}")
     File.mkdir_p!(Path.join(tmp, "node_modules/.bin"))
     on_exit(fn -> File.rm_rf!(tmp) end)
-    config = Config.load!(otp_app: :my_app, asset_root: tmp, static_root: tmp)
+    config = Config.load!([otp_app: :my_app, asset_root: tmp, static_root: tmp] ++ opts)
     Context.new(config, env: :test, plugins: plugins)
   end
+
+  # The manifest checks only apply to `:ssr`, which is no longer the default.
+  defp ssr_ctx, do: ctx([], serve_mode: :ssr)
 
   defp result_for(results, id) do
     Enum.find_value(results, fn {check, r} -> if check.id == id, do: r end)
@@ -56,7 +59,7 @@ defmodule PhoenixAssets.DoctorTest do
   end
 
   test "errors in production when the manifest is missing" do
-    {status, results} = Doctor.run(ctx(), production: true)
+    {status, results} = Doctor.run(ssr_ctx(), production: true)
 
     assert status == :error
 
@@ -86,7 +89,7 @@ defmodule PhoenixAssets.DoctorTest do
   end
 
   test "passes the manifest check in production when the manifest is present" do
-    context = ctx()
+    context = ssr_ctx()
     path = Context.manifest_path(context)
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, ~s({"src/app.ts":{"file":"assets/app.js"}}))
@@ -96,7 +99,7 @@ defmodule PhoenixAssets.DoctorTest do
   end
 
   test "fails the manifest check when the file is not a JSON object" do
-    context = ctx()
+    context = ssr_ctx()
     path = Context.manifest_path(context)
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, "[]")
@@ -106,9 +109,8 @@ defmodule PhoenixAssets.DoctorTest do
     assert result_for(results, :manifest_present).status == :error
   end
 
-  test "in :spa serve_mode the manifest check passes without a server-rendered manifest" do
-    config = Config.load!(otp_app: :my_app, asset_root: System.tmp_dir!(), serve_mode: :spa)
-    {_, results} = Doctor.run(Context.new(config, env: :test), production: true)
+  test "the default :spa serve_mode needs no server-rendered manifest" do
+    {_, results} = Doctor.run(ctx(), production: true)
     assert result_for(results, :manifest_present).status == :ok
   end
 

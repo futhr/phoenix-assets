@@ -9,11 +9,23 @@ defmodule PhoenixAssets.Localize do
   gettext directories and writes frontend locale data.
 
   `defaultLocale` resolves in order: the `default_locale:` option, the
-  configured Gettext backend's default (`gettext_backend:` option or
-  `config :phoenix_assets, :stack, gettext_backend: MyApp.Gettext`), then the
-  first locale alphabetically. Declare one of the first two when the backend
-  default is not the alphabetically-first locale -- with locales `de` and `en`,
-  the bare fallback picks `de`.
+  configured Gettext backend's default, then the first locale alphabetically.
+  Declare one of the first two when the backend default is not the
+  alphabetically-first locale -- with locales `de` and `en`, the bare fallback
+  picks `de`.
+
+  ## Configuring without a preset
+
+  Every option here is also a `:stack` key, so a host that only wants to pin its
+  market locales does not need to write a preset module:
+
+      config :phoenix_assets, :stack,
+        locales: ["sv", "en", "no", "da"],
+        default_locale: "sv",
+        gettext_backend: MyAppWeb.Gettext
+
+  A preset's `integration/2` options win over the `:stack` config, so a preset
+  can still override per-app defaults.
 
   """
 
@@ -23,15 +35,22 @@ defmodule PhoenixAssets.Localize do
   alias PhoenixAssets.Generators.TS
 
   @gettext_dir "priv/gettext"
+  @stack_keys [:gettext_backend, :gettext_dir, :locales, :default_locale]
 
   @impl PhoenixAssets.Plugin
   def init(opts, ctx) do
-    state =
-      opts
-      |> Map.new()
-      |> Map.put_new(:gettext_backend, ctx.config.stack[:gettext_backend])
+    {:ok, Enum.reduce(@stack_keys, Map.new(opts), &put_stack_key(&1, &2, ctx))}
+  end
 
-    {:ok, state}
+  # A `:stack` key fills in only where the preset left off, and a key the host
+  # never set stays absent rather than becoming nil -- that absence is what
+  # separates "no locales declared" (scan priv/gettext) from "locales: []"
+  # (a misconfiguration worth raising on).
+  defp put_stack_key(key, state, ctx) do
+    case ctx.config.stack[key] do
+      nil -> state
+      value -> Map.put_new(state, key, value)
+    end
   end
 
   @impl PhoenixAssets.Plugin

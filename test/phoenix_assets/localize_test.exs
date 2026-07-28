@@ -113,4 +113,39 @@ defmodule PhoenixAssets.LocalizeTest do
     out = IO.iodata_to_binary(hd(Localize.generated_files(ctx(), state)).contents)
     assert out =~ ~s|export const defaultLocale: Locale = "sv"|
   end
+
+  describe "configuring without a preset" do
+    defp stack_ctx(stack) do
+      Context.new(Config.load!(otp_app: :my_app, stack: stack), env: :test)
+    end
+
+    test "reads locales and default_locale from the :stack config" do
+      ctx = stack_ctx(locales: ~w(sv en no da), default_locale: "sv")
+      {:ok, state} = Localize.init([], ctx)
+
+      out = IO.iodata_to_binary(hd(Localize.generated_files(ctx, state)).contents)
+
+      assert out =~ ~s|export const locales = ["da","en","no","sv"] as const|
+      assert out =~ ~s|export const defaultLocale: Locale = "sv"|
+    end
+
+    test "a preset's integration options win over the :stack config" do
+      ctx = stack_ctx(locales: ~w(sv en), default_locale: "sv")
+      {:ok, state} = Localize.init([locales: ~w(en), default_locale: "en"], ctx)
+
+      out = IO.iodata_to_binary(hd(Localize.generated_files(ctx, state)).contents)
+
+      assert out =~ ~s|export const locales = ["en"] as const|
+    end
+
+    # `locales: []` is a misconfiguration worth raising on, but an empty
+    # `:stack` must not be mistaken for one -- the key has to stay absent.
+    test "an empty :stack still falls back to scanning priv/gettext" do
+      ctx = stack_ctx([])
+      {:ok, state} = Localize.init([], ctx)
+
+      assert [file] = Localize.generated_files(ctx, state)
+      assert file.kind == :locales
+    end
+  end
 end

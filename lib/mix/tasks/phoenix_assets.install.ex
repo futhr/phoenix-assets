@@ -84,12 +84,19 @@ if Code.ensure_loaded?(Igniter.Mix.Task) do
                cd assets && pnpm add -D @phoenix-assets/vite \\
                  @phoenix-assets/svelte @phoenix-assets/lint
 
-        3. Declare your stack and generate the typed contracts:
+        3. Point svelte-check at the generated contracts in
+           assets/svelte.config.js -- it does not run through Vite, so the
+           $phoenix alias the plugin resolves at build time has to be spelled
+           out for the type-check:
+
+               kit: { alias: { $phoenix: "src/lib/generated" } }
+
+        4. Declare your stack and generate the typed contracts:
 
                config :phoenix_assets, :stack, shapes: ..., commands: ..., session: ..., topics: ..., types: ...
                mix phoenix_assets.gen
 
-        4. Validate before shipping:  mix phoenix_assets.doctor --production
+        5. Validate before shipping:  mix phoenix_assets.doctor --production
       """
     end
   end

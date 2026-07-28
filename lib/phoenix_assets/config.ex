@@ -51,20 +51,23 @@ defmodule PhoenixAssets.Config do
             static_assets_path: [type: :string, default: "/assets"],
             generated_dir: [
               type: :string,
-              default: "src/generated",
+              default: "src/lib/generated",
               doc:
-                "directory (relative to asset_root) where generated TypeScript contracts are written"
+                "directory (relative to asset_root) where generated TypeScript contracts are " <>
+                  "written; the default sits under SvelteKit's `src/lib` so `$lib`-relative " <>
+                  "imports resolve without a second alias"
             ],
             package_manager: [type: {:in, [:pnpm, :npm, :bun]}, default: :pnpm],
             js_runtime: [type: {:in, [:node, :bun]}, default: :node],
             ssr_runtime: [type: {:in, [:node, :bun]}, default: :node],
             preset: [type: :atom, doc: "a module that `use PhoenixAssets.Preset`"],
             serve_mode: [
-              type: {:in, [:ssr, :spa]},
-              default: :ssr,
+              type: {:in, [:spa, :ssr]},
+              default: :spa,
               doc:
-                "`:ssr` (default) renders HTML from the Vite manifest; `:spa` is an adapter-static " <>
-                  "SvelteKit/SPA build that serves its own index.html and needs no server-rendered manifest"
+                "`:spa` (default) is an adapter-static SvelteKit build that serves its own " <>
+                  "index.html and needs no server-rendered manifest; `:ssr` renders HTML from " <>
+                  "the Vite manifest through `PhoenixAssets.Components`"
             ]
           )
 
@@ -99,12 +102,12 @@ defmodule PhoenixAssets.Config do
             asset_root: "assets",
             static_root: "priv/static",
             static_assets_path: "/assets",
-            generated_dir: "src/generated",
+            generated_dir: "src/lib/generated",
             package_manager: :pnpm,
             js_runtime: :node,
             ssr_runtime: :node,
             preset: nil,
-            serve_mode: :ssr,
+            serve_mode: :spa,
             dev: [],
             build: [],
             env_expose: [],

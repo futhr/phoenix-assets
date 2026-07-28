@@ -15,7 +15,7 @@ defmodule PhoenixAssets.ConfigTest do
       assert config.asset_root == "assets"
       assert config.static_root == "priv/static"
       assert config.static_assets_path == "/assets"
-      assert config.generated_dir == "src/generated"
+      assert config.generated_dir == "src/lib/generated"
       assert config.package_manager == :pnpm
       assert config.js_runtime == :node
       assert config.ssr_runtime == :node

@@ -25,8 +25,8 @@ defmodule PhoenixAssets.ContextTest do
   end
 
   test "generated_path/2 joins onto the generated dir under the asset root" do
-    assert Context.generated_path(ctx(), "routes.ts") == "assets/src/generated/routes.ts"
-    assert Context.generated_path(ctx()) == "assets/src/generated"
+    assert Context.generated_path(ctx(), "routes.ts") == "assets/src/lib/generated/routes.ts"
+    assert Context.generated_path(ctx()) == "assets/src/lib/generated"
   end
 
   test "manifest_path/1 honours the :vite_manifest override, else the default" do

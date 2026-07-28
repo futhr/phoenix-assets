@@ -171,9 +171,24 @@ children = [...] ++ PhoenixAssets.child_specs()
 `:otp_app` is the only required option; the full reference is `PhoenixAssets.Config`.
 Sub-configs: `:dev`, `:build` (`vite_manifest`, `asset_graph`, `asset_url`,
 `budgets`, `allow_source_maps`), `:env` (`expose:`), `:dev_intelligence`
-(`tidewave:`), and `:stack`. Set `serve_mode: :spa` if you ship an
-adapter-static SvelteKit build that serves its own `index.html`; the default
-`:ssr` renders HTML from the Vite manifest.
+(`tidewave:`), and `:stack`. `serve_mode` defaults to `:spa` — an adapter-static
+SvelteKit build that serves its own `index.html`; set `:ssr` to render HTML from
+the Vite manifest through `PhoenixAssets.Components` instead.
+
+Tuning an integration is config, not a reason to write a preset:
+
+```elixir
+config :phoenix_assets, :dev, storybook: [enabled: false]   # run it via `mix storybook`
+config :phoenix_assets, :stack, locales: ["sv", "en"], default_locale: "sv"
+```
+
+Point `svelte-check` at the generated contracts — it does not run through Vite,
+so it needs the alias the plugin resolves at build time:
+
+```js
+// assets/svelte.config.js
+kit: { alias: { $phoenix: "src/lib/generated" } }
+```
 
 ### Declare & generate contracts
 

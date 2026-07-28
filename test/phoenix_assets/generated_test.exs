@@ -62,13 +62,19 @@ defmodule PhoenixAssets.GeneratedTest do
     ctx: ctx,
     tmp: tmp
   } do
-    assert {:ok, %{written: ["src/generated/fake.ts"], unchanged: []}} = Generated.generate(ctx)
-    assert File.read!(Path.join(tmp, "src/generated/fake.ts")) == "export const x = 1\n"
-    assert {:ok, %{written: [], unchanged: ["src/generated/fake.ts"]}} = Generated.generate(ctx)
+    assert {:ok, %{written: ["src/lib/generated/fake.ts"], unchanged: []}} =
+             Generated.generate(ctx)
+
+    assert File.read!(Path.join(tmp, "src/lib/generated/fake.ts")) == "export const x = 1\n"
+
+    assert {:ok, %{written: [], unchanged: ["src/lib/generated/fake.ts"]}} =
+             Generated.generate(ctx)
   end
 
   test "check mode reports drift and passes once written", %{ctx: ctx} do
-    assert {:error, {:stale, ["src/generated/fake.ts"]}} = Generated.generate(ctx, check: true)
+    assert {:error, {:stale, ["src/lib/generated/fake.ts"]}} =
+             Generated.generate(ctx, check: true)
+
     assert {:ok, _} = Generated.generate(ctx)
     assert :ok = Generated.generate(ctx, check: true)
   end
@@ -80,16 +86,16 @@ defmodule PhoenixAssets.GeneratedTest do
   end
 
   test "status/1 splits fresh and stale paths", %{ctx: ctx} do
-    assert %{fresh: [], stale: ["src/generated/fake.ts"]} = Generated.status(ctx)
+    assert %{fresh: [], stale: ["src/lib/generated/fake.ts"]} = Generated.status(ctx)
     Generated.generate(ctx)
-    assert %{fresh: ["src/generated/fake.ts"], stale: []} = Generated.status(ctx)
+    assert %{fresh: ["src/lib/generated/fake.ts"], stale: []} = Generated.status(ctx)
   end
 
   test "output is byte-identical across runs", %{ctx: ctx, tmp: tmp} do
     Generated.generate(ctx)
-    first = File.read!(Path.join(tmp, "src/generated/fake.ts"))
+    first = File.read!(Path.join(tmp, "src/lib/generated/fake.ts"))
     Generated.generate(ctx)
-    assert File.read!(Path.join(tmp, "src/generated/fake.ts")) == first
+    assert File.read!(Path.join(tmp, "src/lib/generated/fake.ts")) == first
   end
 
   test "generate/2 refuses a generated path that escapes the asset root", %{tmp: tmp} do

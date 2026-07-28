@@ -103,7 +103,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
     root: root
   } do
     assert {:ok, %{written: written}} = Generated.generate(ctx)
-    gen = Path.join(root, "src/generated")
+    gen = Path.join(root, "src/lib/generated")
 
     for name <- ~w(routes.ts env.ts electric.ts pubsub.ts locales.ts types.ts) do
       assert File.exists?(Path.join(gen, name)), "expected #{name} to be generated"
@@ -136,7 +136,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
     refute types =~ "api_secret"
     refute types =~ "internal_flag"
 
-    assert "src/generated/types.ts" in written
+    assert "src/lib/generated/types.ts" in written
   end
 
   test "contributes vite and storybook dev processes", %{ctx: ctx} do

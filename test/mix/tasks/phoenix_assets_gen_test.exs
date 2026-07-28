@@ -51,8 +51,8 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
 
   test "gen writes the contracts and reports counts", %{root: root} do
     assert gen([]) =~ "written"
-    assert File.exists?(Path.join(root, "src/generated/types.ts"))
-    assert File.exists?(Path.join(root, "src/generated/electric.ts"))
+    assert File.exists?(Path.join(root, "src/lib/generated/types.ts"))
+    assert File.exists?(Path.join(root, "src/lib/generated/electric.ts"))
   end
 
   test "gen --check raises on drift, then reports up to date once written" do
@@ -65,8 +65,8 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
   test "gen --only restricts the generated kinds", %{root: root} do
     gen(["--only", "types"])
 
-    assert File.exists?(Path.join(root, "src/generated/types.ts"))
-    refute File.exists?(Path.join(root, "src/generated/electric.ts"))
+    assert File.exists?(Path.join(root, "src/lib/generated/types.ts"))
+    refute File.exists?(Path.join(root, "src/lib/generated/electric.ts"))
   end
 
   test "doctor prints a grouped report" do
@@ -76,11 +76,11 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
 
   test "clean removes the generated directory", %{root: root} do
     gen([])
-    assert File.dir?(Path.join(root, "src/generated"))
+    assert File.dir?(Path.join(root, "src/lib/generated"))
 
     out = capture_io(fn -> Mix.Task.rerun("phoenix_assets.clean", []) end)
     assert out =~ "removed"
-    refute File.dir?(Path.join(root, "src/generated"))
+    refute File.dir?(Path.join(root, "src/lib/generated"))
   end
 
   test "graph writes the asset graph json", %{root: root} do

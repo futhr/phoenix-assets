@@ -37,6 +37,34 @@ into one asset graph, and validates the production manifest.
   `config :phoenix_assets, :dev, enabled: true`) it also supervises Vite,
   Storybook, and the generated-file watcher.
 
+- **Point `svelte-check` at the generated contracts.** The Vite plugin resolves
+  `$phoenix/*` at dev and build time, but `svelte-check` and `tsc` do not run
+  through Vite, so they need the alias spelled out:
+
+  ```js
+  // assets/svelte.config.js
+  kit: { alias: { $phoenix: "src/lib/generated" } }
+  ```
+
+  Match `generated_dir` if you moved it. Without this the app builds and the
+  type-check fails, which is a confusing half-hour the first time.
+
+## Tuning the stack without a preset
+
+Every knob below is config. Reach for a preset only when you are changing *which*
+integrations run or their order — not to adjust one of them.
+
+```elixir
+# Storybook off the supervised dev tree (run it on demand via `mix storybook`)
+config :phoenix_assets, :dev, storybook: [enabled: false]   # or: [port: 6007]
+
+# Pin your market locales instead of scanning priv/gettext
+config :phoenix_assets, :stack,
+  locales: ["sv", "en", "no", "da"],
+  default_locale: "sv",
+  gettext_backend: MyAppWeb.Gettext
+```
+
 ## Declaration modules (the backend contract)
 
 Each is a small DSL. The declarations are metadata only — the actual server work
@@ -154,14 +182,20 @@ pnpm add -D @phoenix-assets/lint @biomejs/biome tailwindcss svelte
 
 ## When you genuinely need to deviate
 
-Write a module with `use PhoenixAssets.Preset`, list `integration/2` calls, and
-set it as `config :phoenix_assets, preset: MyApp.Assets.Stack`. Start by copying
+A preset changes *which* integrations run and in what order — adding one the
+stack doesn't ship, or dropping one entirely. Write a module with
+`use PhoenixAssets.Preset`, list `integration/2` calls, and set it as
+`config :phoenix_assets, preset: MyApp.Assets.Stack`. Start by copying
 `PhoenixAssets.Presets.Svelte`. Ordering is resolved at compile time (a cycle or
 missing hard dependency is a compile error).
+
+If your preset is the default list with one option changed, it is config you
+want — see "Tuning the stack without a preset" above.
 
 ## Don't
 
 - Don't hand-write a preset just to use the standard stack — omit `:preset`.
+  Turning Storybook off or pinning a locale list is config, not a preset.
 - Don't generate page routes or hand-copy contract types — let the generators own
   them and import from `$phoenix/*`.
 - Don't put secrets in `config :phoenix_assets, :env, expose: [...]` — only listed
