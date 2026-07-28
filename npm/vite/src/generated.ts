@@ -38,4 +38,8 @@ export const GENERATED = {
     file: "locales.ts",
     stub: 'export const locales = [] as const\nexport type Locale = string\nexport const defaultLocale = "en"\n',
   },
+  locales: {
+    file: "locales.ts",
+    stub: 'export const locales = [] as const\nexport type Locale = string\nexport const defaultLocale = "en"\n',
+  },
 } satisfies Record<string, GeneratedModule>

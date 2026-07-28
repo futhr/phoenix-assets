@@ -1,5 +1,8 @@
+import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
-import { parsePo } from "../src/po-loader"
+import { parsePo, poLoaderPlugin } from "../src/po-loader"
+
+const fixture = fileURLToPath(new URL("./fixtures/messages.po", import.meta.url))
 
 describe("parsePo", () => {
   it("parses msgid/msgstr pairs, skipping the header and empty translations", () => {
@@ -71,5 +74,21 @@ describe("parsePo", () => {
     ].join("\n")
 
     expect(parsePo(po).cat).toBe("Katze")
+  })
+})
+
+describe("poLoaderPlugin", () => {
+  const plugin = poLoaderPlugin()
+  const load = plugin.load as unknown as (id: string) => { code: string; map: null } | null
+
+  it("loads a PO file as an ES module before Vite parses it", () => {
+    expect(load(`${fixture}?import`)).toEqual({
+      code: 'export const messages = {"hello":"Hello"}',
+      map: null,
+    })
+  })
+
+  it("ignores non-PO modules", () => {
+    expect(load(`${fixture}.ts`)).toBeNull()
   })
 })

@@ -133,6 +133,8 @@ config :phoenix_assets, :stack,
 SvelteKit's, never generated**), `env.ts`, `electric.ts`, `commands.ts`,
 `session.ts`, `pubsub.ts`, `locales.ts`, `types.ts`. The frontend imports them through `$phoenix/*` virtual
 modules (`$phoenix/routes`, `$phoenix/electric`, …) provided by the Vite plugin.
+The locale contract is `$phoenix/locales`; `$phoenix/localize` remains an alias
+for older hosts.
 
 Rules to rely on:
 

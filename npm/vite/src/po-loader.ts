@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import type { Plugin } from "vite"
 
 /**
@@ -9,12 +10,20 @@ export function poLoaderPlugin(): Plugin {
   return {
     name: "phoenix-assets:po-loader",
     enforce: "pre",
-    transform(code, id) {
-      const [file] = id.split("?")
-      if (!file?.endsWith(".po")) return null
+    load(id) {
+      const file = poFile(id)
+      if (!file) return null
+      const code = readFileSync(file, "utf8")
       return { code: `export const messages = ${JSON.stringify(parsePo(code))}`, map: null }
     },
   }
+}
+
+function poFile(id: string): string | null {
+  const raw = id.split("?")[0]
+  if (!raw?.endsWith(".po")) return null
+  const file = decodeURIComponent(raw)
+  return file.startsWith("/@fs/") ? file.slice(4) : file
 }
 
 /**
