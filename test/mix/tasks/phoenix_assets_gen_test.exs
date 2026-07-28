@@ -74,11 +74,47 @@ defmodule Mix.Tasks.PhoenixAssets.GenTest do
     assert out =~ "sveltekit"
   end
 
-  test "clean removes the generated directory", %{root: root} do
+  test "clean removes the files this library generated", %{root: root} do
     gen([])
-    assert File.dir?(Path.join(root, "src/lib/generated"))
+    assert File.exists?(Path.join(root, "src/lib/generated/electric.ts"))
 
     out = capture_io(fn -> Mix.Task.rerun("phoenix_assets.clean", []) end)
+
+    assert out =~ "removed"
+    refute File.exists?(Path.join(root, "src/lib/generated/electric.ts"))
+  end
+
+  # Hosts co-locate their own artifacts in this directory, and a directory-wide
+  # rm -rf deleted hand-written files that took real work to reconstruct.
+  test "clean leaves files it did not generate", %{root: root} do
+    gen([])
+    theirs = Path.join(root, "src/lib/generated/shapes.ts")
+    File.write!(theirs, "export const shapes = {}\n")
+
+    out = capture_io(fn -> Mix.Task.rerun("phoenix_assets.clean", []) end)
+
+    assert File.read!(theirs) == "export const shapes = {}\n"
+    refute out =~ "shapes.ts"
+  end
+
+  test "clean keeps a generated file that was edited by hand, and says so", %{root: root} do
+    gen([])
+    edited = Path.join(root, "src/lib/generated/electric.ts")
+    File.write!(edited, "// hand-edited\n")
+
+    out = capture_io(fn -> Mix.Task.rerun("phoenix_assets.clean", []) end)
+
+    assert File.read!(edited) == "// hand-edited\n"
+    assert out =~ "differ from generated output"
+    assert out =~ "electric.ts"
+  end
+
+  test "clean --all removes the directory outright", %{root: root} do
+    gen([])
+    File.write!(Path.join(root, "src/lib/generated/theirs.ts"), "export const x = 1\n")
+
+    out = capture_io(fn -> Mix.Task.rerun("phoenix_assets.clean", ["--all"]) end)
+
     assert out =~ "removed"
     refute File.dir?(Path.join(root, "src/lib/generated"))
   end

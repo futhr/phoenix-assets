@@ -144,6 +144,30 @@ defmodule PhoenixAssets.Generated do
     end
   end
 
+  @doc """
+  Removes the files the configured plugins generate.
+
+  Returns `{:ok, %{removed: [...], kept: [...]}}`, where `kept` lists paths that
+  exist but whose contents differ from what the plugins would emit right now.
+  Those are left alone: a host co-locating its own artifacts in the generated
+  directory, or a contract someone edited by hand, should not be destroyed by a
+  cleanup. Nothing outside the plugins' own file list is touched at all.
+  """
+  @spec clean(Context.t()) ::
+          {:ok, %{removed: [Path.t()], kept: [Path.t()]}} | {:error, term()}
+  def clean(%Context{} = ctx) do
+    with {:ok, files} <- collect_files(ctx, nil) do
+      {removed, kept} =
+        files
+        |> Enum.filter(&File.exists?(abs_path!(&1, ctx)))
+        |> Enum.split_with(&fresh?(&1, ctx))
+
+      Enum.each(removed, &File.rm!(abs_path!(&1, ctx)))
+
+      {:ok, %{removed: Enum.map(removed, & &1.path), kept: Enum.map(kept, & &1.path)}}
+    end
+  end
+
   defp fresh?(%GeneratedFile{} = file, ctx) do
     abs = abs_path!(file, ctx)
     File.read(abs) == {:ok, IO.iodata_to_binary(file.contents)}
