@@ -44,6 +44,7 @@ defmodule PhoenixAssets.Presets.Svelte do
   integration(PhoenixAssets.Session)
   integration(PhoenixAssets.PubSub)
   integration(PhoenixAssets.Localize)
+  integration(PhoenixAssets.Enums)
   integration(PhoenixAssets.Types)
   integration(PhoenixAssets.Typespec)
 end

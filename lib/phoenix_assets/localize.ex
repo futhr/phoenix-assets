@@ -35,7 +35,75 @@ defmodule PhoenixAssets.Localize do
   alias PhoenixAssets.Generators.TS
 
   @gettext_dir "priv/gettext"
-  @stack_keys [:gettext_backend, :gettext_dir, :locales, :default_locale]
+  @stack_keys [:gettext_backend, :gettext_dir, :locales, :default_locale, :locale_names]
+
+  # Keyed by primary subtag, so "en-GB" and "pt-BR" resolve through their
+  # language. Deliberately covers the languages the fleet ships rather than all
+  # of ISO 639 -- an unknown code falls back to itself, which is honest, and
+  # `locale_names:` overrides anything here.
+  @english_names %{
+    "ar" => "Arabic",
+    "cs" => "Czech",
+    "da" => "Danish",
+    "de" => "German",
+    "el" => "Greek",
+    "en" => "English",
+    "es" => "Spanish",
+    "fi" => "Finnish",
+    "fr" => "French",
+    "he" => "Hebrew",
+    "hi" => "Hindi",
+    "hu" => "Hungarian",
+    "id" => "Indonesian",
+    "it" => "Italian",
+    "ja" => "Japanese",
+    "ko" => "Korean",
+    "nb" => "Norwegian Bokmål",
+    "nl" => "Dutch",
+    "no" => "Norwegian",
+    "pl" => "Polish",
+    "pt" => "Portuguese",
+    "ro" => "Romanian",
+    "ru" => "Russian",
+    "sv" => "Swedish",
+    "th" => "Thai",
+    "tr" => "Turkish",
+    "uk" => "Ukrainian",
+    "vi" => "Vietnamese",
+    "zh" => "Chinese"
+  }
+
+  @native_names %{
+    "ar" => "العربية",
+    "cs" => "Čeština",
+    "da" => "Dansk",
+    "de" => "Deutsch",
+    "el" => "Ελληνικά",
+    "en" => "English",
+    "es" => "Español",
+    "fi" => "Suomi",
+    "fr" => "Français",
+    "he" => "עברית",
+    "hi" => "हिन्दी",
+    "hu" => "Magyar",
+    "id" => "Bahasa Indonesia",
+    "it" => "Italiano",
+    "ja" => "日本語",
+    "ko" => "한국어",
+    "nb" => "Norsk bokmål",
+    "nl" => "Nederlands",
+    "no" => "Norsk",
+    "pl" => "Polski",
+    "pt" => "Português",
+    "ro" => "Română",
+    "ru" => "Русский",
+    "sv" => "Svenska",
+    "th" => "ไทย",
+    "tr" => "Türkçe",
+    "uk" => "Українська",
+    "vi" => "Tiếng Việt",
+    "zh" => "中文"
+  }
 
   @impl PhoenixAssets.Plugin
   def init(opts, ctx) do
@@ -62,7 +130,7 @@ defmodule PhoenixAssets.Localize do
     [
       GeneratedFile.new(
         path: Path.join(ctx.generated_dir, "locales.ts"),
-        contents: render(locales, default),
+        contents: render(locales, default, Map.get(state, :locale_names) || %{}),
         plugin: :localize,
         kind: :locales
       )
@@ -131,14 +199,53 @@ defmodule PhoenixAssets.Localize do
     end
   end
 
-  defp render(locales, default) do
+  defp render(locales, default, overrides) do
     [
       TS.header(),
       "\nexport const locales = #{JSON.encode!(locales)} as const\n",
       "export type Locale = (typeof locales)[number]\n",
-      render_default_locale(default)
+      render_default_locale(default),
+      render_names(locales, overrides)
     ]
     |> IO.iodata_to_binary()
+  end
+
+  # A language picker needs a name to show, and three platforms each ended up
+  # hand-maintaining the same table because the contract carried only codes.
+  # `:cldr` is not a dependency here, so the names come from the BEAM's own
+  # locale data where it has them, and fall back to the code itself.
+  defp render_names(locales, overrides) do
+    names = Map.new(locales, &{&1, display_names(&1, overrides)})
+
+    "export const localeNames: Record<Locale, { name: string; nativeName: string }> = " <>
+      "#{JSON.encode!(names)}\n"
+  end
+
+  defp display_names(locale, overrides) do
+    case Map.get(overrides, locale) do
+      %{} = override ->
+        %{
+          "name" => Map.get(override, :name) || Map.get(override, "name") || english_name(locale),
+          "nativeName" =>
+            Map.get(override, :native_name) || Map.get(override, "nativeName") ||
+              native_name(locale)
+        }
+
+      _ ->
+        %{"name" => english_name(locale), "nativeName" => native_name(locale)}
+    end
+  end
+
+  defp english_name(locale) do
+    Map.get(@english_names, primary_subtag(locale), locale)
+  end
+
+  defp native_name(locale) do
+    Map.get(@native_names, primary_subtag(locale), english_name(locale))
+  end
+
+  defp primary_subtag(locale) do
+    locale |> to_string() |> String.split(["-", "_"], parts: 2) |> hd() |> String.downcase()
   end
 
   defp render_default_locale(nil), do: "export const defaultLocale: Locale | null = null\n"

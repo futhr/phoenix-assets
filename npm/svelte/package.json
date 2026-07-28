@@ -20,6 +20,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./socket": {
+      "types": "./dist/socket.d.ts",
+      "import": "./dist/socket.js"
+    },
     "./collection": {
       "types": "./dist/collection.d.ts",
       "svelte": "./dist/collection.js",
@@ -45,6 +49,7 @@
     "@electric-sql/client": "^1.0.0",
     "@tanstack/electric-db-collection": "^0.3.0",
     "@tanstack/svelte-db": "^0.1.0",
+    "phoenix": "^1.7.0",
     "svelte": "^5.7.0"
   },
   "peerDependenciesMeta": {
@@ -52,6 +57,9 @@
       "optional": true
     },
     "@tanstack/svelte-db": {
+      "optional": true
+    },
+    "phoenix": {
       "optional": true
     }
   },
@@ -61,8 +69,10 @@
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tanstack/electric-db-collection": "catalog:",
     "@tanstack/svelte-db": "catalog:",
+    "@types/phoenix": "^1.6.7",
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
+    "phoenix": "^1.8.9",
     "svelte": "catalog:",
     "svelte-check": "catalog:",
     "typescript": "catalog:",

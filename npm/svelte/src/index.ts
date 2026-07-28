@@ -6,13 +6,21 @@ export {
   runCommand,
   UNKNOWN_COMMAND_ERROR,
 } from "./commands/run.js"
-export { createShapeStore, type ShapeStore } from "./electric/shape-store.js"
+export {
+  createMutableShapeStore,
+  createShapeStore,
+  type MutableShapeStore,
+  type ShapeMutations,
+  type ShapeStatus,
+  type ShapeStore,
+} from "./electric/shape-store.svelte.js"
 export {
   type AuthConfig,
   authHeaders,
   configureShapeAuth,
   createShapeUrl,
   getAuthToken,
+  resetShapeAuth,
 } from "./electric/url.js"
 export {
   type CancellableHandler,

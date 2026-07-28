@@ -23,7 +23,7 @@ vi.mock("@electric-sql/client", () => ({
 }))
 
 import { ShapeStream } from "@electric-sql/client"
-import { createShapeStore } from "../src/electric/shape-store"
+import { createShapeStore } from "../src/electric/shape-store.svelte"
 
 beforeEach(() => {
   h.rows = []

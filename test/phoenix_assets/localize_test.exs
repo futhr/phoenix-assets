@@ -138,6 +138,51 @@ defmodule PhoenixAssets.LocalizeTest do
       assert out =~ ~s|export const locales = ["en"] as const|
     end
 
+    test "emits a display and native name for every locale" do
+      ctx = stack_ctx(locales: ~w(sv en ja), default_locale: "en")
+      {:ok, state} = Localize.init([], ctx)
+
+      out = IO.iodata_to_binary(hd(Localize.generated_files(ctx, state)).contents)
+
+      assert out =~ ~s|"sv":{"name":"Swedish","nativeName":"Svenska"}|
+      assert out =~ ~s|"ja":{"name":"Japanese","nativeName":"日本語"}|
+      assert out =~ "export const localeNames: Record<Locale,"
+    end
+
+    test "resolves a regional locale through its primary subtag" do
+      ctx = stack_ctx(locales: ~w(pt-BR), default_locale: "pt-BR")
+      {:ok, state} = Localize.init([], ctx)
+
+      out = IO.iodata_to_binary(hd(Localize.generated_files(ctx, state)).contents)
+
+      assert out =~ ~s|"pt-BR":{"name":"Portuguese","nativeName":"Português"}|
+    end
+
+    # The built-in table covers the languages the fleet ships, not all of ISO
+    # 639. An unknown code must still produce a usable entry.
+    test "falls back to the code itself for an unknown language" do
+      ctx = stack_ctx(locales: ~w(zz), default_locale: "zz")
+      {:ok, state} = Localize.init([], ctx)
+
+      out = IO.iodata_to_binary(hd(Localize.generated_files(ctx, state)).contents)
+
+      assert out =~ ~s|"zz":{"name":"zz","nativeName":"zz"}|
+    end
+
+    test "accepts host-supplied names for locales the table does not know" do
+      ctx =
+        stack_ctx(
+          locales: ~w(zz),
+          default_locale: "zz",
+          locale_names: %{"zz" => %{name: "Zedish", native_name: "Zedska"}}
+        )
+
+      {:ok, state} = Localize.init([], ctx)
+      out = IO.iodata_to_binary(hd(Localize.generated_files(ctx, state)).contents)
+
+      assert out =~ ~s|"zz":{"name":"Zedish","nativeName":"Zedska"}|
+    end
+
     # `locales: []` is a misconfiguration worth raising on, but an empty
     # `:stack` must not be mistaken for one -- the key has to stay absent.
     test "an empty :stack still falls back to scanning priv/gettext" do
