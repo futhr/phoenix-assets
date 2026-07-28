@@ -12,6 +12,9 @@ defmodule PhoenixAssets.Config do
   `expose:` allow-list of constants surfaced to the frontend; it is stored on the
   `:env_expose` struct field and consumed by `PhoenixAssets.Generators.Env`.
 
+  The `:dev_intelligence` sub-config carries `tidewave: true`, the opt-in for
+  `PhoenixAssets.DevIntelligence.TidewaveTools`.
+
   ## Example
 
       config :phoenix_assets,

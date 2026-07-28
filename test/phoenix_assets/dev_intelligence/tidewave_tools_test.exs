@@ -22,7 +22,29 @@ defmodule PhoenixAssets.DevIntelligence.TidewaveToolsTest do
 
     Application.put_env(:phoenix_assets, :otp_app, :phoenix_assets)
     Application.put_env(:phoenix_assets, :asset_root, root)
+    Application.put_env(:phoenix_assets, :dev_intelligence, tidewave: true)
     :ok
+  end
+
+  describe "without the :tidewave opt-in" do
+    setup do
+      Application.delete_env(:phoenix_assets, :dev_intelligence)
+      :ok
+    end
+
+    test "every entry point reports itself disabled rather than acting" do
+      refute TidewaveTools.enabled?()
+      assert TidewaveTools.status() == {:error, :disabled}
+      assert TidewaveTools.logs(:vite) == {:error, :disabled}
+      assert TidewaveTools.restart(:vite) == {:error, :disabled}
+      assert TidewaveTools.doctor() == {:error, :disabled}
+    end
+
+    test "an explicit false is not an opt-in either" do
+      Application.put_env(:phoenix_assets, :dev_intelligence, tidewave: false)
+
+      refute TidewaveTools.enabled?()
+    end
   end
 
   test "status/0 is empty when the dev supervisor is not running" do
