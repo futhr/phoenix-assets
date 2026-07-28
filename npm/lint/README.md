@@ -24,6 +24,18 @@ pnpm add -D @phoenix-assets/lint @biomejs/biome tailwindcss svelte
 Layer your app-specific `files.includes` excludes and `overrides` on top (e.g.
 barrel-file exemptions, your Tailwind entry CSS).
 
+The base is deliberately laxer than the config `phoenix_assets` runs on itself:
+unused imports and variables are warnings rather than errors, and the noisier
+`suspicious` rules are off. A shared config that fails an app's build on day one
+gets deleted, not adopted — so raise these in your own `biome.json` once the app
+is clean. It is also *stricter* in one direction: the `performance` rules
+(`noBarrelFile`, `noReExportAll`, `noAccumulatingSpread`) are errors, because
+those cost host apps bundle size in a way they cannot see from a diff.
+
+A `**/*.svelte` override disables `useConst`, `useImportType`,
+`noUnusedVariables`, and `noUnusedImports` — Biome false-positives on all four in
+Svelte files.
+
 ## Tailwind v4 linter
 
 The package ships a compiled `phoenix-assets-lint-tailwind` binary (Node cannot

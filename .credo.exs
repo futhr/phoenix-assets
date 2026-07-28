@@ -15,22 +15,11 @@
       #
       name: "default",
       #
-      # These are the files included in the analysis:
+      # These are the files included in the analysis. This is a single
+      # non-umbrella package, so the generated src/, web/, and apps/*/ globs
+      # that `mix credo.gen.config` writes are dropped -- none of them exist.
       files: %{
-        #
-        # You can give explicit globs or simply directories.
-        # In the latter case `**/*.{ex,exs}` will be used.
-        #
-        included: [
-          "lib/",
-          "src/",
-          "test/",
-          "web/",
-          "apps/*/lib/",
-          "apps/*/src/",
-          "apps/*/test/",
-          "apps/*/web/"
-        ],
+        included: ["config/", "lib/", "test/"],
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
       #
