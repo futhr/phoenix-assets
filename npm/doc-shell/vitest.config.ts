@@ -9,7 +9,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
-      include: ["src/{ast,directives,openapi}.ts"],
+      include: ["src/{ast,directives,highlighter,openapi}.ts"],
     },
   },
 })

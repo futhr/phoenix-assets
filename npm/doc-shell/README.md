@@ -24,3 +24,9 @@ The recursive AST renderer dispatches all fourteen directives plus Shiki and
 Mermaid code fences. `ApiReference` renders tag-grouped OpenAPI operations,
 recursive schemas and examples, and a collapsible try-it panel with a lazy JSON
 viewer. All assets are bundled; `pnpm check:offline` rejects CDN references.
+
+Shiki grammars are loaded explicitly rather than through its full bundle — see
+`supportedLanguages` for the set, which covers a Phoenix + SvelteKit codebase and
+the formats its docs quote. Anything else renders as plain text. Highlighting
+emits both themes as `--shiki-light` / `--shiki-dark` custom properties, so the
+page's `color-scheme` picks a side and a dark host needs no extra class.

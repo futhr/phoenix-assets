@@ -1,5 +1,5 @@
 <script lang="ts">
-import { codeToHtml } from "shiki"
+import { highlight } from "./highlighter"
 
 interface Props {
   code: string
@@ -8,13 +8,19 @@ interface Props {
 const { code, language = "text" }: Props = $props()
 let html = $state("")
 $effect(() => {
-  void codeToHtml(code, { lang: language, theme: "github-dark" })
+  // Two edits in quick succession can settle out of order; the flag drops
+  // whichever result the component has already moved past.
+  let current = true
+  void highlight(code, language)
     .then((value) => {
-      html = value
+      if (current) html = value ?? ""
     })
     .catch(() => {
-      html = ""
+      if (current) html = ""
     })
+  return () => {
+    current = false
+  }
 })
 </script>
 
@@ -24,7 +30,14 @@ $effect(() => {
 </div>
 
 <style>
-  .code-block { position: relative; margin: 1rem 0; overflow: auto; border-radius: var(--doc-radius); background: #0d1117; color: #f0f6fc; }
-  button { position: absolute; z-index: 1; top: .5rem; right: .5rem; border: 1px solid #48515c; border-radius: .25rem; background: #21262d; color: inherit; cursor: pointer; }
+  .code-block { position: relative; margin: 1rem 0; overflow: auto; border-radius: var(--doc-radius); background: var(--doc-surface); color: var(--doc-foreground); }
+  button { position: absolute; z-index: 1; top: .5rem; right: .5rem; border: 1px solid var(--doc-border); border-radius: .25rem; background: var(--doc-background); color: inherit; cursor: pointer; }
   pre, :global(.shiki) { margin: 0; padding: 1rem; overflow: auto; }
+  /* Shiki emits both themes as custom properties; the host's color-scheme
+     picks a side, so a dark host needs no extra class or media query. */
+  :global(.shiki),
+  :global(.shiki span) {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+    background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
+  }
 </style>
