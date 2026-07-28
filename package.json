@@ -12,6 +12,7 @@
     "lint": "biome check --error-on-warnings .",
     "format": "biome check --write --unsafe .",
     "knip": "knip",
+    "check:boundary": "node scripts/check-boundary.mjs",
     "check:exports": "pnpm -r build && pnpm -r run check:publish",
     "audit": "pnpm audit --prod"
   },

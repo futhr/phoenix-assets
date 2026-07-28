@@ -29,6 +29,10 @@
     {:knip, command: "pnpm knip", deps: [:pnpm_install]},
     {:check_exports, command: "pnpm check:exports", deps: [:pnpm_install]},
 
+    ## Scope gate: no consuming platform's name or vocabulary in lib/ or npm/.
+    ## Needs no install -- plain Node, like the doc-shell offline guard.
+    {:boundary, command: "node scripts/check-boundary.mjs"},
+
     ## --- Deliberately off ---
     {:ex_doc, false},
     {:sobelow, false},

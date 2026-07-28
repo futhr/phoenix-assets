@@ -34,8 +34,9 @@ mix check
 It runs: `compile --warnings-as-errors`, `format --check-formatted`,
 `credo --strict`, `doctor` (doc coverage), `mix_audit`, `dialyzer`, ExUnit **with
 coverage** (`mix coveralls.lcov`, ≥85%), and the frontend — Biome (strict),
-`tsc --noEmit`, Vitest **with coverage** (≥80%), knip (dead-code detection), and
-`check:exports` (publint + arethetypeswrong). It therefore requires Node + pnpm on
+`tsc --noEmit`, Vitest **with coverage** (≥80%), knip (dead-code detection),
+`check:exports` (publint + arethetypeswrong), and the scope gate
+(`scripts/check-boundary.mjs`, see below). It therefore requires Node + pnpm on
 PATH. Config lives in `.check.exs`, `.doctor.exs`, `coveralls.json`, `.credo.exs`,
 `biome.json`, `knip.json`.
 
@@ -56,6 +57,37 @@ npm/vite, npm/svelte       TypeScript packages (Biome + Vitest)
 npm/doc-shell              Svelte documentation UI for the doc-shell/v1 contract
 npm/lint                   shared Biome base config + Tailwind v4 linter for host apps
 ```
+
+## What may live here
+
+`phoenix_assets` is a **generic, UI-free asset substrate**. It may know about
+Phoenix, Vite, Svelte, Tailwind, Electric, and Ash. It may not know about any
+product built on it. A feature belongs here only if it would read as sensible to
+someone who has never seen the apps that consume it.
+
+`@phoenix-assets/svelte/reporting` is the **one sanctioned UI exception**, and it
+survives only on a specific guarantee: it decodes a *generic* versioned envelope
+into generic charts. Domain semantics and theming come from the host. The moment
+it can name a business concept, it has stopped being renderer-neutral and the
+exception no longer applies. The contract it renders is owned upstream — changes
+land there first, and this package follows.
+
+`node scripts/check-boundary.mjs` enforces the mechanical half (no consuming
+platform's name anywhere in `lib/` or `npm/*/src`; no business vocabulary inside
+`reporting/`) and runs as part of `mix check`. The judgement half is yours: when
+a host asks for something, the question is whether the *next* host would want the
+same thing, or whether the seam is just too narrow for them to do it themselves.
+
+Two failure modes to watch, because both have happened:
+
+- **Absorbing a feature.** A host's product code arrives wearing a generic name.
+  The gate catches the obvious version; the subtle version is a config key or a
+  contract field that only one host will ever set.
+- **Refusing to generalise.** More common here, and more expensive. A gap in this
+  library gets paid for once per host — six of them rebuilt the same Electric
+  shape store, four the same auth headers, three the same enum generator. If you
+  find a host working around this library, that is a bug report about this
+  library.
 
 ## Conventions & gotchas
 
