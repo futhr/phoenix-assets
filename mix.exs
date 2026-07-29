@@ -85,7 +85,13 @@ defmodule PhoenixAssets.MixProject do
   defp dialyzer do
     [
       flags: [:error_handling, :extra_return, :missing_return, :unmatched_returns, :unknown],
-      plt_add_apps: [:mix]
+      plt_add_apps: [:mix],
+      # Kept outside `_build` so the two PLTs can be cached on different keys.
+      # The core PLT depends only on the Erlang/Elixir pair, so a lockfile bump
+      # must not discard it -- inside `_build` it shares the mix.lock cache key
+      # and every dependency update pays a full core rebuild.
+      plt_core_path: "priv/plts/core",
+      plt_local_path: "priv/plts/local"
     ]
   end
 

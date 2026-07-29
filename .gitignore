@@ -23,6 +23,10 @@ node_modules/
 # when an integration/install test scaffolds an app that builds into priv/static.
 priv/static/_app/immutable/
 
+# Dialyzer PLTs -- moved out of _build so CI can cache the core PLT on the
+# toolchain alone rather than on mix.lock.
+/priv/plts/
+
 # Editors / OS
 .DS_Store
 *.iml

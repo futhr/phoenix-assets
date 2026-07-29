@@ -19,18 +19,17 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
+      # Two legs on merge, one on pull request. Floor = the oldest supported
+      # toolchain compiles warning-free and passes ExUnit; full = the whole
+      # quality gate (Elixir + frontend) plus coverage upload. A change that
+      # passes `full` almost never breaks the floor on its own, and the floor
+      # leg is a complete compile + ExUnit run, so PRs skip it and merges to
+      # main still prove it.
       matrix:
-        include:
-          # Floor: the oldest supported toolchain compiles warning-free and
-          # passes ExUnit.
-          - elixir: "1.18"
-            otp: "27"
-            check: elixir
-          # Latest: the full quality gate (Elixir + frontend) and the
-          # coverage upload.
-          - elixir: "1.20"
-            otp: "29"
-            check: full
+        include: >-
+          ${{ github.event_name == 'pull_request'
+          && fromJson('[{"elixir":"1.20","otp":"29","check":"full"}]')
+          || fromJson('[{"elixir":"1.18","otp":"27","check":"elixir"},{"elixir":"1.20","otp":"29","check":"full"}]') }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -59,14 +58,42 @@ jobs:
           key: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
 
+      # The core PLT is the expensive half of dialyzer and depends only on the
+      # Erlang/Elixir pair, so it must not share the mix.lock-keyed cache above
+      # -- otherwise every dependency bump pays a full core rebuild. The local
+      # PLT does track deps and is keyed accordingly.
+      - uses: actions/cache@v5
+        if: matrix.check == 'full'
+        with:
+          path: priv/plts/core
+          key: ${{ runner.os }}-plt-core-${{ matrix.elixir }}-${{ matrix.otp }}
+
+      - uses: actions/cache@v5
+        if: matrix.check == 'full'
+        with:
+          path: priv/plts/local
+          key: ${{ runner.os }}-plt-local-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-plt-local-${{ matrix.elixir }}-${{ matrix.otp }}-
+
+      - run: mkdir -p priv/plts/core priv/plts/local
+        if: matrix.check == 'full'
+
+      # phx_new is a fixed archive, so restoring it beats refetching it on every
+      # leg of every run.
+      - uses: actions/cache@v5
+        with:
+          path: ~/.mix/archives
+          key: ${{ runner.os }}-mix-archives-${{ matrix.elixir }}-${{ matrix.otp }}
+
       - run: mix deps.get
       - run: pnpm install --frozen-lockfile
         if: matrix.check == 'full'
 
       # The phoenix_assets.install test scaffolds a throwaway app via
       # Igniter's phx_test_project/1, which shells out to the Phoenix
-      # project generator. Install the archive so that test can run.
-      - run: mix archive.install hex phx_new --force
+      # project generator. Install the archive so that test can run, unless the
+      # cache above already restored it.
+      - run: mix archive | grep -q phx_new || mix archive.install hex phx_new --force
 
       # Floor leg: compile (warnings as errors) + ExUnit only. Formatting,
       # static analysis, and the frontend run once, on the latest toolchain.
