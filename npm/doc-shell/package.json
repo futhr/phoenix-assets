@@ -53,7 +53,7 @@
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
     "svelte": "catalog:",
-    "svelte-check": "^4.7.3",
+    "svelte-check": "^4.7.4",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
