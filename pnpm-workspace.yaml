@@ -11,7 +11,7 @@ catalog:
   "@sveltejs/vite-plugin-svelte": ^7.2.0
   "@tanstack/electric-db-collection": ^0.3.12
   "@tanstack/svelte-db": ^0.1.91
-  "@types/node": ^26.1.1
+  "@types/node": ^26.1.2
   "@vitest/coverage-v8": ^4.1.10
   happy-dom: ^20.10.6
   svelte: ^5.56.7
