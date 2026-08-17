@@ -48,7 +48,7 @@
   "peerDependencies": {
     "@electric-sql/client": "^1.0.0",
     "@tanstack/electric-db-collection": "^0.3.0",
-    "@tanstack/svelte-db": "^0.1.0",
+    "@tanstack/svelte-db": "^0.1.0 || ^0.2.0",
     "phoenix": "^1.7.0",
     "svelte": "^5.7.0"
   },
@@ -72,7 +72,7 @@
     "@types/phoenix": "^1.6.7",
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
-    "phoenix": "^1.8.9",
+    "phoenix": "^1.8.11",
     "svelte": "catalog:",
     "svelte-check": "catalog:",
     "typescript": "catalog:",
@@ -82,6 +82,6 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
-    "layerchart": "2.0.2"
+    "layerchart": "2.2.0"
   }
 }

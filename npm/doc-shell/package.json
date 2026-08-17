@@ -40,16 +40,16 @@
     "svelte": "^5.7.0"
   },
   "dependencies": {
-    "@shikijs/langs": "^4.3.1",
-    "@shikijs/themes": "^4.3.1",
+    "@shikijs/langs": "^4.4.3",
+    "@shikijs/themes": "^4.4.3",
     "fuse.js": "^7.5.0",
-    "mermaid": "^11.16.0",
-    "shiki": "^4.3.1"
+    "mermaid": "^11.16.1",
+    "shiki": "^4.4.3"
   },
   "devDependencies": {
+    "@storybook/addon-svelte-csf": "^5.1.2",
     "@sveltejs/package": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
-    "@storybook/addon-svelte-csf": "^5.1.2",
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
     "svelte": "catalog:",

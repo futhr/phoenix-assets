@@ -7,23 +7,23 @@ packages:
 # dev-tool versions are catalogued. `pnpm publish` rewrites "catalog:" to the
 # resolved range automatically.
 catalog:
-  "@electric-sql/client": ^1.5.24
+  "@electric-sql/client": ^1.5.26
   "@sveltejs/package": ^2.5.8
-  "@sveltejs/vite-plugin-svelte": ^7.2.0
-  "@tanstack/electric-db-collection": ^0.3.15
-  "@tanstack/svelte-db": ^0.1.94
-  "@types/node": ^26.1.2
+  "@sveltejs/vite-plugin-svelte": ^7.3.0
+  "@tanstack/electric-db-collection": ^0.3.18
+  "@tanstack/svelte-db": ^0.2.2
+  "@types/node": ^26.2.0
   "@vitest/coverage-v8": ^4.1.10
-  happy-dom: ^20.11.1
-  svelte: ^5.56.8
-  svelte-check: ^4.7.4
+  happy-dom: ^20.11.2
+  svelte: ^5.56.9
+  svelte-check: ^4.7.6
   tailwindcss: ^4.3.3
   tsup: ^8.5.1
   # tsup's declaration bundler uses compiler APIs removed in TypeScript 7, and
   # 8.5.1 is still the newest release. Keep the newest compatible TS major and
   # re-check with `npm view tsup version` before touching this.
   typescript: ^6.0.3
-  vite: ^8.1.5
+  vite: ^8.2.1
   vitest: ^4.1.10
 
 # pnpm 10's home for the build-script allowlist (moved out of package.json's

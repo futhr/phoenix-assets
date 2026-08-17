@@ -19,7 +19,7 @@ const list = $derived(!nodes ? [] : typeof nodes === "string" ? [nodes] : nodes)
   {:else if isDirective(node.tag)}
     <Directive name={node.tag} title={node.attrs?.title}>{#snippet children()}<AstRenderer nodes={node.content ?? null} />{/snippet}</Directive>
   {:else if node.tag === "pre"}
-    {@const info = preCodeInfo(node)}
+    {const info = $derived(preCodeInfo(node))}
     {#if info?.language === "mermaid"}<MermaidDiagram code={info.code} />{:else if info}<CodeBlock code={info.code} language={info.language} />{:else}<pre><AstRenderer nodes={node.content ?? null} /></pre>{/if}
   {:else if /^h[1-6]$/.test(node.tag)}
     <svelte:element this={node.tag as "h1"} id={headingId(node.content)}><AstRenderer nodes={node.content ?? null} /></svelte:element>
