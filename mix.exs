@@ -54,7 +54,10 @@ defmodule PhoenixAssets.MixProject do
       {:plug, "~> 1.14"},
       {:telemetry, "~> 1.1"},
       {:file_system, "~> 1.0"},
-      {:muontrap, "~> 1.5"},
+      # MuonTrap 2 replaces cgroup v1 with cgroup v2. We use only the stable
+      # daemon API, so follow its library guidance and remain compatible with
+      # both maintained majors while allowing new locks to select v2.
+      {:muontrap, ">= 1.8.0 and < 3.0.0"},
       {:nimble_options, "~> 1.1"},
       {:phoenix_live_view, "~> 1.1", optional: true},
       {:ash, "~> 3.0", optional: true},
