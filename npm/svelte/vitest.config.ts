@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: { conditions: ["browser"] },
   test: {
     environment: "happy-dom",
+    setupFiles: ["./test/setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
