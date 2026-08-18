@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and smoke exact artifacts without publishing
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  build:
+    name: Build exact release artifacts
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+        with:
+          otp-version: "29"
+          elixir-version: "1.20"
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - run: mix deps.get
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate tagged release identity and metadata links
+        if: github.ref_type == 'tag'
+        run: node scripts/release.mjs check --tag "$GITHUB_REF_NAME" --network
+
+      - name: Validate untagged dry run
+        if: github.ref_type != 'tag' && inputs.dry_run
+        run: node scripts/release.mjs check --allow-untagged --network
+
+      - name: Reject untagged production run
+        if: github.ref_type != 'tag' && !inputs.dry_run
+        run: node scripts/release.mjs check
+
+      - name: Build once and record checksums
+        if: github.ref_type == 'tag'
+        run: node scripts/release.mjs build --tag "$GITHUB_REF_NAME" --artifact-dir dist/release
+
+      - name: Build once and record checksums (dry run)
+        if: github.ref_type != 'tag' && inputs.dry_run
+        run: node scripts/release.mjs build --allow-untagged --artifact-dir dist/release
+
+      - name: Smoke exact registry artifacts
+        if: github.ref_type == 'tag'
+        run: node scripts/release.mjs smoke --tag "$GITHUB_REF_NAME" --artifact-dir dist/release
+
+      - name: Smoke exact registry artifacts (dry run)
+        if: github.ref_type != 'tag' && inputs.dry_run
+        run: node scripts/release.mjs smoke --allow-untagged --artifact-dir dist/release
+
+      - name: Exercise registry preflight and npm publish dry run
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run && github.ref_type == 'tag'
+        run: node scripts/release.mjs publish --dry-run --tag "$GITHUB_REF_NAME" --artifact-dir dist/release
+
+      - name: Exercise registry preflight and npm publish dry run (untagged)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run && github.ref_type != 'tag'
+        run: node scripts/release.mjs publish --dry-run --allow-untagged --artifact-dir dist/release
+
+      - name: Upload exact release artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ github.sha }}
+          path: dist/release/
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Attest and publish exact artifacts
+    if: github.ref_type == 'tag' && (github.event_name == 'push' || !inputs.dry_run)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+        with:
+          otp-version: "29"
+          elixir-version: "1.20"
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-${{ github.sha }}
+          path: dist/release
+
+      - name: Verify downloaded bytes and source identity
+        run: node scripts/release.mjs verify --tag "$GITHUB_REF_NAME" --artifact-dir dist/release
+
+      - name: Record build provenance before registry mutation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            dist/release/*.tar
+            dist/release/*.tgz
+            dist/release/release-manifest.json
+            dist/release/SHA256SUMS
+
+      - name: Publish or resume all five registry artifacts
+        run: node scripts/release.mjs publish --tag "$GITHUB_REF_NAME" --artifact-dir dist/release
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create immutable release record
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/release/* --clobber

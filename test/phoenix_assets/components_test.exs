@@ -16,6 +16,9 @@ defmodule PhoenixAssets.ComponentsTest do
   }
 
   setup do
+    :persistent_term.erase({ManifestServer, :manifest})
+    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+
     path = Path.join(System.tmp_dir!(), "c_#{System.unique_integer([:positive])}.json")
     File.write!(path, JSON.encode!(@manifest))
     on_exit(fn -> File.rm_rf!(path) end)
@@ -64,7 +67,6 @@ defmodule PhoenixAssets.ComponentsTest do
     }
 
     :persistent_term.put({ManifestServer, :manifest}, manifest)
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
 
     html = render_component(&Components.vite_assets/1, entry: "src/app.ts")
 
@@ -98,7 +100,6 @@ defmodule PhoenixAssets.ComponentsTest do
     }
 
     :persistent_term.put({ManifestServer, :manifest}, manifest)
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
 
     html = render_component(&Components.vite_assets/1, entry: "src/app.ts", nonce: "n0nce")
 

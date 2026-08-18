@@ -33,7 +33,7 @@ defmodule PhoenixAssets.Commands.Definitions do
     * `:body` -- a TypeScript type name, or a keyword list of
       `{field, type}` rendered as an interface. A field type is a scalar
       (`:string`, `:map`, ...) or another TypeScript type name. Field names are
-      emitted verbatim, so they match the JSON the controller actually reads.
+      emitted as exact JSON keys and quoted when TypeScript requires it.
     * `:result` -- the TypeScript type of the success payload, or a keyword
       list of `{key, type}` when the endpoint wraps it (`result: [job:
       "VideoRenderJobRow"]` describes `{"job": {...}}`). Omit for a command
@@ -152,7 +152,7 @@ defmodule PhoenixAssets.Commands.Definitions do
       compile_error!(env, name, "result must declare at least one key, or name a type")
     end
 
-    Enum.each(result, fn {key, type} -> validate_field_type!(env, name, "result", key, type) end)
+    validate_fields!(env, name, "result", result)
   end
 
   defp validate_result!(env, name, result) do
@@ -203,7 +203,40 @@ defmodule PhoenixAssets.Commands.Definitions do
       compile_error!(env, name, "body must declare at least one field, or name a type")
     end
 
-    Enum.each(body, fn {field, type} -> validate_field_type!(env, name, "body", field, type) end)
+    validate_fields!(env, name, "body", body)
+  end
+
+  defp validate_fields!(env, name, kind, fields) do
+    ensure_unique_field_names!(env, name, kind, fields)
+    Enum.each(fields, fn {field, type} -> validate_field_type!(env, name, kind, field, type) end)
+  end
+
+  defp ensure_unique_field_names!(env, name, kind, fields) do
+    result =
+      Enum.reduce_while(fields, %{}, fn {field, _}, seen ->
+        normalized = field |> to_string() |> String.normalize(:nfc)
+
+        case seen do
+          %{^normalized => previous} ->
+            {:halt, {:duplicate, previous, field, normalized}}
+
+          _ ->
+            {:cont, Map.put(seen, normalized, field)}
+        end
+      end)
+
+    case result do
+      {:duplicate, previous, field, normalized} ->
+        compile_error!(
+          env,
+          name,
+          "#{kind} fields #{inspect(previous)} and #{inspect(field)} normalize to " <>
+            "duplicate JSON key #{inspect(normalized)}"
+        )
+
+      _ ->
+        :ok
+    end
   end
 
   # A field is either a scalar this generator knows how to render, or -- written

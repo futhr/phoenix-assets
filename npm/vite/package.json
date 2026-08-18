@@ -4,10 +4,10 @@
   "description": "Vite plugin for phoenix_assets: $phoenix/* virtual modules, the generated-contracts HMR bridge, a PO loader, and the asset-graph emitter.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/futhr/phoenix_assets",
+  "homepage": "https://github.com/futhr/phoenix-assets",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "url": "git+https://github.com/futhr/phoenix-assets.git",
     "directory": "npm/vite"
   },
   "files": [
@@ -23,6 +23,9 @@
   },
   "types": "./dist/index.d.ts",
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

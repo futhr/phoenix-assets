@@ -4,10 +4,10 @@
   "description": "Typed Electric, PubSub, localization, and portable reporting helpers for phoenix_assets on Svelte 5.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/futhr/phoenix_assets",
+  "homepage": "https://github.com/futhr/phoenix-assets",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "url": "git+https://github.com/futhr/phoenix-assets.git",
     "directory": "npm/svelte"
   },
   "files": [
@@ -38,6 +38,9 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "svelte-package -i src -o dist",
     "dev": "svelte-package -i src -o dist --watch",

@@ -25,7 +25,11 @@ search. Navigation is similarly host-controlled through a `navigate` callback.
 The recursive AST renderer dispatches all fourteen directives plus Shiki and
 Mermaid code fences. `ApiReference` renders tag-grouped OpenAPI operations,
 recursive schemas and examples, and a collapsible try-it panel with a lazy JSON
-viewer. All assets are bundled; `pnpm check:offline` rejects CDN references.
+viewer. Dynamic links reject executable and unknown URL schemes. Try-it paths
+cannot replace the configured API origin; a cross-origin `baseUrl` also needs an
+exact `allowedOrigins` entry and an on-screen confirmation before sending. Even
+then browser cookies remain same-origin-only. All assets are bundled; `pnpm
+check:offline` rejects CDN references.
 
 Shiki grammars are loaded explicitly rather than through its full bundle — see
 `supportedLanguages` for the set, which covers a Phoenix + SvelteKit codebase and

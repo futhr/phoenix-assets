@@ -1,0 +1,475 @@
+import { execFileSync, spawnSync } from "node:child_process"
+import { createHash } from "node:crypto"
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
+import { tmpdir } from "node:os"
+import { basename, dirname, join, resolve } from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
+
+const REPOSITORY = "futhr/phoenix-assets"
+const STALE_REPOSITORY = "futhr/phoenix" + "_assets"
+const REPOSITORY_URL = `https://github.com/${REPOSITORY}`
+const NPM_REPOSITORY_URL = `git+${REPOSITORY_URL}.git`
+const RELEASE_SCHEMA = "phoenix-assets/release/v1"
+const PACKAGES = [
+  { directory: "npm/doc-shell", name: "@phoenix-assets/doc-shell", slug: "doc-shell" },
+  { directory: "npm/lint", name: "@phoenix-assets/lint", slug: "lint" },
+  { directory: "npm/svelte", name: "@phoenix-assets/svelte", slug: "svelte" },
+  { directory: "npm/vite", name: "@phoenix-assets/vite", slug: "vite" },
+]
+
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+
+function run(command, args, options = {}) {
+  execFileSync(command, args, { stdio: "inherit", ...options })
+}
+
+function capture(command, args, options = {}) {
+  return execFileSync(command, args, { encoding: "utf8", ...options }).trim()
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"))
+}
+
+function hash(path, algorithm) {
+  return createHash(algorithm).update(readFileSync(path)).digest("hex")
+}
+
+function integrity(path) {
+  return `sha512-${createHash("sha512").update(readFileSync(path)).digest("base64")}`
+}
+
+export function readReleaseVersions(root) {
+  const mix = readFileSync(join(root, "mix.exs"), "utf8")
+  const mixVersion = mix.match(/@version\s+"([^"]+)"/)?.[1]
+  return {
+    hex: mixVersion,
+    npm: Object.fromEntries(
+      PACKAGES.map((pkg) => [
+        pkg.name,
+        readJson(join(root, pkg.directory, "package.json")).version,
+      ]),
+    ),
+  }
+}
+
+export function collectReleaseErrors(
+  root,
+  { allowUntagged = false, checkGit = true, tag, requireClean = Boolean(tag) } = {},
+) {
+  const errors = []
+  const versions = readReleaseVersions(root)
+  const expected = versions.hex
+
+  if (!expected || !SEMVER.test(expected))
+    errors.push(`invalid Mix version: ${expected ?? "missing"}`)
+  for (const [name, version] of Object.entries(versions.npm)) {
+    if (version !== expected)
+      errors.push(`${name} version ${version} does not match Mix ${expected}`)
+  }
+
+  if (tag && tag !== `v${expected}`) errors.push(`tag ${tag} does not match release v${expected}`)
+  if (!tag && !allowUntagged) errors.push("a production release requires --tag v<version>")
+
+  for (const pkg of PACKAGES) {
+    const manifest = readJson(join(root, pkg.directory, "package.json"))
+    if (manifest.homepage !== REPOSITORY_URL) {
+      errors.push(`${pkg.name} homepage must be ${REPOSITORY_URL}`)
+    }
+    if (manifest.repository?.url !== NPM_REPOSITORY_URL) {
+      errors.push(`${pkg.name} repository URL must be ${NPM_REPOSITORY_URL}`)
+    }
+    if (manifest.repository?.directory !== pkg.directory) {
+      errors.push(`${pkg.name} repository directory must be ${pkg.directory}`)
+    }
+    if (manifest.publishConfig?.access !== "public") {
+      errors.push(`${pkg.name} publishConfig.access must be public`)
+    }
+  }
+
+  for (const path of ["mix.exs", "config/config.exs", "README.md", "CHANGELOG.md"]) {
+    const contents = readFileSync(join(root, path), "utf8")
+    if (contents.includes(STALE_REPOSITORY)) {
+      errors.push(`${path} still references ${STALE_REPOSITORY}`)
+    }
+  }
+
+  if (checkGit) {
+    const origin = capture("git", ["remote", "get-url", "origin"], { cwd: root })
+    if (!origin.includes(`${REPOSITORY}.git`)) errors.push(`origin is not ${REPOSITORY}: ${origin}`)
+
+    if (tag) {
+      const head = capture("git", ["rev-parse", "HEAD"], { cwd: root })
+      const tagged = capture("git", ["rev-list", "-n", "1", tag], { cwd: root })
+      if (head !== tagged) errors.push(`${tag} points to ${tagged}, not checked-out ${head}`)
+
+      if (requireClean) {
+        const dirty = capture("git", ["status", "--porcelain"], { cwd: root })
+        if (dirty) errors.push("tagged releases must build from a clean worktree")
+      }
+    }
+
+    const staleLinks = spawnSync("git", ["grep", "-n", STALE_REPOSITORY], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    if (staleLinks.status === 0) errors.push(`stale repository links:\n${staleLinks.stdout.trim()}`)
+    if (staleLinks.status !== 0 && staleLinks.status !== 1) {
+      errors.push(`git grep failed: ${staleLinks.stderr.trim()}`)
+    }
+
+    for (const workflow of [".github/workflows/ci.yml", ".github/workflows/release.yml"]) {
+      const contents = readFileSync(join(root, workflow), "utf8")
+      const mutable = [...contents.matchAll(/uses:\s+[^\s]+@([^\s#]+)/g)]
+        .map((match) => match[1])
+        .filter((reference) => !/^[a-f\d]{40}$/.test(reference))
+      if (mutable.length > 0)
+        errors.push(`${workflow} has mutable action refs: ${mutable.join(", ")}`)
+    }
+  }
+
+  return errors
+}
+
+export function validateRelease(root, options = {}) {
+  const errors = collectReleaseErrors(root, options)
+  if (errors.length > 0) throw new Error(`release validation failed:\n- ${errors.join("\n- ")}`)
+  return readReleaseVersions(root).hex
+}
+
+function artifactPaths(output, version) {
+  return {
+    hex: join(output, `phoenix_assets-${version}.tar`),
+    npm: Object.fromEntries(
+      PACKAGES.map((pkg) => [pkg.name, join(output, `phoenix-assets-${pkg.slug}-${version}.tgz`)]),
+    ),
+  }
+}
+
+function writeManifest(root, output, version, paths, sourceDirty) {
+  const sourceSha = capture("git", ["rev-parse", "HEAD"], { cwd: root })
+  const artifacts = [
+    {
+      ecosystem: "hex",
+      name: "phoenix_assets",
+      file: basename(paths.hex),
+      sha256: hash(paths.hex, "sha256"),
+    },
+    ...PACKAGES.map((pkg) => ({
+      ecosystem: "npm",
+      name: pkg.name,
+      file: basename(paths.npm[pkg.name]),
+      sha256: hash(paths.npm[pkg.name], "sha256"),
+      integrity: integrity(paths.npm[pkg.name]),
+    })),
+  ]
+  const manifest = {
+    schema_version: RELEASE_SCHEMA,
+    version,
+    source_repository: REPOSITORY_URL,
+    source_sha: sourceSha,
+    source_dirty: sourceDirty,
+    artifacts,
+  }
+  const manifestPath = join(output, "release-manifest.json")
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+
+  const checksumPaths = [...artifacts.map(({ file }) => join(output, file)), manifestPath]
+  const checksums = checksumPaths
+    .map((path) => `${hash(path, "sha256")}  ${basename(path)}`)
+    .sort()
+    .join("\n")
+  writeFileSync(join(output, "SHA256SUMS"), `${checksums}\n`)
+}
+
+function buildArtifacts(root, output, options) {
+  const version = validateRelease(root, options)
+  const sourceDirty = Boolean(capture("git", ["status", "--porcelain"], { cwd: root }))
+  mkdirSync(output, { recursive: true })
+  const existing = readdirSync(output)
+  if (existing.length > 0) throw new Error(`artifact directory must be empty: ${output}`)
+
+  run("pnpm", ["-r", "build"], { cwd: root })
+  run("pnpm", ["-r", "run", "check:publish"], { cwd: root })
+
+  const paths = artifactPaths(output, version)
+  run("mix", ["hex.build", "--output", paths.hex], { cwd: root })
+  for (const pkg of PACKAGES) {
+    run("pnpm", ["--dir", pkg.directory, "pack", "--out", paths.npm[pkg.name]], { cwd: root })
+  }
+
+  writeManifest(root, output, version, paths, sourceDirty)
+  verifyArtifacts(root, output, options)
+}
+
+export function verifyArtifacts(root, output, options = {}) {
+  const version = validateRelease(root, { ...options, requireClean: false })
+  const manifest = readJson(join(output, "release-manifest.json"))
+  if (manifest.schema_version !== RELEASE_SCHEMA) throw new Error("unknown release manifest schema")
+  if (manifest.version !== version)
+    throw new Error("artifact manifest version does not match source")
+
+  const currentSha = capture("git", ["rev-parse", "HEAD"], { cwd: root })
+  if (manifest.source_sha !== currentSha)
+    throw new Error("artifacts were built from another commit")
+  if (options.tag && manifest.source_dirty)
+    throw new Error("tagged artifacts came from a dirty tree")
+
+  const expectedFiles = new Set([
+    `phoenix_assets-${version}.tar`,
+    ...PACKAGES.map((pkg) => `phoenix-assets-${pkg.slug}-${version}.tgz`),
+  ])
+  for (const artifact of manifest.artifacts) {
+    if (!expectedFiles.delete(artifact.file))
+      throw new Error(`unexpected artifact ${artifact.file}`)
+    const path = join(output, artifact.file)
+    if (!existsSync(path)) throw new Error(`missing artifact ${artifact.file}`)
+    if (hash(path, "sha256") !== artifact.sha256) {
+      throw new Error(`checksum mismatch for ${artifact.file}`)
+    }
+    if (artifact.ecosystem === "npm" && integrity(path) !== artifact.integrity) {
+      throw new Error(`npm integrity mismatch for ${artifact.file}`)
+    }
+  }
+  if (expectedFiles.size > 0)
+    throw new Error(`manifest is missing ${[...expectedFiles].join(", ")}`)
+
+  const checksumLines = readFileSync(join(output, "SHA256SUMS"), "utf8").trim().split("\n")
+  for (const line of checksumLines) {
+    const match = line.match(/^([a-f\d]{64})  (.+)$/)
+    if (!match) throw new Error(`invalid SHA256SUMS line: ${line}`)
+    const [, expectedHash, file] = match
+    if (hash(join(output, file), "sha256") !== expectedHash) {
+      throw new Error(`SHA256SUMS mismatch for ${file}`)
+    }
+  }
+  return manifest
+}
+
+function smokeNpmArtifacts(sourceRoot, output, manifest) {
+  const root = mkdtempSync(join(tmpdir(), "phoenix-assets-npm-smoke-"))
+  try {
+    const dependencies = Object.fromEntries(
+      manifest.artifacts
+        .filter(({ ecosystem }) => ecosystem === "npm")
+        .map(({ name, file }) => [name, `file:${join(output, file)}`]),
+    )
+    for (const pkg of PACKAGES) {
+      Object.assign(
+        dependencies,
+        readJson(join(sourceRoot, pkg.directory, "package.json")).peerDependencies,
+      )
+    }
+    const workspace = readFileSync(join(sourceRoot, "pnpm-workspace.yaml"), "utf8")
+    const sveltePluginVersion = workspace.match(/"@sveltejs\/vite-plugin-svelte":\s*([^\s]+)/)?.[1]
+    if (!sveltePluginVersion) throw new Error("Svelte Vite plugin catalog version is missing")
+    dependencies["@sveltejs/vite-plugin-svelte"] = sveltePluginVersion
+    writeFileSync(
+      join(root, "package.json"),
+      `${JSON.stringify({ name: "phoenix-assets-release-smoke", private: true, type: "module", dependencies }, null, 2)}\n`,
+    )
+    run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false"], {
+      cwd: root,
+    })
+
+    writeFileSync(
+      join(root, "smoke.mjs"),
+      `
+const imports = [
+  "@phoenix-assets/vite",
+  "@phoenix-assets/svelte",
+  "@phoenix-assets/svelte/socket",
+]
+const resolutions = [
+  "@phoenix-assets/lint/lint-tailwind.js",
+  "@phoenix-assets/svelte/collection",
+  "@phoenix-assets/svelte/reporting",
+  "@phoenix-assets/doc-shell",
+  "@phoenix-assets/doc-shell/theme.css",
+  "@phoenix-assets/lint/biome.base.json",
+]
+for (const specifier of [...imports, ...resolutions]) import.meta.resolve(specifier)
+for (const specifier of imports) await import(specifier)
+`,
+    )
+    writeFileSync(
+      join(root, "consumer.js"),
+      `
+export { PortableReport } from "@phoenix-assets/svelte/reporting"
+export { createShapeCollection } from "@phoenix-assets/svelte/collection"
+export { DocShell } from "@phoenix-assets/doc-shell"
+import "@phoenix-assets/doc-shell/theme.css"
+`,
+    )
+    writeFileSync(
+      join(root, "vite.config.mjs"),
+      `
+import { svelte } from "@sveltejs/vite-plugin-svelte"
+import { defineConfig } from "vite"
+export default defineConfig({
+  plugins: [svelte()],
+  build: { lib: { entry: "consumer.js", formats: ["es"] } },
+})
+`,
+    )
+    run("node", ["smoke.mjs"], { cwd: root })
+    run(join(root, "node_modules/.bin/vite"), ["build"], { cwd: root })
+  } finally {
+    rmSync(root, { force: true, recursive: true })
+  }
+}
+
+function smokeHexArtifact(output, manifest) {
+  const artifact = manifest.artifacts.find(({ ecosystem }) => ecosystem === "hex")
+  if (!artifact) throw new Error("Hex artifact is missing")
+  const root = mkdtempSync(join(tmpdir(), "phoenix-assets-hex-smoke-"))
+  const outer = join(root, "outer")
+  const source = join(root, "source")
+  mkdirSync(outer)
+  mkdirSync(source)
+
+  try {
+    run("tar", ["-xf", join(output, artifact.file), "-C", outer])
+    run("tar", ["-xzf", join(outer, "contents.tar.gz"), "-C", source])
+    run("mix", ["deps.get", "--only", "prod"], {
+      cwd: source,
+      env: { ...process.env, MIX_ENV: "prod" },
+    })
+    run("mix", ["compile", "--warnings-as-errors"], {
+      cwd: source,
+      env: { ...process.env, MIX_ENV: "prod" },
+    })
+  } finally {
+    rmSync(root, { force: true, recursive: true })
+  }
+}
+
+function smokeArtifacts(root, output, options) {
+  const manifest = verifyArtifacts(root, output, options)
+  smokeNpmArtifacts(root, output, manifest)
+  smokeHexArtifact(output, manifest)
+}
+
+function npmRegistryState(name, version, path) {
+  const result = spawnSync("npm", ["view", `${name}@${version}`, "dist.integrity", "--json"], {
+    encoding: "utf8",
+  })
+  if (result.status === 0) {
+    const published = JSON.parse(result.stdout)
+    const local = integrity(path)
+    if (published !== local) throw new Error(`${name}@${version} exists with different bytes`)
+    return "identical"
+  }
+  const output = `${result.stdout}\n${result.stderr}`
+  if (/E404|404 Not Found/.test(output)) return "missing"
+  throw new Error(`npm preflight failed for ${name}@${version}: ${output.trim()}`)
+}
+
+async function hexRegistryState(version, path) {
+  const response = await fetch(`https://repo.hex.pm/tarballs/phoenix_assets-${version}.tar`)
+  if (response.status === 404) return "missing"
+  if (!response.ok) throw new Error(`Hex preflight failed with HTTP ${response.status}`)
+  const published = createHash("sha256")
+    .update(Buffer.from(await response.arrayBuffer()))
+    .digest("hex")
+  if (published !== hash(path, "sha256")) {
+    throw new Error(`phoenix_assets ${version} exists with different bytes`)
+  }
+  return "identical"
+}
+
+async function publishArtifacts(root, output, options) {
+  const manifest = verifyArtifacts(root, output, options)
+  const npmArtifacts = manifest.artifacts.filter(({ ecosystem }) => ecosystem === "npm")
+  const hexArtifact = manifest.artifacts.find(({ ecosystem }) => ecosystem === "hex")
+  if (!hexArtifact) throw new Error("Hex artifact is missing")
+
+  // Complete every registry read before the first write. A rerun skips bytes
+  // already published from this manifest and rejects any conflicting version.
+  const npmStates = new Map(
+    npmArtifacts.map((artifact) => [
+      artifact.name,
+      npmRegistryState(artifact.name, manifest.version, join(output, artifact.file)),
+    ]),
+  )
+  const hexState = await hexRegistryState(manifest.version, join(output, hexArtifact.file))
+
+  for (const artifact of npmArtifacts) {
+    if (npmStates.get(artifact.name) === "identical") {
+      console.log(`already published with identical bytes: ${artifact.name}@${manifest.version}`)
+      continue
+    }
+    const args = ["publish", join(output, artifact.file), "--access", "public"]
+    if (options.dryRun) args.push("--dry-run")
+    run("npm", args, { cwd: root })
+  }
+
+  if (hexState === "identical") {
+    console.log(`already published with identical bytes: phoenix_assets ${manifest.version}`)
+  } else if (options.dryRun) {
+    console.log(`dry run: validated ${hexArtifact.file}; Hex registry was not mutated`)
+  } else {
+    run("elixir", [join(root, "scripts/publish-hex.exs"), join(output, hexArtifact.file)], {
+      cwd: root,
+    })
+  }
+}
+
+function parseArgs(argv) {
+  const [command, ...args] = argv
+  const value = (flag) => {
+    const index = args.indexOf(flag)
+    return index === -1 ? undefined : args[index + 1]
+  }
+  return {
+    allowUntagged: args.includes("--allow-untagged"),
+    artifactDir: value("--artifact-dir"),
+    command,
+    dryRun: args.includes("--dry-run"),
+    network: args.includes("--network"),
+    tag: value("--tag"),
+  }
+}
+
+async function main() {
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+  const options = parseArgs(process.argv.slice(2))
+  const releaseOptions = { allowUntagged: options.allowUntagged, tag: options.tag }
+  const output = resolve(root, options.artifactDir ?? "dist/release")
+
+  switch (options.command) {
+    case "check":
+      validateRelease(root, releaseOptions)
+      if (options.network) run("git", ["ls-remote", "--exit-code", "origin", "HEAD"], { cwd: root })
+      break
+    case "build":
+      buildArtifacts(root, output, releaseOptions)
+      break
+    case "verify":
+      verifyArtifacts(root, output, releaseOptions)
+      break
+    case "smoke":
+      smokeArtifacts(root, output, releaseOptions)
+      break
+    case "publish":
+      await publishArtifacts(root, output, { ...releaseOptions, dryRun: options.dryRun })
+      break
+    default:
+      throw new Error("usage: release.mjs <check|build|verify|smoke|publish> [options]")
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exitCode = 1
+  })
+}

@@ -18,10 +18,16 @@ if config_env() == :dev do
   config :git_ops,
     mix_project: Mix.Project.get!(),
     changelog_file: "CHANGELOG.md",
-    repository_url: "https://github.com/futhr/phoenix_assets",
+    repository_url: "https://github.com/futhr/phoenix-assets",
     version_tag_prefix: "v",
     manage_mix_version?: true,
     manage_readme_version: false,
+    managed_files: [
+      {"npm/doc-shell/package.json", :json},
+      {"npm/lint/package.json", :json},
+      {"npm/svelte/package.json", :json},
+      {"npm/vite/package.json", :json}
+    ],
     types: [
       tidbit: [hidden?: true],
       important: [header: "Important Changes"],

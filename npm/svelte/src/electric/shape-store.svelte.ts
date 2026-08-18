@@ -41,6 +41,19 @@ export interface ShapeMutations<T extends Row<unknown>> {
   identify?: (row: T) => string
 }
 
+interface OptimisticMutation<T> {
+  id: number
+  pending: boolean
+  patch: (rows: T[]) => T[]
+}
+
+interface QueuedWrite {
+  id: number
+  run: () => Promise<unknown>
+  resolve: () => void
+  reject: (error: Error) => void
+}
+
 const toError = (cause: unknown): Error =>
   cause instanceof Error ? cause : new Error(String(cause))
 
@@ -119,10 +132,10 @@ export function createShapeStore<T extends Row<unknown>>(
 /**
  * A shape store whose writes show up before the server confirms them.
  *
- * The optimistic rows are applied locally, the handler runs, and a rejection
- * puts the previous rows back and surfaces the error. Electric's own sync
- * overwrites the optimistic state once the change round-trips, so the local
- * overlay only has to cover the gap in between.
+ * Each optimistic change is replayed over Electric's latest rows in issue
+ * order. Server writes are serialized in that same order: a slow older write
+ * cannot clear or roll back a newer optimistic change, while an Electric sync
+ * arriving between writes becomes the new base for every pending patch.
  */
 export function createMutableShapeStore<T extends Row<unknown>>(
   path: string | (() => string),
@@ -133,26 +146,72 @@ export function createMutableShapeStore<T extends Row<unknown>>(
   const store = createShapeStore<T>(path, params, config)
   const identify = mutations.identify ?? ((row: T) => String((row as { id?: unknown }).id))
 
-  // null means "no local overlay" — read straight through to the synced rows.
-  let overlay = $state<T[] | null>(null)
+  let optimistic = $state<OptimisticMutation<T>[]>([])
   let mutationError = $state<Error | null>(null)
+  let nextMutationId = 0
+  const writeQueue: QueuedWrite[] = []
+  let writing = false
 
-  const current = () => overlay ?? store.rows
+  const current = () => optimistic.reduce((rows, mutation) => mutation.patch(rows), store.rows)
 
-  const apply = async (next: T[], write: () => Promise<unknown>) => {
-    const previous = current()
-    overlay = next
+  const settleSuccess = (id: number) => {
+    optimistic = optimistic.map((mutation) =>
+      mutation.id === id ? { ...mutation, pending: false } : mutation,
+    )
+
+    // Successful patches stay in the replay chain while a later mutation
+    // still depends on them. Once the queue settles, Electric is the truth.
+    if (!optimistic.some((mutation) => mutation.pending)) optimistic = []
+  }
+
+  const settleFailure = (id: number, cause: unknown): Error => {
+    optimistic = optimistic.filter((mutation) => mutation.id !== id)
+    if (!optimistic.some((mutation) => mutation.pending)) optimistic = []
+    mutationError = toError(cause)
+    return mutationError
+  }
+
+  const runNextWrite = () => {
+    if (writing) return
+    const queued = writeQueue.shift()
+    if (!queued) return
+    writing = true
+
+    let result: Promise<unknown>
+    try {
+      result = queued.run()
+    } catch (cause) {
+      queued.reject(settleFailure(queued.id, cause))
+      writing = false
+      runNextWrite()
+      return
+    }
+
+    void result.then(
+      () => {
+        settleSuccess(queued.id)
+        queued.resolve()
+        writing = false
+        runNextWrite()
+      },
+      (cause: unknown) => {
+        queued.reject(settleFailure(queued.id, cause))
+        writing = false
+        runNextWrite()
+      },
+    )
+  }
+
+  const apply = (patch: (rows: T[]) => T[], write: () => Promise<unknown>): Promise<void> => {
+    const id = nextMutationId
+    nextMutationId += 1
+    optimistic = [...optimistic, { id, pending: true, patch }]
     mutationError = null
 
-    try {
-      await write()
-      // Drop the overlay and let Electric's sync be the truth again.
-      overlay = null
-    } catch (cause) {
-      overlay = previous
-      mutationError = cause instanceof Error ? cause : new Error(String(cause))
-      throw mutationError
-    }
+    return new Promise<void>((resolve, reject) => {
+      writeQueue.push({ id, run: write, resolve, reject })
+      runNextWrite()
+    })
   }
 
   return {
@@ -166,20 +225,35 @@ export function createMutableShapeStore<T extends Row<unknown>>(
       return mutationError ?? store.error
     },
     retry() {
-      overlay = null
+      optimistic = []
       mutationError = null
       store.retry()
     },
     insert(row) {
-      return apply([...current(), row], () => mutations.onInsert?.(row) ?? Promise.resolve())
+      return apply(
+        (rows) => {
+          let replaced = false
+          const next = rows.map((existing) => {
+            if (identify(existing) !== identify(row)) return existing
+            replaced = true
+            return row
+          })
+          return replaced ? next : [...next, row]
+        },
+        () => mutations.onInsert?.(row) ?? Promise.resolve(),
+      )
     },
     update(id, changes) {
-      const next = current().map((row) => (identify(row) === id ? { ...row, ...changes } : row))
-      return apply(next, () => mutations.onUpdate?.(id, changes) ?? Promise.resolve())
+      return apply(
+        (rows) => rows.map((row) => (identify(row) === id ? { ...row, ...changes } : row)),
+        () => mutations.onUpdate?.(id, changes) ?? Promise.resolve(),
+      )
     },
     remove(id) {
-      const next = current().filter((row) => identify(row) !== id)
-      return apply(next, () => mutations.onRemove?.(id) ?? Promise.resolve())
+      return apply(
+        (rows) => rows.filter((row) => identify(row) !== id),
+        () => mutations.onRemove?.(id) ?? Promise.resolve(),
+      )
     },
   }
 }

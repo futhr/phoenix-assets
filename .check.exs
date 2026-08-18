@@ -28,6 +28,8 @@
     {:vitest, command: "pnpm test", deps: [:pnpm_install]},
     {:knip, command: "pnpm knip", deps: [:pnpm_install]},
     {:check_exports, command: "pnpm check:exports", deps: [:pnpm_install]},
+    {:release_tests, command: "pnpm test:release", deps: [:pnpm_install]},
+    {:release_contract, command: "pnpm check:release", deps: [:pnpm_install]},
 
     ## Scope gate: no consuming platform's name or vocabulary in lib/ or npm/.
     ## Needs no install -- plain Node, like the doc-shell offline guard.

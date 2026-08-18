@@ -16,8 +16,11 @@ defmodule PhoenixAssetsTest do
 
   setup do
     saved = Application.get_all_env(:phoenix_assets)
+    :persistent_term.erase({ManifestServer, :manifest})
 
     on_exit(fn ->
+      :persistent_term.erase({ManifestServer, :manifest})
+
       for {key, _} <- Application.get_all_env(:phoenix_assets) do
         Application.delete_env(:phoenix_assets, key)
       end
@@ -73,7 +76,6 @@ defmodule PhoenixAssetsTest do
       }
     )
 
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
     Application.put_env(:phoenix_assets, :build, asset_url: "https://cdn.example.com/")
 
     resolved = PhoenixAssets.entry!("src/app.ts")
@@ -97,7 +99,6 @@ defmodule PhoenixAssetsTest do
 
   test "entry!/1 raises when a production manifest is expected but missing" do
     :persistent_term.put({ManifestServer, :manifest}, {:error, :missing})
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
 
     assert_raise RuntimeError, ~r/manifest unavailable/, fn -> PhoenixAssets.entry!("app") end
   end

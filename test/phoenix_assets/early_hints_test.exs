@@ -16,6 +16,12 @@ defmodule PhoenixAssets.EarlyHintsTest do
     "_vendor-BBB.js" => %{"file" => "assets/vendor-BBB.js"}
   }
 
+  setup do
+    :persistent_term.erase({ManifestServer, :manifest})
+    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+    :ok
+  end
+
   defp call(opts) do
     conn = conn(:get, "/")
     EarlyHints.call(conn, EarlyHints.init(opts))
@@ -23,7 +29,6 @@ defmodule PhoenixAssets.EarlyHintsTest do
 
   test "sends 103 hints for the entry's stylesheets and module chunks" do
     :persistent_term.put({ManifestServer, :manifest}, @manifest)
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
 
     conn = call(entry: "src/app.ts")
 
@@ -50,7 +55,6 @@ defmodule PhoenixAssets.EarlyHintsTest do
 
   test "an unknown entry passes through rather than crashing the request" do
     :persistent_term.put({ManifestServer, :manifest}, @manifest)
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
 
     conn = call(entry: "src/ghost.ts")
     assert Plug.Test.sent_informs(conn) == []

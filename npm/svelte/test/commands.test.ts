@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { runCommand } from "../src/commands/run"
+import { configureShapeAuth, resetShapeAuth } from "../src/electric/url"
 
 const ERRORS = ["edit_rejected", "not_found"] as const
 
@@ -18,6 +19,7 @@ function respond(
 afterEach(() => {
   vi.restoreAllMocks()
   localStorage.clear()
+  resetShapeAuth()
 })
 
 describe("runCommand", () => {
@@ -93,6 +95,79 @@ describe("runCommand", () => {
     expect(
       await runCommand({ path: "/api/pages", method: "POST", fetch: fetchFn }, ERRORS),
     ).toEqual({ ok: false, error: "unknown_error", status: 0 })
+  })
+
+  it.each([
+    [
+      "token reader",
+      {
+        readToken: () => {
+          throw new Error("token source failed")
+        },
+      },
+    ],
+    [
+      "header callback",
+      {
+        headers: () => {
+          throw new Error("header source failed")
+        },
+      },
+    ],
+  ])("normalizes a throwing %s", async (_name, auth) => {
+    configureShapeAuth(auth)
+    const fetchFn = vi.fn()
+
+    await expect(
+      runCommand({ path: "/api/pages", method: "POST", fetch: fetchFn }, ERRORS),
+    ).resolves.toEqual({ ok: false, error: "unknown_error", status: 0 })
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it("normalizes a missing path parameter before fetch", async () => {
+    const fetchFn = vi.fn()
+
+    await expect(
+      runCommand({ path: "/api/pages/:id", method: "POST", fetch: fetchFn }, ERRORS),
+    ).resolves.toEqual({ ok: false, error: "unknown_error", status: 0 })
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it("normalizes circular request bodies before fetch", async () => {
+    const body: { self?: unknown } = {}
+    body.self = body
+    const fetchFn = vi.fn()
+
+    await expect(
+      runCommand({ path: "/api/pages", method: "POST", body, fetch: fetchFn }, ERRORS),
+    ).resolves.toEqual({ ok: false, error: "unknown_error", status: 0 })
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it("normalizes malformed response objects", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(null)
+
+    await expect(
+      runCommand({ path: "/api/pages", method: "POST", fetch: fetchFn }, ERRORS),
+    ).resolves.toEqual({ ok: false, error: "unknown_error", status: 0 })
+  })
+
+  it("normalizes abort rejection", async () => {
+    const fetchFn = vi.fn().mockRejectedValue(new DOMException("aborted", "AbortError"))
+    const controller = new AbortController()
+    controller.abort()
+
+    await expect(
+      runCommand(
+        {
+          path: "/api/pages",
+          method: "POST",
+          fetch: fetchFn,
+          signal: controller.signal,
+        },
+        ERRORS,
+      ),
+    ).resolves.toEqual({ ok: false, error: "unknown_error", status: 0 })
   })
 
   it("returns null data for a 204 without reading the body", async () => {

@@ -134,7 +134,7 @@ The full Svelte stack is the default — there's no preset module to write.
 
 ```elixir
 # mix.exs
-{:phoenix_assets, github: "futhr/phoenix_assets"}
+{:phoenix_assets, github: "futhr/phoenix-assets"}
 ```
 
 ```bash
@@ -288,7 +288,8 @@ module.
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/futhr/phoenix_assets/blob/main/CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/futhr/phoenix-assets/blob/main/CONTRIBUTING.md) for guidelines.
+The coordinated Hex/npm release process is documented in [RELEASING.md](RELEASING.md).
 
 ## Fleet library lockstep
 
@@ -300,4 +301,4 @@ consumer `override:` pin is updated in the same change.
 
 ## License
 
-Phoenix Assets is released under the MIT License. See [LICENSE](https://github.com/futhr/phoenix_assets/blob/main/LICENSE) for details.
+Phoenix Assets is released under the MIT License. See [LICENSE](https://github.com/futhr/phoenix-assets/blob/main/LICENSE) for details.

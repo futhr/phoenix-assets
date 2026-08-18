@@ -1,6 +1,6 @@
 # @phoenix-assets/vite
 
-The Vite half of [`phoenix_assets`](https://github.com/futhr/phoenix_assets). It
+The Vite half of [`phoenix_assets`](https://github.com/futhr/phoenix-assets). It
 exposes the contracts Elixir generates as `$phoenix/*` virtual modules, bridges
 HMR so a regenerated contract reloads without a restart, loads gettext `.po`
 files, and emits the asset graph the Phoenix side validates against.

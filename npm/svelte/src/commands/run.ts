@@ -48,35 +48,32 @@ export async function runCommand<TData, TError extends string>(
   request: CommandRequest,
   knownErrors: readonly TError[] = [],
 ): Promise<CommandResult<TData, TError>> {
-  const { path, method, params = {}, body, headers = {}, signal } = request
-  const fetchFn = request.fetch ?? fetch
-
-  const requestHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...authHeaders(),
-    ...headers,
-  }
-
-  let response: Response
   try {
-    response = await fetchFn(createShapeUrl(path, params), {
+    const { path, method, params = {}, body, headers = {}, signal } = request
+    const fetchFn = request.fetch ?? fetch
+    const requestHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...headers,
+    }
+
+    const response = await fetchFn(createShapeUrl(path, params), {
       method,
       headers: requestHeaders,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       ...(signal ? { signal } : {}),
     })
+    const payload = await readJson(response)
+
+    if (response.ok) return { ok: true, data: payload as TData }
+
+    return {
+      ok: false,
+      error: errorCode(payload, knownErrors),
+      status: response.status,
+    }
   } catch {
     return { ok: false, error: UNKNOWN_COMMAND_ERROR, status: 0 }
-  }
-
-  const payload = await readJson(response)
-
-  if (response.ok) return { ok: true, data: payload as TData }
-
-  return {
-    ok: false,
-    error: errorCode(payload, knownErrors),
-    status: response.status,
   }
 }
 

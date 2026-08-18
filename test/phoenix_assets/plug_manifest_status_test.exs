@@ -12,6 +12,12 @@ defmodule PhoenixAssets.PlugManifestStatusTest do
   alias PhoenixAssets.ManifestServer
   alias PhoenixAssets.Plug, as: AssetsPlug
 
+  setup do
+    :persistent_term.erase({ManifestServer, :manifest})
+    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+    :ok
+  end
+
   defp manifest_status(opts) do
     conn = :get |> conn("/__assets/status") |> AssetsPlug.call(AssetsPlug.init(opts))
     JSON.decode!(conn.resp_body)["manifest"]
@@ -19,7 +25,6 @@ defmodule PhoenixAssets.PlugManifestStatusTest do
 
   test ~s|reports "loaded" when a manifest map is cached| do
     :persistent_term.put({ManifestServer, :manifest}, %{"src/app.ts" => %{"file" => "x"}})
-    on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
 
     assert manifest_status(enabled: true) == "loaded"
   end

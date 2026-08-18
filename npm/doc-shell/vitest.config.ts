@@ -3,13 +3,14 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   plugins: [svelte()],
+  resolve: { conditions: ["browser"] },
   test: {
     environment: "happy-dom",
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
-      include: ["src/{ast,directives,highlighter,openapi}.ts"],
+      include: ["src/{ast,directives,highlighter,openapi,url}.ts"],
     },
   },
 })

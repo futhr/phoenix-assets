@@ -55,6 +55,9 @@ Releases are cut from the git root with:
 mix git_ops.release   # --initial for the first release
 ```
 
+The coordinated Hex/npm workflow, credentials, dry run, and partial-failure
+recovery are documented in [`RELEASING.md`](RELEASING.md).
+
 ## Pull requests
 
 1. Branch from `main`.

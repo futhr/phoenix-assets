@@ -326,6 +326,31 @@ defmodule PhoenixAssets.DSLValidationTest do
       )
     end
 
+    test "duplicate inline field names are a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandDuplicateBodyField do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/publish", body: [{:name, :string}, {:name, :integer}]
+        end
+        """,
+        ~r/command :publish.*body fields :name and :name normalize to duplicate JSON key "name"/s
+      )
+    end
+
+    test "Unicode-normalized inline field collisions are a compile error" do
+      assert_compile_error(
+        """
+        defmodule DSLV.CommandNormalizedResultField do
+          use PhoenixAssets.Commands.Definitions
+          command :publish, route: "/api/publish",
+            result: [{:"café", :string}, {:"café", :integer}]
+        end
+        """,
+        ~r/command :publish.*result fields.*normalize to duplicate JSON key "café"/s
+      )
+    end
+
     test "a glob route is a compile error" do
       assert_compile_error(
         """

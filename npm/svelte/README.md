@@ -1,6 +1,6 @@
 # @phoenix-assets/svelte
 
-The Svelte 5 runtime for [`phoenix_assets`](https://github.com/futhr/phoenix_assets).
+The Svelte 5 runtime for [`phoenix_assets`](https://github.com/futhr/phoenix-assets).
 The contracts Elixir generates are types and route strings; this package is the
 small amount of runtime they call into — the shape client, the command client,
 locale resolution, event modifiers, and the portable-report renderer.

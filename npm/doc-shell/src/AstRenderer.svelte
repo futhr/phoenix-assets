@@ -6,6 +6,7 @@ import Directive from "./Directive.svelte"
 import { isDirective } from "./directives.js"
 import MermaidDiagram from "./MermaidDiagram.svelte"
 import type { DocAstNode } from "./types.js"
+import { safeLinkTarget } from "./url.js"
 
 interface Props {
   nodes: DocAstNode[] | string | null
@@ -25,7 +26,9 @@ const list = $derived(!nodes ? [] : typeof nodes === "string" ? [nodes] : nodes)
     <svelte:element this={node.tag as "h1"} id={headingId(node.content)}><AstRenderer nodes={node.content ?? null} /></svelte:element>
   {:else if ["p", "ul", "ol", "li", "blockquote", "strong", "em", "table", "thead", "tbody", "tr", "th", "td", "code"].includes(node.tag)}
     <svelte:element this={node.tag as "p"}><AstRenderer nodes={node.content ?? null} /></svelte:element>
-  {:else if node.tag === "a"}<a href={node.attrs?.href}><AstRenderer nodes={node.content ?? null} /></a>
+  {:else if node.tag === "a"}
+    {const link = $derived(safeLinkTarget(node.attrs?.href))}
+    {#if link}<a href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined}><AstRenderer nodes={node.content ?? null} /></a>{:else}<span data-unsafe-link><AstRenderer nodes={node.content ?? null} /></span>{/if}
   {:else if node.tag === "br"}<br />{:else if node.tag === "hr"}<hr />
   {:else}<div data-unknown-tag={node.tag}><AstRenderer nodes={node.content ?? null} /></div>{/if}
 {/each}

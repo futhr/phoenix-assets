@@ -141,7 +141,9 @@ defmodule PhoenixAssets.Commands do
 
   defp render_interface(prefix, suffix, fields) when is_list(fields) do
     rendered =
-      Enum.map_join(fields, "", fn {field, type} -> "  #{field}: #{field_type(type)}\n" end)
+      Enum.map_join(fields, "", fn {field, type} ->
+        "  #{TS.object_key(field)}: #{field_type(type)}\n"
+      end)
 
     "\nexport interface #{prefix}#{suffix} {\n#{rendered}}\n"
   end

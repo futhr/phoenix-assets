@@ -44,6 +44,23 @@ defmodule PhoenixAssets.CommandsTest do
     use PhoenixAssets.Commands.Definitions
   end
 
+  defmodule WireKeyDeclarations do
+    @moduledoc false
+    use PhoenixAssets.Commands.Definitions
+
+    command(:wire_keys,
+      route: "/api/wire-keys",
+      body: [
+        {:"display-name", :string},
+        {:"space key", :string},
+        {:class, :string},
+        {:café, :string},
+        {:"quote\"slash\\", :string}
+      ],
+      result: [{:"result-value", :integer}]
+    )
+  end
+
   defmodule Stub do
     @moduledoc false
     def init(opts), do: opts
@@ -60,8 +77,8 @@ defmodule PhoenixAssets.CommandsTest do
 
   defp ctx, do: Context.new(Config.load!(otp_app: :my_app), env: :test)
 
-  defp render do
-    {:ok, state} = Commands.init([commands: Declarations], ctx())
+  defp render(module \\ Declarations) do
+    {:ok, state} = Commands.init([commands: module], ctx())
     [file] = Commands.generated_files(ctx(), state)
     assert file.kind == :commands
     IO.iodata_to_binary(file.contents)
@@ -86,6 +103,68 @@ defmodule PhoenixAssets.CommandsTest do
     out = render()
 
     assert out =~ "export interface PublishArticleBody {\n  note: string\n  pinned: boolean\n}"
+  end
+
+  test "quotes non-identifier wire keys without rewriting their JSON names" do
+    out = render(WireKeyDeclarations)
+
+    assert out =~ ~s|  "display-name": string|
+    assert out =~ ~s|  "space key": string|
+    assert out =~ "  class: string"
+    assert out =~ ~s|  "café": string|
+    assert out =~ ~S|  "quote\"slash\\": string|
+    assert out =~ ~s|  "result-value": number|
+  end
+
+  test "generated interfaces with escaped wire keys compile with TypeScript" do
+    case System.find_executable("pnpm") do
+      nil ->
+        :ok
+
+      pnpm ->
+        root = Path.join(System.tmp_dir!(), "pa_commands_#{System.unique_integer([:positive])}")
+        File.mkdir_p!(root)
+        on_exit(fn -> File.rm_rf!(root) end)
+        File.write!(Path.join(root, "commands.ts"), render(WireKeyDeclarations))
+
+        File.write!(
+          Path.join(root, "runtime.d.ts"),
+          ~S"""
+          declare module "@phoenix-assets/svelte" {
+            export interface CommandOptions { signal?: AbortSignal }
+            export type CommandResult<TData, TError extends string> =
+              | { ok: true; data: TData }
+              | { ok: false; error: TError | "unknown_error"; status: number }
+            export function runCommand<TData, TError extends string>(
+              request: unknown,
+              errors: readonly TError[],
+            ): Promise<CommandResult<TData, TError>>
+          }
+          """
+        )
+
+        {output, status} =
+          System.cmd(
+            pnpm,
+            [
+              "exec",
+              "tsc",
+              "--noEmit",
+              "--strict",
+              "--target",
+              "ES2022",
+              "--module",
+              "ESNext",
+              "--moduleResolution",
+              "Bundler",
+              Path.join(root, "commands.ts"),
+              Path.join(root, "runtime.d.ts")
+            ],
+            stderr_to_stdout: true
+          )
+
+        assert status == 0, output
+    end
   end
 
   test "renders the declared error codes as a union and a runtime list" do

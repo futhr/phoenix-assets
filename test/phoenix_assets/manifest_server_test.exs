@@ -11,7 +11,9 @@ defmodule PhoenixAssets.ManifestServerTest do
   # outlives the supervised process. Erase it after every test so the global term
   # never leaks into another module's tests (e.g. EarlyHints reads it directly).
   setup do
+    :persistent_term.erase({ManifestServer, :manifest})
     on_exit(fn -> :persistent_term.erase({ManifestServer, :manifest}) end)
+    :ok
   end
 
   defp start_with_manifest do

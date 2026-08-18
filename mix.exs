@@ -4,7 +4,7 @@ defmodule PhoenixAssets.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/futhr/phoenix_assets"
+  @source_url "https://github.com/futhr/phoenix-assets"
 
   def project do
     [
@@ -102,7 +102,7 @@ defmodule PhoenixAssets.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib mix.exs README.md CHANGELOG.md LICENSE usage-rules.md)
+      files: ~w(lib mix.exs README.md RELEASING.md CHANGELOG.md LICENSE usage-rules.md)
     ]
   end
 
@@ -114,11 +114,12 @@ defmodule PhoenixAssets.MixProject do
       formatters: ["html"],
       extras: [
         "README.md": [title: "Overview"],
+        "RELEASING.md": [title: "Releasing"],
         "usage-rules.md": [title: "Usage rules"],
         "CHANGELOG.md": [title: "Changelog"]
       ],
       groups_for_extras: [
-        Reference: ["usage-rules.md", "CHANGELOG.md"]
+        Reference: ["usage-rules.md", "RELEASING.md", "CHANGELOG.md"]
       ],
       nest_modules_by_prefix: [
         PhoenixAssets.Commands,

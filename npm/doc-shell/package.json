@@ -4,10 +4,10 @@
   "description": "Renderer-neutral Svelte documentation shell for DocShell artifacts.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/futhr/phoenix_assets",
+  "homepage": "https://github.com/futhr/phoenix-assets",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/futhr/phoenix_assets.git",
+    "url": "git+https://github.com/futhr/phoenix-assets.git",
     "directory": "npm/doc-shell"
   },
   "files": [
@@ -28,6 +28,9 @@
   "sideEffects": [
     "**/*.css"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "svelte-package -i src -o dist",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
