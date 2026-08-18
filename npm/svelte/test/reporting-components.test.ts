@@ -1,9 +1,9 @@
 import { mount, tick, unmount } from "svelte"
 import { describe, expect, it } from "vitest"
 import type { PanelDefinition, ResultFrame } from "../src/reporting/contract"
-import DataTable from "../src/reporting/DataTable.svelte"
-import PortablePanel from "../src/reporting/PortablePanel.svelte"
-import PortableReport from "../src/reporting/PortableReport.svelte"
+import DataTable from "../src/reporting/data-table.svelte"
+import PortablePanel from "../src/reporting/portable-panel.svelte"
+import PortableReport from "../src/reporting/portable-report.svelte"
 
 describe("portable report components", () => {
   it("renders exact values in a semantic table", () => {

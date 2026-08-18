@@ -1,13 +1,13 @@
 <script lang="ts">
-import AstRenderer from "./AstRenderer.svelte"
-import AudienceSwitcher from "./AudienceSwitcher.svelte"
 import { extractToc } from "./ast.js"
-import Backlinks from "./Backlinks.svelte"
-import Breadcrumbs from "./Breadcrumbs.svelte"
-import LocaleSwitcher from "./LocaleSwitcher.svelte"
-import Search from "./Search.svelte"
-import Sidebar from "./Sidebar.svelte"
-import TableOfContents from "./TableOfContents.svelte"
+import AstRenderer from "./ast-renderer.svelte"
+import AudienceSwitcher from "./audience-switcher.svelte"
+import Backlinks from "./backlinks.svelte"
+import Breadcrumbs from "./breadcrumbs.svelte"
+import LocaleSwitcher from "./locale-switcher.svelte"
+import Search from "./search.svelte"
+import Sidebar from "./sidebar.svelte"
+import TableOfContents from "./table-of-contents.svelte"
 import type { DocShellPresentation, DocShellTheme, NavigationItem } from "./types.js"
 
 interface Props {

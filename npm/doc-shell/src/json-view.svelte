@@ -1,5 +1,5 @@
 <script lang="ts">
-import JsonView from "./JsonView.svelte"
+import JsonView from "./json-view.svelte"
 
 interface Props {
   value: unknown

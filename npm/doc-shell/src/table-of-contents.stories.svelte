@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import TableOfContents from "./TableOfContents.svelte"
+import TableOfContents from "./table-of-contents.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/TableOfContents",

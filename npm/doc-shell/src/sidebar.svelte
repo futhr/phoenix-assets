@@ -1,5 +1,5 @@
 <script lang="ts">
-import Sidebar from "./Sidebar.svelte"
+import Sidebar from "./sidebar.svelte"
 import type { NavigationItem } from "./types.js"
 import { safeLinkTarget } from "./url.js"
 

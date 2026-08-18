@@ -1,7 +1,7 @@
 <script lang="ts">
-import JsonView from "./JsonView.svelte"
+import JsonView from "./json-view.svelte"
 import { typeLabel } from "./openapi.js"
-import SchemaTable from "./SchemaTable.svelte"
+import SchemaTable from "./schema-table.svelte"
 import type { JsonSchema } from "./types.js"
 
 interface Props {

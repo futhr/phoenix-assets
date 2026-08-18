@@ -1,6 +1,6 @@
 <script lang="ts">
 import { schemaFrom } from "./openapi.js"
-import SchemaTable from "./SchemaTable.svelte"
+import SchemaTable from "./schema-table.svelte"
 import type { OperationEntry } from "./types.js"
 
 interface Props {

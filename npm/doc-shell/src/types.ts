@@ -42,7 +42,7 @@ export interface SearchEntry {
   kind?: string | null
   /**
    * Pre-split content tokens. StaticGenerator only, and nothing here reads
-   * them — `Search.svelte` indexes `title` and `content` through Fuse. Declared
+   * them — `search.svelte` indexes `title` and `content` through Fuse. Declared
    * so the type describes the payload honestly; a producer may omit them.
    */
   tokens?: string[]

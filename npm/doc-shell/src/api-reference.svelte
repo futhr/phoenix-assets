@@ -1,7 +1,7 @@
 <script lang="ts">
-import OperationCard from "./OperationCard.svelte"
 import { flattenOperations, groupOperations } from "./openapi.js"
-import TryIt from "./TryIt.svelte"
+import OperationCard from "./operation-card.svelte"
+import TryIt from "./try-it.svelte"
 import type { OpenApiDocument, OperationEntry } from "./types.js"
 
 interface Props {

@@ -71,7 +71,7 @@ describe("devClientPlugin", () => {
 
   it("ignores changes outside the generated directory", () => {
     const server = serve("/app")
-    server.handlers.change("/app/src/components/Button.svelte")
+    server.handlers.change("/app/src/components/button.svelte")
     vi.runAllTimers()
 
     expect(server.sent).toHaveLength(0)

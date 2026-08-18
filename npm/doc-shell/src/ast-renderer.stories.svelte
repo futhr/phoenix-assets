@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import AstRenderer from "./AstRenderer.svelte"
+import AstRenderer from "./ast-renderer.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/AstRenderer",

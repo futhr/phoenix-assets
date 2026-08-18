@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import Directive from "./Directive.svelte"
+import Directive from "./directive.svelte"
 import { directiveNames } from "./directives.js"
 
 const { Story } = defineMeta({

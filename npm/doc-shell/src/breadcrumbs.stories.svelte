@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import Breadcrumbs from "./Breadcrumbs.svelte"
+import Breadcrumbs from "./breadcrumbs.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/Breadcrumbs",

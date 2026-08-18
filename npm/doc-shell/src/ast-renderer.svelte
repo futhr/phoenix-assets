@@ -1,10 +1,10 @@
 <script lang="ts">
-import AstRenderer from "./AstRenderer.svelte"
 import { headingId, preCodeInfo } from "./ast.js"
-import CodeBlock from "./CodeBlock.svelte"
-import Directive from "./Directive.svelte"
+import AstRenderer from "./ast-renderer.svelte"
+import CodeBlock from "./code-block.svelte"
+import Directive from "./directive.svelte"
 import { isDirective } from "./directives.js"
-import MermaidDiagram from "./MermaidDiagram.svelte"
+import MermaidDiagram from "./mermaid-diagram.svelte"
 import type { DocAstNode } from "./types.js"
 import { safeLinkTarget } from "./url.js"
 

@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import Backlinks from "./Backlinks.svelte"
+import Backlinks from "./backlinks.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/Backlinks",

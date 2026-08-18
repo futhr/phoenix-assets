@@ -13,6 +13,7 @@
     "format": "biome check --write --unsafe .",
     "knip": "knip",
     "check:boundary": "node scripts/check-boundary.mjs",
+    "check:svelte-filenames": "node scripts/check-svelte-filenames.mjs",
     "check:exports": "pnpm -r build && pnpm -r run check:publish",
     "check:release": "node scripts/release.mjs check --allow-untagged",
     "test:release": "node --test scripts/release.test.mjs",

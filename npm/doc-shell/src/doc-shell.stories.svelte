@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import DocShell from "./DocShell.svelte"
+import DocShell from "./doc-shell.svelte"
 import { presentation } from "./fixtures.js"
 
 const { Story } = defineMeta({ title: "DocShell/Shell", component: DocShell, tags: ["autodocs"] })

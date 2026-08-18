@@ -7,9 +7,9 @@ import {
   type PanelResult,
   type ReportingMessages,
 } from "./contract.js"
-import DataTable from "./DataTable.svelte"
+import DataTable from "./data-table.svelte"
 import { formatCell } from "./format.js"
-import HeatmapChart from "./HeatmapChart.svelte"
+import HeatmapChart from "./heatmap-chart.svelte"
 
 let {
   panel,

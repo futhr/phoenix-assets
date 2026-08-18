@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import AudienceSwitcher from "./AudienceSwitcher.svelte"
+import AudienceSwitcher from "./audience-switcher.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/AudienceSwitcher",

@@ -1,7 +1,7 @@
 import { flushSync, mount, unmount } from "svelte"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import AstRenderer from "../src/AstRenderer.svelte"
-import TryIt from "../src/TryIt.svelte"
+import AstRenderer from "../src/ast-renderer.svelte"
+import TryIt from "../src/try-it.svelte"
 import type { OperationEntry } from "../src/types.js"
 import { isAllowedTryItOrigin, resolveTryItTarget, safeLinkTarget } from "../src/url.js"
 

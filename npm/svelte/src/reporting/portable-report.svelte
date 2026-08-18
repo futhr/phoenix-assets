@@ -4,7 +4,7 @@ import {
   type ReportEnvelope,
   type ReportingMessages,
 } from "./contract.js"
-import PortablePanel from "./PortablePanel.svelte"
+import PortablePanel from "./portable-panel.svelte"
 
 let {
   envelope,

@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import MermaidDiagram from "./MermaidDiagram.svelte"
+import MermaidDiagram from "./mermaid-diagram.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/MermaidDiagram",

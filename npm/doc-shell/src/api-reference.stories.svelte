@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import ApiReference from "./ApiReference.svelte"
+import ApiReference from "./api-reference.svelte"
 import { spec } from "./fixtures.js"
 
 const { Story } = defineMeta({

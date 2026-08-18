@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import SchemaTable from "./SchemaTable.svelte"
+import SchemaTable from "./schema-table.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/SchemaTable",

@@ -29,7 +29,7 @@ function lint(relFile: string) {
 describe("lint-tailwind CLI", () => {
   it("flags a reducible arbitrary value inside an expression class attribute", () => {
     // <div class={"z-[10] w-[180px]"}> -- the string literal is extracted and checked.
-    const { status, out } = lint("src/Expr.svelte")
+    const { status, out } = lint("src/expr.svelte")
 
     expect(status).toBe(1)
     expect(out).toContain('"z-[10]" can be written as "z-10"')
@@ -39,7 +39,7 @@ describe("lint-tailwind CLI", () => {
     // With `--spacing: 4px`, a named step emits `calc(var(--spacing) * N)` while
     // `w-[180px]` emits a literal `180px`; the CSS-equality guard means the linter
     // suggests nothing rather than a wrong `w-45`. Regression for the px map fix.
-    const { out } = lint("src/Expr.svelte")
+    const { out } = lint("src/expr.svelte")
 
     expect(out).not.toContain("w-[180px]")
     expect(out).toContain("Found 1 unnecessary")
@@ -48,7 +48,7 @@ describe("lint-tailwind CLI", () => {
   it("reports a utility call inside a class attribute exactly once", () => {
     // <div class={cn("order-[5]")}> must not be double-counted by the generic
     // CallExpression pass -- the `visitedCalls` dedup fix.
-    const { status, out } = lint("src/Utility.svelte")
+    const { status, out } = lint("src/utility.svelte")
 
     expect(status).toBe(1)
     expect(out).toContain("Found 1 unnecessary")

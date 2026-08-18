@@ -1,5 +1,5 @@
 <script module>import { defineMeta } from "@storybook/addon-svelte-csf"
-import JsonView from "./JsonView.svelte"
+import JsonView from "./json-view.svelte"
 
 const { Story } = defineMeta({
   title: "DocShell/JsonView",
