@@ -40,6 +40,11 @@ jobs:
           otp-version: ${{ matrix.otp }}
           elixir-version: ${{ matrix.elixir }}
 
+      # file_system uses inotifywait on Linux. The watcher integration test
+      # exercises the real backend, which is not bundled with ubuntu-latest.
+      - name: Install file-system watcher
+        run: sudo apt-get update && sudo apt-get install --yes inotify-tools
+
       - uses: pnpm/action-setup@v6
         if: matrix.check == 'full'
       - uses: actions/setup-node@v6

@@ -7,5 +7,8 @@ import { defineConfig } from "vitest/config"
 export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
+    // Each black-box test starts the Tailwind CLI. Shared CI runners can take
+    // longer than Vitest's 5-second default while mix check runs in parallel.
+    testTimeout: 15_000,
   },
 })
