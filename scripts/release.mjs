@@ -26,6 +26,16 @@ const PACKAGES = [
 ]
 
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+const CANONICAL_REMOTES = new Set([
+  `https://github.com/${REPOSITORY}`,
+  `https://github.com/${REPOSITORY}.git`,
+  `git@github.com:${REPOSITORY}.git`,
+  `ssh://git@github.com/${REPOSITORY}.git`,
+])
+
+export function isCanonicalRepositoryRemote(origin) {
+  return CANONICAL_REMOTES.has(origin)
+}
 
 function run(command, args, options = {}) {
   execFileSync(command, args, { stdio: "inherit", ...options })
@@ -104,7 +114,9 @@ export function collectReleaseErrors(
 
   if (checkGit) {
     const origin = capture("git", ["remote", "get-url", "origin"], { cwd: root })
-    if (!origin.includes(`${REPOSITORY}.git`)) errors.push(`origin is not ${REPOSITORY}: ${origin}`)
+    if (!isCanonicalRepositoryRemote(origin)) {
+      errors.push(`origin is not ${REPOSITORY}: ${origin}`)
+    }
 
     if (tag) {
       const head = capture("git", ["rev-parse", "HEAD"], { cwd: root })

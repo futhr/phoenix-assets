@@ -7,20 +7,33 @@ environment.
 
 ## One-time repository and registry setup
 
-1. Create a GitHub environment named `release` with required reviewers and deployment restricted to
-   tags matching `v*`.
-2. Add `HEX_API_KEY` to that environment. Generate a dedicated Hex key with only `api:write`:
+1. Protect `main`: require the current CI jobs, require the branch to be up to date, disable
+   administrator bypass, and forbid force pushes and deletion.
+2. Protect `v*` with a no-bypass ruleset that restricts tag creation to maintainers and forbids
+   tag update and deletion.
+3. Create a GitHub environment named `release` with administrator bypass disabled, required
+   reviewers, and deployment restricted to tags matching `v*`.
+4. Add `HEX_API_KEY` to that environment. Generate a dedicated Hex key with only `api:write`:
    `mix hex.user key generate --key-name phoenix-assets-ci --permission api:write`.
-3. Bootstrap each scoped npm package with a granular `NPM_TOKEN` restricted to the
+5. Bootstrap each scoped npm package with a granular `NPM_TOKEN` restricted to the
    `@phoenix-assets` scope and publishing only. Store it in the `release` environment as
    `NPM_TOKEN`.
-4. After the first npm publish, configure each package's npm trusted publisher for
+6. After the first npm publish, configure each package's npm trusted publisher for
    `futhr/phoenix-assets`, workflow `release.yml`, environment `release`, and publish permission.
    Remove `NPM_TOKEN` after all four packages use OIDC.
-5. GitHub artifact attestations for private repositories require GitHub Enterprise Cloud. The
+7. GitHub artifact attestations for private repositories require GitHub Enterprise Cloud. The
    publish job deliberately fails before registry mutation when attestations are unavailable;
    enable the repository feature or make the source repository public before the first production
    release.
+
+Verify the GitHub controls before every production release:
+
+```bash
+gh api repos/futhr/phoenix-assets/environments/release
+gh api repos/futhr/phoenix-assets/environments/release/deployment-branch-policies
+gh api repos/futhr/phoenix-assets/branches/main/protection
+gh api repos/futhr/phoenix-assets/rulesets
+```
 
 No GitHub personal access token is needed. The workflow's short-lived `GITHUB_TOKEN` only reads the
 repository, writes the GitHub release, and records attestations. npm uses OIDC after bootstrap; Hex

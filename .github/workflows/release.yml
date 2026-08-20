@@ -21,7 +21,8 @@ permissions:
 jobs:
   quality:
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: Build exact release artifacts
@@ -32,6 +33,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
         with:
@@ -49,11 +51,11 @@ jobs:
 
       - name: Validate tagged release identity and metadata links
         if: github.ref_type == 'tag'
-        run: node scripts/release.mjs check --tag "$GITHUB_REF_NAME" --network
+        run: node scripts/release.mjs check --tag "$GITHUB_REF_NAME"
 
       - name: Validate untagged dry run
         if: github.ref_type != 'tag' && inputs.dry_run
-        run: node scripts/release.mjs check --allow-untagged --network
+        run: node scripts/release.mjs check --allow-untagged
 
       - name: Reject untagged production run
         if: github.ref_type != 'tag' && !inputs.dry_run
@@ -100,12 +102,14 @@ jobs:
     environment: release
     permissions:
       attestations: write
+      artifact-metadata: write
       contents: write
       id-token: write
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
         with:

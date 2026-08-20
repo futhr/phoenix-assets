@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
-import { collectReleaseErrors, validateRelease } from "./release.mjs"
+import { collectReleaseErrors, isCanonicalRepositoryRemote, validateRelease } from "./release.mjs"
 
 const packages = ["doc-shell", "lint", "svelte", "vite"]
 
@@ -98,4 +98,23 @@ test("rejects noncanonical repository metadata", () => {
       ),
     )
   })
+})
+
+test("accepts canonical GitHub checkout remotes and rejects lookalikes", () => {
+  for (const remote of [
+    "https://github.com/futhr/phoenix-assets",
+    "https://github.com/futhr/phoenix-assets.git",
+    "git@github.com:futhr/phoenix-assets.git",
+    "ssh://git@github.com/futhr/phoenix-assets.git",
+  ]) {
+    assert.equal(isCanonicalRepositoryRemote(remote), true)
+  }
+
+  for (const remote of [
+    "https://github.com/futhr/phoenix-assets-fork.git",
+    "https://github.com/attacker/futhr/phoenix-assets.git",
+    "git@github.example:futhr/phoenix-assets.git",
+  ]) {
+    assert.equal(isCanonicalRepositoryRemote(remote), false)
+  }
 })
