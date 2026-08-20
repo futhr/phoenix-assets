@@ -2,7 +2,11 @@
 
 > Supervised SvelteKit tooling and typed frontend contracts for Phoenix.
 
-[![CI](https://github.com/futhr/phoenix-assets/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/futhr/phoenix-assets/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Hex.pm](https://img.shields.io/hexpm/v/phoenix_assets.svg)](https://hex.pm/packages/phoenix_assets)
+[![Docs](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/phoenix_assets)
+[![CI](https://github.com/futhr/phoenix-assets/actions/workflows/ci.yml/badge.svg)](https://github.com/futhr/phoenix-assets/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/futhr/phoenix-assets/branch/main/graph/badge.svg)](https://codecov.io/gh/futhr/phoenix-assets)
+[![License](https://img.shields.io/github/license/futhr/phoenix-assets.svg)](LICENSE)
 
 ---
 
