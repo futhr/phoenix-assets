@@ -45,10 +45,15 @@ Conventional commits drive the shared version. `git_ops` updates `mix.exs`, all 
 the changelog, and the tag in one release commit:
 
 ```bash
-mix git_ops.release --initial # first release only
+git rm CHANGELOG.md           # first release only: remove the bootstrap placeholder
+mix git_ops.release --initial # GitOps recreates the changelog in the release commit
 # or: mix git_ops.release
 node scripts/release.mjs check --tag "$(git describe --tags --exact-match)" --network
 ```
+
+The tracked changelog before the first release is only a bootstrap placeholder used by package and
+documentation checks. Remove it immediately before the initial GitOps release; do not commit the
+deletion separately.
 
 Push the release commit without its tag, then dispatch the **Release** workflow on `main` with
 `dry_run` enabled. It runs the complete Elixir 1.18/OTP 27 and Elixir 1.20/OTP 29 matrix, creates all

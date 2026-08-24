@@ -52,7 +52,9 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org)
 Releases are cut from the git root with:
 
 ```bash
-mix git_ops.release   # --initial for the first release
+git rm CHANGELOG.md           # first release only; do not commit separately
+mix git_ops.release --initial # first release only
+# or: mix git_ops.release
 ```
 
 The coordinated Hex/npm workflow, credentials, dry run, and partial-failure

@@ -2,6 +2,7 @@
   "name": "@phoenix-assets/lint",
   "version": "0.1.0",
   "description": "Shared Biome config + Tailwind v4 arbitrary-value linter for phoenix_assets host apps (Svelte 5).",
+  "author": "Tobias Bohwalli <hi@futhr.io>",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/futhr/phoenix-assets",
