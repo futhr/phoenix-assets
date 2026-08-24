@@ -1,6 +1,9 @@
 packages:
   - "npm/*"
 
+overrides:
+  esbuild: 0.28.2
+
 # One catalog entry per shared tool; packages reference them with "catalog:"
 # so versions cannot drift between npm/vite, npm/svelte, npm/doc-shell, and
 # npm/lint. Peer ranges stay wide and hand-written in each package.json — only
