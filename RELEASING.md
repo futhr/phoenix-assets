@@ -15,9 +15,13 @@ environment.
    reviewers, and deployment restricted to tags matching `v*`.
 4. Add `HEX_API_KEY` to that environment. Generate a dedicated Hex key with only `api:write`:
    `mix hex.user key generate --key-name phoenix-assets-ci --permission api:write`.
-5. Bootstrap each scoped npm package with a granular `NPM_TOKEN` restricted to the
-   `@phoenix-assets` scope and publishing only. Store it in the `release` environment as
-   `NPM_TOKEN`.
+5. Create the `phoenix-assets` npm organization and make the publishing account an owner. Bootstrap
+   the four packages with a short-lived granular `NPM_TOKEN` configured exactly as follows:
+   **Packages and scopes** = **Read and write**, **Only select packages and scopes** =
+   `@phoenix-assets`, **Bypass two-factor authentication** = enabled, and no IP restriction. The
+   separate **Organizations** permission may remain **No access**: npm documents that organization
+   access manages membership and settings but does not grant permission to publish packages. Store
+   the token in the GitHub `release` environment, not as a repository-wide secret.
 6. After the first npm publish, configure each package's npm trusted publisher for
    `futhr/phoenix-assets`, workflow `release.yml`, environment `release`, and publish permission.
    Remove `NPM_TOKEN` after all four packages use OIDC.
@@ -25,6 +29,18 @@ environment.
    publish job deliberately fails before registry mutation when attestations are unavailable;
    enable the repository feature or make the source repository public before the first production
    release.
+
+If a tagged run publishes npm artifacts but fails while publishing Hex, repair that immutable
+release from its already-attested artifact instead of moving the tag or rebuilding bytes:
+
+```bash
+gh workflow run recover-hex.yml \
+  --field release_tag=v0.1.0 \
+  --field source_run_id=32740503072
+```
+
+After the recovery succeeds, rerun the original release job. Its registry preflight skips artifacts
+whose published bytes match the manifest and finishes the GitHub release record.
 
 Verify the GitHub controls before every production release:
 

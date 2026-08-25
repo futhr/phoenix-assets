@@ -16,6 +16,7 @@ hex_ebin =
 if is_nil(hex_ebin), do: raise("Hex archive not found; run `mix local.hex --force`")
 true = Code.prepend_path(hex_ebin)
 {:ok, _} = Application.ensure_all_started(:ssl)
+{:ok, _} = Application.ensure_all_started(:inets)
 
 config =
   :mix_hex_core.default_config()

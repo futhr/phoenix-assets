@@ -1,0 +1,92 @@
+name: Recover Hex release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Immutable release tag whose exact Hex artifact should be resumed
+        required: true
+        type: string
+      source_run_id:
+        description: Release workflow run containing the attested artifact
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  attestations: read
+  contents: read
+
+jobs:
+  publish:
+    name: Publish attested Hex artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    steps:
+      - name: Check out recovery code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          path: recovery
+
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+        with:
+          otp-version: "29"
+          elixir-version: "1.20"
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Validate recovery inputs and check out tagged source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+            echo "Invalid release tag: $RELEASE_TAG" >&2
+            exit 1
+          }
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || {
+            echo "Invalid source run id: $SOURCE_RUN_ID" >&2
+            exit 1
+          }
+          git -C recovery worktree add --detach "$GITHUB_WORKSPACE/source" "$RELEASE_TAG"
+
+      - name: Download exact release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          source_sha=$(git -C source rev-parse HEAD)
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "release-$source_sha" \
+            --dir artifacts
+
+      - name: Verify source identity, checksums, and attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          node source/scripts/release.mjs verify \
+            --tag "$RELEASE_TAG" \
+            --artifact-dir "$GITHUB_WORKSPACE/artifacts"
+          gh attestation verify artifacts/phoenix_assets-*.tar \
+            --repo "$GITHUB_REPOSITORY"
+
+      - name: Publish exact Hex artifact
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          version=${RELEASE_TAG#v}
+          elixir recovery/scripts/publish-hex.exs \
+            "$GITHUB_WORKSPACE/artifacts/phoenix_assets-$version.tar"
