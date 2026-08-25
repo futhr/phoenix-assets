@@ -88,8 +88,28 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           version=${RELEASE_TAG#v}
-          elixir recovery/scripts/publish-hex.exs \
-            "$GITHUB_WORKSPACE/artifacts/phoenix_assets-$version.tar"
+          artifact="$GITHUB_WORKSPACE/artifacts/phoenix_assets-$version.tar"
+          published="$RUNNER_TEMP/phoenix_assets-$version.tar"
+          status=$(curl --silent --show-error \
+            --output "$published" \
+            --write-out "%{http_code}" \
+            "https://repo.hex.pm/tarballs/phoenix_assets-$version.tar")
+          case "$status" in
+            200)
+              cmp --silent "$artifact" "$published" || {
+                echo "Hex release exists with different bytes" >&2
+                exit 1
+              }
+              echo "Already published with identical bytes: phoenix_assets $version"
+              ;;
+            404)
+              elixir recovery/scripts/publish-hex.exs "$artifact"
+              ;;
+            *)
+              echo "Hex preflight failed with HTTP $status" >&2
+              exit 1
+              ;;
+          esac
 
       - name: Publish HexDocs from tagged source
         working-directory: source
