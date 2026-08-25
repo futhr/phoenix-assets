@@ -90,3 +90,11 @@ jobs:
           version=${RELEASE_TAG#v}
           elixir recovery/scripts/publish-hex.exs \
             "$GITHUB_WORKSPACE/artifacts/phoenix_assets-$version.tar"
+
+      - name: Publish HexDocs from tagged source
+        working-directory: source
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: |
+          mix deps.get
+          mix hex.publish docs --yes

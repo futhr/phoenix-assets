@@ -145,6 +145,13 @@ jobs:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Publish HexDocs from tagged source
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: |
+          mix deps.get
+          mix hex.publish docs --yes
+
       - name: Create immutable release record
         env:
           GH_TOKEN: ${{ github.token }}

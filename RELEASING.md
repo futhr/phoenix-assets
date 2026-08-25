@@ -30,8 +30,9 @@ environment.
    enable the repository feature or make the source repository public before the first production
    release.
 
-If a tagged run publishes npm artifacts but fails while publishing Hex, repair that immutable
-release from its already-attested artifact instead of moving the tag or rebuilding bytes:
+If a tagged run publishes npm artifacts but fails while publishing Hex or HexDocs, repair that
+immutable release from its already-attested artifact and tagged source instead of moving the tag or
+rebuilding bytes:
 
 ```bash
 gh workflow run recover-hex.yml \
