@@ -129,8 +129,8 @@ runtime helpers, the documentation shell, and shared frontend lint tooling.
 
 ## Usage
 
-> Runs in production on the author's platforms. Packaged for Hex, but not
-> published there yet — install it from GitHub.
+> Runs in production on the author's platforms. The Elixir package is
+> published on Hex and the companion frontend packages are published on npm.
 
 The full Svelte stack is the default — there's no preset module to write.
 
@@ -138,11 +138,11 @@ The full Svelte stack is the default — there's no preset module to write.
 
 ```elixir
 # mix.exs
-{:phoenix_assets, github: "futhr/phoenix-assets"}
+{:phoenix_assets, "~> 0.1.0"}
 ```
 
 ```bash
-cd assets && pnpm add -D @phoenix-assets/vite @phoenix-assets/svelte @phoenix-assets/lint
+cd assets && pnpm add -D --save-exact @phoenix-assets/vite@0.1.0 @phoenix-assets/svelte@0.1.0 @phoenix-assets/lint@0.1.0
 ```
 
 ### Configure & supervise
