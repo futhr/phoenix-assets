@@ -30,7 +30,7 @@
     "parser": { "allowComments": true, "allowTrailingCommas": true }
   },
   "css": {
-    "parser": { "cssModules": false }
+    "parser": { "cssModules": false, "tailwindDirectives": true }
   },
   "assist": {
     "enabled": true,

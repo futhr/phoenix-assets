@@ -1,7 +1,7 @@
 {
   "name": "@phoenix-assets/lint",
   "version": "0.1.0",
-  "description": "Shared Biome config + Tailwind v4 arbitrary-value linter for phoenix_assets host apps (Svelte 5).",
+  "description": "Shared Biome, Svelte 5 structure, and Tailwind v4 lint tooling for phoenix_assets host apps.",
   "author": "Tobias Bohwalli <hi@futhr.io>",
   "type": "module",
   "license": "MIT",
@@ -18,10 +18,12 @@
     "LICENSE"
   ],
   "bin": {
+    "phoenix-assets-lint-svelte": "./dist/lint-svelte.js",
     "phoenix-assets-lint-tailwind": "./dist/lint-tailwind.js"
   },
   "exports": {
     "./biome.base.json": "./biome.base.json",
+    "./lint-svelte.js": "./dist/lint-svelte.js",
     "./lint-tailwind.js": "./dist/lint-tailwind.js"
   },
   "publishConfig": {

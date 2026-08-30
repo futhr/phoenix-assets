@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup"
 
 export default defineConfig({
-  entry: ["lint-tailwind.ts"],
+  entry: ["lint-svelte.ts", "lint-tailwind.ts"],
   format: ["esm"],
   clean: true,
   sourcemap: true,

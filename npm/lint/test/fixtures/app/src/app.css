@@ -1,6 +1,2 @@
 @import "tailwindcss";
-
-@theme {
-  /* px-configured spacing scale */
-  --spacing: 4px;
-}
+@import "$design-system/tokens.css";

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["lint-tailwind.ts"]
+  "include": ["lint-svelte.ts", "lint-tailwind.ts"]
 }

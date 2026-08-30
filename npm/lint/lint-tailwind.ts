@@ -14,9 +14,10 @@
  *        Defaults to src/**\/*.svelte + src/**\/*.variants.ts
  */
 
-import { type Dirent, readdirSync, readFileSync } from "node:fs"
+import { type Dirent, existsSync, readdirSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, join, relative, resolve } from "node:path"
+import { pathToFileURL } from "node:url"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,6 +62,12 @@ interface TailwindModule {
   ): DesignSystem
 }
 
+interface SvelteConfig {
+  kit?: {
+    alias?: Record<string, string>
+  }
+}
+
 // This linter relies on Tailwind v4's UNDOCUMENTED `__unstable__loadDesignSystem`.
 // Guard the dependency so an upstream change fails with an actionable message
 // instead of a cryptic crash inside a host app's lint run.
@@ -87,8 +94,39 @@ const importTailwind = async (): Promise<TailwindModule> => {
   return mod as TailwindModule
 }
 
+const loadSvelteAliases = async (): Promise<Record<string, string>> => {
+  const configPath = resolve("svelte.config.js")
+  if (!existsSync(configPath)) return {}
+
+  let configModule: { default?: SvelteConfig }
+  try {
+    configModule = (await import(pathToFileURL(configPath).href)) as {
+      default?: SvelteConfig
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    throw new Error(`lint-tailwind: cannot load svelte.config.js: ${reason}`)
+  }
+
+  return configModule.default?.kit?.alias ?? {}
+}
+
+const resolveAlias = (id: string, aliases: Record<string, string>): string | null => {
+  const prefixes = Object.keys(aliases).sort((left, right) => right.length - left.length)
+
+  for (const prefix of prefixes) {
+    const target = aliases[prefix]
+    if (target === undefined) continue
+    if (id === prefix) return resolve(target)
+    if (id.startsWith(`${prefix}/`)) return resolve(target, id.slice(prefix.length + 1))
+  }
+
+  return null
+}
+
 const loadDesignSystem = async (): Promise<DesignSystem> => {
   const tailwind = await importTailwind()
+  const aliases = await loadSvelteAliases()
   const cssPath = resolve("src/app.css")
   const css = readFileSync(cssPath, "utf-8")
 
@@ -96,13 +134,17 @@ const loadDesignSystem = async (): Promise<DesignSystem> => {
     base: dirname(cssPath),
     loadStylesheet: async (id: string, base: string) => {
       let p: string
-      try {
-        p = resolve(base, id)
-        readFileSync(p) // test existence
-      } catch {
-        // Resolve bare specifiers (e.g. "tailwindcss") via node_modules
-        const specifier = id.endsWith(".css") ? id : `${id}/index.css`
-        p = require.resolve(specifier)
+      const aliased = resolveAlias(id, aliases)
+      if (aliased) {
+        p = aliased
+      } else {
+        try {
+          p = resolve(base, id)
+          readFileSync(p)
+        } catch {
+          const specifier = id.endsWith(".css") ? id : `${id}/index.css`
+          p = require.resolve(specifier)
+        }
       }
       return { path: p, base: dirname(p), content: readFileSync(p, "utf-8") }
     },

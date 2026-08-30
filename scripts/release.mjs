@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -292,6 +293,16 @@ function smokeNpmArtifacts(sourceRoot, output, manifest) {
       cwd: root,
     })
 
+    mkdirSync(join(root, "src"))
+    writeFileSync(join(root, "src", "app.css"), '@import "tailwindcss";\n')
+    writeFileSync(join(root, "src", "smoke.svelte"), '<p class="p-4">Lint smoke</p>\n')
+    run(join(root, "node_modules/.bin/phoenix-assets-lint-svelte"), ["src/smoke.svelte"], {
+      cwd: root,
+    })
+    run(join(root, "node_modules/.bin/phoenix-assets-lint-tailwind"), ["src/smoke.svelte"], {
+      cwd: root,
+    })
+
     writeFileSync(
       join(root, "smoke.mjs"),
       `
@@ -301,6 +312,7 @@ const imports = [
   "@phoenix-assets/svelte/socket",
 ]
 const resolutions = [
+  "@phoenix-assets/lint/lint-svelte.js",
   "@phoenix-assets/lint/lint-tailwind.js",
   "@phoenix-assets/svelte/collection",
   "@phoenix-assets/svelte/reporting",
@@ -339,7 +351,7 @@ export default defineConfig({
   }
 }
 
-function smokeHexArtifact(output, manifest) {
+function smokeHexArtifact(sourceRoot, output, manifest) {
   const artifact = manifest.artifacts.find(({ ecosystem }) => ecosystem === "hex")
   if (!artifact) throw new Error("Hex artifact is missing")
   const root = mkdtempSync(join(tmpdir(), "phoenix-assets-hex-smoke-"))
@@ -351,6 +363,7 @@ function smokeHexArtifact(output, manifest) {
   try {
     run("tar", ["-xf", join(output, artifact.file), "-C", outer])
     run("tar", ["-xzf", join(outer, "contents.tar.gz"), "-C", source])
+    copyFileSync(join(sourceRoot, ".tool-versions"), join(source, ".tool-versions"))
     run("mix", ["deps.get", "--only", "prod"], {
       cwd: source,
       env: { ...process.env, MIX_ENV: "prod" },
@@ -367,7 +380,7 @@ function smokeHexArtifact(output, manifest) {
 function smokeArtifacts(root, output, options) {
   const manifest = verifyArtifacts(root, output, options)
   smokeNpmArtifacts(root, output, manifest)
-  smokeHexArtifact(output, manifest)
+  smokeHexArtifact(root, output, manifest)
 }
 
 function npmRegistryState(name, version, path) {

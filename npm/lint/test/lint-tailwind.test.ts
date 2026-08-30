@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process"
-import { existsSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -9,12 +8,10 @@ import { describe, expect, it } from "vitest"
 const pkgDir = join(dirname(fileURLToPath(import.meta.url)), "..")
 const appDir = join(pkgDir, "test", "fixtures", "app")
 
-// Prefer the built binary when present (runs on any supported Node); otherwise
-// run the TypeScript source via Node's type stripping (Node >= 22.6).
-const distEntry = join(pkgDir, "dist", "lint-tailwind.js")
-const useDist = existsSync(distEntry)
-const entry = useDist ? distEntry : join(pkgDir, "lint-tailwind.ts")
-const nodeFlags = useDist ? [] : ["--experimental-strip-types", "--no-warnings"]
+// Unit tests always run current source. The release smoke test owns verification
+// of the compiled package so an old dist directory cannot mask a regression.
+const entry = join(pkgDir, "lint-tailwind.ts")
+const nodeFlags = ["--experimental-strip-types", "--no-warnings"]
 
 function lint(relFile: string) {
   const res = spawnSync(process.execPath, [...nodeFlags, entry, relFile], {
@@ -27,6 +24,14 @@ function lint(relFile: string) {
 }
 
 describe("lint-tailwind CLI", () => {
+  it("loads CSS through aliases declared by the host Svelte config", () => {
+    const { status, out } = lint("src/expr.svelte")
+
+    expect(status).toBe(1)
+    expect(out).not.toContain("cannot load")
+    expect(out).toContain("Found 1 unnecessary")
+  })
+
   it("flags a reducible arbitrary value inside an expression class attribute", () => {
     // <div class={"z-[10] w-[180px]"}> -- the string literal is extracted and checked.
     const { status, out } = lint("src/expr.svelte")

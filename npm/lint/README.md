@@ -1,10 +1,10 @@
 # @phoenix-assets/lint
 
 The shared frontend lint tooling for `phoenix_assets` host apps (Svelte 5 +
-Tailwind v4): a base **Biome** config + the **Tailwind v4 arbitrary-value
-linter**. Biome lints/formats `.ts`/`.js`/`.svelte`; the Tailwind linter catches
-arbitrary values that have a standard utility equivalent (`w-[180px]` → `w-45`),
-which Biome can't.
+Tailwind v4): a base **Biome** config, a Svelte structure linter, and the
+**Tailwind v4 arbitrary-value linter**. Biome owns syntax and style. The focused
+linters enforce project structure and design-system rules that Biome cannot
+infer.
 
 ## Install
 
@@ -56,5 +56,23 @@ Or invoke it ad hoc with `pnpm exec phoenix-assets-lint-tailwind` /
 
 Run it from your frontend root — it reads `src/app.css` and scans
 `src/**/*.svelte` + `src/**/*.variants.ts` by default (pass paths to override),
-and exits non-zero on findings. It uses Tailwind's `__unstable__loadDesignSystem`
-API, so keep it aligned with your `tailwindcss` version.
+and exits non-zero on findings. CSS imports may use aliases from the host
+`svelte.config.js`; the linter resolves the same `kit.alias` map used by
+SvelteKit. It uses Tailwind's `__unstable__loadDesignSystem` API, so keep it
+aligned with your `tailwindcss` version.
+
+## Svelte structure linter
+
+`phoenix-assets-lint-svelte` rejects files containing both module and instance
+script blocks. Keeping one script block makes component ownership obvious and
+prevents Storybook fixtures from becoming a second, easily missed source module.
+Move reusable fixture data to a neighboring TypeScript module when it should not
+live in the component's only script block.
+
+```jsonc
+{
+  "scripts": {
+    "lint:svelte": "phoenix-assets-lint-svelte"
+  }
+}
+```
