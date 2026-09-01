@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.0](https://github.com/futhr/phoenix-assets/compare/v0.1.0...v0.2.0) (2026-09-01)
+
+
+
+
+### Features:
+
+* share frontend lint tooling by futhr
+
+### Bug Fixes:
+
+* lint: resolve host stylesheet packages by futhr
+
+* deps: update patched optional integrations by futhr
+
+* lint: align generic SvelteKit conventions by futhr
+
+* release: make Hex recovery resumable by futhr
+
+* release: publish HexDocs by futhr
+
+* release: recover Hex publishing failures by futhr
+
 ## [v0.1.0](https://github.com/futhr/phoenix-assets/compare/v0.1.0...v0.1.0) (2026-08-24)
 ### Breaking Changes:
 
