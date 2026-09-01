@@ -56,23 +56,27 @@ Or invoke it ad hoc with `pnpm exec phoenix-assets-lint-tailwind` /
 
 Run it from your frontend root — it reads `src/app.css` and scans
 `src/**/*.svelte` + `src/**/*.variants.ts` by default (pass paths to override),
-and exits non-zero on findings. CSS imports may use aliases from the host
-`svelte.config.js`; the linter resolves the same `kit.alias` map used by
-SvelteKit. It uses Tailwind's `__unstable__loadDesignSystem` API, so keep it
-aligned with your `tailwindcss` version.
+and exits non-zero on findings. CSS imports may use exact or trailing-wildcard
+aliases from the host `svelte.config.js`. The resolver also supports SvelteKit's
+implicit `$lib` alias and respects `kit.files.lib`; virtual aliases such as
+`$app` and `$env` are intentionally outside a filesystem stylesheet resolver.
+It uses Tailwind's `__unstable__loadDesignSystem` API, so keep it aligned with
+your `tailwindcss` version.
 
 ## Svelte structure linter
 
-`phoenix-assets-lint-svelte` rejects files containing both module and instance
-script blocks. Keeping one script block makes component ownership obvious and
-prevents Storybook fixtures from becoming a second, easily missed source module.
-Move reusable fixture data to a neighboring TypeScript module when it should not
-live in the component's only script block.
+`phoenix-assets-lint-svelte` parses every selected component with the Svelte
+compiler. Module and instance script blocks may coexist: that is a standard
+Svelte composition pattern. Hosts with a stricter local convention can opt in
+to `--single-script` and add repeated `--allow <glob>` exceptions. Keeping the
+policy explicit prevents a host convention from being mistaken for a Svelte
+invariant.
 
 ```jsonc
 {
   "scripts": {
-    "lint:svelte": "phoenix-assets-lint-svelte"
+    "lint:svelte": "phoenix-assets-lint-svelte",
+    "lint:svelte:strict": "phoenix-assets-lint-svelte --single-script --allow 'src/**/*.stories.svelte'"
   }
 }
 ```

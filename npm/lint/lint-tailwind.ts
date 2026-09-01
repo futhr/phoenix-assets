@@ -65,6 +65,9 @@ interface TailwindModule {
 interface SvelteConfig {
   kit?: {
     alias?: Record<string, string>
+    files?: {
+      lib?: string
+    }
   }
 }
 
@@ -108,7 +111,12 @@ const loadSvelteAliases = async (): Promise<Record<string, string>> => {
     throw new Error(`lint-tailwind: cannot load svelte.config.js: ${reason}`)
   }
 
-  return configModule.default?.kit?.alias ?? {}
+  const kit = configModule.default?.kit
+
+  return {
+    $lib: kit?.files?.lib ?? "src/lib",
+    ...kit?.alias,
+  }
 }
 
 const resolveAlias = (id: string, aliases: Record<string, string>): string | null => {
@@ -117,6 +125,16 @@ const resolveAlias = (id: string, aliases: Record<string, string>): string | nul
   for (const prefix of prefixes) {
     const target = aliases[prefix]
     if (target === undefined) continue
+
+    if (prefix.endsWith("/*")) {
+      const base = prefix.slice(0, -2)
+      if (!id.startsWith(`${base}/`)) continue
+
+      const suffix = id.slice(base.length + 1)
+      const resolvedTarget = target.endsWith("/*") ? target.slice(0, -2) : target
+      return resolve(resolvedTarget, suffix)
+    }
+
     if (id === prefix) return resolve(target)
     if (id.startsWith(`${prefix}/`)) return resolve(target, id.slice(prefix.length + 1))
   }

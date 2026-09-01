@@ -24,7 +24,7 @@ function lint(relFile: string) {
 }
 
 describe("lint-tailwind CLI", () => {
-  it("loads CSS through aliases declared by the host Svelte config", () => {
+  it("loads CSS through wildcard and implicit aliases from the host Svelte config", () => {
     const { status, out } = lint("src/expr.svelte")
 
     expect(status).toBe(1)

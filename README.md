@@ -92,7 +92,9 @@ integration wires the plugin into the Vite config and contributes a doctor check
 that the CSS entry exists, so the asset graph stays honest about what produces
 your CSS. `@phoenix-assets/lint` adds a Tailwind v4 linter that flags arbitrary
 values like `w-[180px]` when a named equivalent (`w-45`) exists — checked against
-your *real* design system.
+your *real* design system. Its Svelte CLI parses components without rejecting
+Svelte's valid module+instance script composition; a single-script convention is
+available only as an explicit host policy with glob exceptions.
 
 **The frontend imports generated contracts directly** through `$phoenix/*`
 virtual modules, and HMR is bridged: when Elixir regenerates a contract, the Vite
@@ -113,7 +115,7 @@ runtime helpers, the documentation shell, and shared frontend lint tooling.
 | `@phoenix-assets/vite` | `npm/vite/` | Vite plugin, `$phoenix/*` virtual modules, dev/HMR bridge, graph emitter. |
 | `@phoenix-assets/svelte` | `npm/svelte/` | Typed Electric / PubSub / localization helpers plus the closed portable-report decoder, accessible tables, and shared LayerChart 2 components. |
 | `@phoenix-assets/doc-shell` | `npm/doc-shell/` | Renderer-neutral Svelte documentation UI for the `doc-shell/v1` artifact contract. |
-| `@phoenix-assets/lint` | `npm/lint/` | Shared Biome base config + Tailwind v4 arbitrary-value linter for host apps. |
+| `@phoenix-assets/lint` | `npm/lint/` | Shared Biome base config, Svelte parser/policy linter, and Tailwind v4 arbitrary-value linter for host apps. |
 
 ---
 

@@ -22,21 +22,40 @@ describe("lint-svelte CLI", () => {
     const { status, output } = lint("src/one-script.svelte")
 
     expect(status).toBe(0)
-    expect(output).toContain("at most one script block")
+    expect(output).toContain("parsed successfully")
   })
 
   it("ignores script-like text in Svelte comments", () => {
     const { status, output } = lint("src/script-comment.svelte")
 
     expect(status).toBe(0)
-    expect(output).toContain("at most one script block")
+    expect(output).toContain("parsed successfully")
   })
 
-  it("rejects a component with module and instance script blocks", () => {
+  it("accepts standard module and instance script blocks by default", () => {
     const { status, output } = lint("src/two-scripts.svelte")
+
+    expect(status).toBe(0)
+    expect(output).toContain("module and instance scripts are supported")
+  })
+
+  it("can enforce a host-owned single-script policy", () => {
+    const { status, output } = lint("--single-script", "src/two-scripts.svelte")
 
     expect(status).toBe(1)
     expect(output).toContain("src/two-scripts.svelte:5")
-    expect(output).toContain("found 2 script blocks")
+    expect(output).toContain("forbidden by --single-script")
+  })
+
+  it("supports glob allowlists for the optional policy", () => {
+    const { status, output } = lint(
+      "--single-script",
+      "--allow",
+      "src/**/two-scripts.svelte",
+      "src/two-scripts.svelte",
+    )
+
+    expect(status).toBe(0)
+    expect(output).toContain("satisfy the configured single-script policy")
   })
 })

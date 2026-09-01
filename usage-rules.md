@@ -190,7 +190,15 @@ pnpm add -D @phoenix-assets/lint @biomejs/biome tailwindcss svelte
 - **Tailwind v4 hygiene:** add a `lint:tw` script running the compiled
   `phoenix-assets-lint-tailwind` binary the package ships (or invoke it ad hoc with
   `pnpm exec phoenix-assets-lint-tailwind`) — it flags arbitrary values with a
-  standard equivalent (`w-[180px]` → `w-45`). Wire both into CI.
+  standard equivalent (`w-[180px]` → `w-45`). CSS imports resolve exact and
+  trailing-wildcard `kit.alias` entries plus SvelteKit's implicit `$lib` alias
+  (including a custom `kit.files.lib`).
+- **Svelte structure:** `phoenix-assets-lint-svelte` parses the selected
+  components. It accepts standard module+instance script composition by default.
+  A host may opt into `--single-script` and use repeated `--allow <glob>` values
+  when that narrower convention is part of the host's own architecture.
+
+Wire the applicable commands into CI.
 
 ## When you genuinely need to deviate
 
