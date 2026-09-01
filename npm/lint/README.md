@@ -60,6 +60,9 @@ and exits non-zero on findings. CSS imports may use exact or trailing-wildcard
 aliases from the host `svelte.config.js`. The resolver also supports SvelteKit's
 implicit `$lib` alias and respects `kit.files.lib`; virtual aliases such as
 `$app` and `$env` are intentionally outside a filesystem stylesheet resolver.
+Bare package imports resolve from the importing stylesheet and host project, so
+pnpm's strict dependency layout does not require packages to be dependencies of
+the linter itself.
 It uses Tailwind's `__unstable__loadDesignSystem` API, so keep it aligned with
 your `tailwindcss` version.
 

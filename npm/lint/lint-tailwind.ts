@@ -161,7 +161,7 @@ const loadDesignSystem = async (): Promise<DesignSystem> => {
           readFileSync(p)
         } catch {
           const specifier = id.endsWith(".css") ? id : `${id}/index.css`
-          p = require.resolve(specifier)
+          p = require.resolve(specifier, { paths: [base, process.cwd()] })
         }
       }
       return { path: p, base: dirname(p), content: readFileSync(p, "utf-8") }

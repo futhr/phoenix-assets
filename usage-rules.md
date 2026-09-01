@@ -192,7 +192,8 @@ pnpm add -D @phoenix-assets/lint @biomejs/biome tailwindcss svelte
   `pnpm exec phoenix-assets-lint-tailwind`) — it flags arbitrary values with a
   standard equivalent (`w-[180px]` → `w-45`). CSS imports resolve exact and
   trailing-wildcard `kit.alias` entries plus SvelteKit's implicit `$lib` alias
-  (including a custom `kit.files.lib`).
+  (including a custom `kit.files.lib`). Bare packages resolve from the importing
+  stylesheet and host project, including under pnpm's strict dependency layout.
 - **Svelte structure:** `phoenix-assets-lint-svelte` parses the selected
   components. It accepts standard module+instance script composition by default.
   A host may opt into `--single-script` and use repeated `--allow <glob>` values

@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process"
+import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 // `lint-tailwind.ts` has no exported units (it runs `main()` on import), so it is
 // exercised as a black box: run the CLI against a fixture app and read its report.
@@ -12,6 +13,23 @@ const appDir = join(pkgDir, "test", "fixtures", "app")
 // of the compiled package so an old dist directory cannot mask a regression.
 const entry = join(pkgDir, "lint-tailwind.ts")
 const nodeFlags = ["--experimental-strip-types", "--no-warnings"]
+const hostPackageDir = join(appDir, "node_modules", "@fixture", "host-theme")
+
+beforeAll(() => {
+  mkdirSync(hostPackageDir, { recursive: true })
+  writeFileSync(
+    join(hostPackageDir, "package.json"),
+    JSON.stringify({
+      name: "@fixture/host-theme",
+      exports: { "./index.css": "./index.css" },
+    }),
+  )
+  writeFileSync(join(hostPackageDir, "index.css"), '@theme { --font-host: "Host only"; }\n')
+})
+
+afterAll(() => {
+  rmSync(join(appDir, "node_modules", "@fixture"), { force: true, recursive: true })
+})
 
 function lint(relFile: string) {
   const res = spawnSync(process.execPath, [...nodeFlags, entry, relFile], {
@@ -24,7 +42,7 @@ function lint(relFile: string) {
 }
 
 describe("lint-tailwind CLI", () => {
-  it("loads CSS through wildcard and implicit aliases from the host Svelte config", () => {
+  it("loads CSS through host packages and SvelteKit aliases", () => {
     const { status, out } = lint("src/expr.svelte")
 
     expect(status).toBe(1)
