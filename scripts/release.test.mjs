@@ -1,9 +1,16 @@
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
+import { createHash } from "node:crypto"
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
-import { collectReleaseErrors, isCanonicalRepositoryRemote, validateRelease } from "./release.mjs"
+import {
+  collectReleaseErrors,
+  isCanonicalRepositoryRemote,
+  validateRelease,
+  verifyArtifacts,
+} from "./release.mjs"
 
 const packages = ["doc-shell", "lint", "svelte", "vite"]
 
@@ -117,4 +124,114 @@ test("accepts canonical GitHub checkout remotes and rejects lookalikes", () => {
   ]) {
     assert.equal(isCanonicalRepositoryRemote(remote), false)
   }
+})
+
+function withArtifacts(callback) {
+  withFixture({}, (root) => {
+    execFileSync("git", ["init", "-q", root])
+    execFileSync(
+      "git",
+      [
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.test",
+        "commit",
+        "--allow-empty",
+        "--no-gpg-sign",
+        "-qm",
+        "fixture",
+      ],
+      { cwd: root },
+    )
+    const sourceSha = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: root,
+      encoding: "utf8",
+    }).trim()
+    const output = join(root, "artifacts")
+    mkdirSync(output)
+    const definitions = [
+      { ecosystem: "hex", name: "phoenix_assets", file: "phoenix_assets-1.2.3.tar" },
+      ...packages.map((name) => ({
+        ecosystem: "npm",
+        name: `@phoenix-assets/${name}`,
+        file: `phoenix-assets-${name}-1.2.3.tgz`,
+      })),
+    ]
+    const artifacts = definitions.map((artifact) => {
+      const bytes = Buffer.from(artifact.name)
+      writeFileSync(join(output, artifact.file), bytes)
+      return {
+        ...artifact,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+        ...(artifact.ecosystem === "npm"
+          ? { integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}` }
+          : {}),
+      }
+    })
+    const manifest = {
+      schema_version: "phoenix-assets/release/v1",
+      version: "1.2.3",
+      source_sha: sourceSha,
+      source_repository: "https://github.com/futhr/phoenix-assets",
+      source_dirty: false,
+      artifacts,
+    }
+    const save = () => {
+      writeFileSync(join(output, "release-manifest.json"), JSON.stringify(manifest))
+      const lines = [...artifacts.map(({ file }) => file), "release-manifest.json"].map(
+        (file) =>
+          `${createHash("sha256")
+            .update(readFileSync(join(output, file)))
+            .digest("hex")}  ${file}`,
+      )
+      writeFileSync(join(output, "SHA256SUMS"), `${lines.join("\n")}\n`)
+    }
+    save()
+    const verify = () => verifyArtifacts(root, output, { checkGit: false, allowUntagged: true })
+    callback({ manifest, output, save, verify })
+  })
+}
+
+test("verifies all five artifacts and the complete checksum manifest", () => {
+  withArtifacts(({ verify }) => assert.equal(verify().artifacts.length, 5))
+})
+
+for (const field of ["name", "ecosystem"]) {
+  test(`rejects a changed artifact ${field} even when its bytes match`, () => {
+    withArtifacts(({ manifest, save, verify }) => {
+      manifest.artifacts[0][field] = "unexpected"
+      save()
+      assert.throws(verify, /artifact identity mismatch/)
+    })
+  })
+}
+
+test("rejects a changed source repository", () => {
+  withArtifacts(({ manifest, save, verify }) => {
+    manifest.source_repository = "https://example.test/other"
+    save()
+    assert.throws(verify, /repository does not match/)
+  })
+})
+
+for (const mode of ["missing", "duplicate", "escape"]) {
+  test(`rejects ${mode} entries in SHA256SUMS`, () => {
+    withArtifacts(({ output, verify }) => {
+      const path = join(output, "SHA256SUMS")
+      const lines = readFileSync(path, "utf8").trim().split("\n")
+      if (mode === "missing") lines.pop()
+      if (mode === "duplicate") lines.push(lines[0])
+      if (mode === "escape") lines.push(`${"0".repeat(64)}  ../mix.exs`)
+      writeFileSync(path, `${lines.join("\n")}\n`)
+      assert.throws(verify, /SHA256SUMS/)
+    })
+  })
+}
+
+test("rejects artifact byte tampering", () => {
+  withArtifacts(({ output, verify }) => {
+    writeFileSync(join(output, "phoenix_assets-1.2.3.tar"), "changed")
+    assert.throws(verify, /checksum mismatch/)
+  })
 })

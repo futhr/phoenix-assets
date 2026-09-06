@@ -229,6 +229,10 @@ export function verifyArtifacts(root, output, options = {}) {
   if (manifest.schema_version !== RELEASE_SCHEMA) throw new Error("unknown release manifest schema")
   if (manifest.version !== version)
     throw new Error("artifact manifest version does not match source")
+  if (manifest.source_repository !== REPOSITORY_URL)
+    throw new Error("artifact manifest repository does not match source")
+  if (typeof manifest.source_dirty !== "boolean")
+    throw new Error("artifact manifest must declare source_dirty")
 
   const currentSha = capture("git", ["rev-parse", "HEAD"], { cwd: root })
   if (manifest.source_sha !== currentSha)
@@ -236,13 +240,20 @@ export function verifyArtifacts(root, output, options = {}) {
   if (options.tag && manifest.source_dirty)
     throw new Error("tagged artifacts came from a dirty tree")
 
-  const expectedFiles = new Set([
-    `phoenix_assets-${version}.tar`,
-    ...PACKAGES.map((pkg) => `phoenix-assets-${pkg.slug}-${version}.tgz`),
+  const expectedFiles = new Map([
+    [`phoenix_assets-${version}.tar`, { ecosystem: "hex", name: "phoenix_assets" }],
+    ...PACKAGES.map((pkg) => [
+      `phoenix-assets-${pkg.slug}-${version}.tgz`,
+      { ecosystem: "npm", name: pkg.name },
+    ]),
   ])
+  const expectedChecksums = new Set([...expectedFiles.keys(), "release-manifest.json"])
   for (const artifact of manifest.artifacts) {
-    if (!expectedFiles.delete(artifact.file))
-      throw new Error(`unexpected artifact ${artifact.file}`)
+    const expected = expectedFiles.get(artifact.file)
+    if (!expected) throw new Error(`unexpected artifact ${artifact.file}`)
+    if (artifact.name !== expected.name || artifact.ecosystem !== expected.ecosystem)
+      throw new Error(`artifact identity mismatch for ${artifact.file}`)
+    expectedFiles.delete(artifact.file)
     const path = join(output, artifact.file)
     if (!existsSync(path)) throw new Error(`missing artifact ${artifact.file}`)
     if (hash(path, "sha256") !== artifact.sha256) {
@@ -253,17 +264,21 @@ export function verifyArtifacts(root, output, options = {}) {
     }
   }
   if (expectedFiles.size > 0)
-    throw new Error(`manifest is missing ${[...expectedFiles].join(", ")}`)
+    throw new Error(`manifest is missing ${[...expectedFiles.keys()].join(", ")}`)
 
   const checksumLines = readFileSync(join(output, "SHA256SUMS"), "utf8").trim().split("\n")
   for (const line of checksumLines) {
     const match = line.match(/^([a-f\d]{64})  (.+)$/)
     if (!match) throw new Error(`invalid SHA256SUMS line: ${line}`)
     const [, expectedHash, file] = match
+    if (!expectedChecksums.delete(file))
+      throw new Error(`unexpected or duplicate SHA256SUMS file: ${file}`)
     if (hash(join(output, file), "sha256") !== expectedHash) {
       throw new Error(`SHA256SUMS mismatch for ${file}`)
     }
   }
+  if (expectedChecksums.size > 0)
+    throw new Error(`SHA256SUMS is missing ${[...expectedChecksums].join(", ")}`)
   return manifest
 }
 
