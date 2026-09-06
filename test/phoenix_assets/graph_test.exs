@@ -145,4 +145,24 @@ defmodule PhoenixAssets.GraphTest do
     assert graph["routes"] == %{}
     assert log =~ "failed to initialise"
   end
+
+  defmodule ContractPlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+
+    def graph_entries(_, _) do
+      for kind <- [:command, :session, :enum, :typespec],
+          do: Entry.new(kind: kind, key: "contract", data: %{"kind" => to_string(kind)})
+    end
+  end
+
+  test "preserves every built-in contract entry kind" do
+    context = %{ctx() | plugins: [{ContractPlugin, []}]}
+    graph = Graph.build(context, manifest: %{})
+
+    for section <- ~w(commands sessions enums typespecs) do
+      assert is_map(graph[section]["contract"])
+    end
+  end
+
 end

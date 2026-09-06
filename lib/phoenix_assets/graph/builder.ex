@@ -37,7 +37,11 @@ defmodule PhoenixAssets.Graph.Builder do
       "stories" => group(entries, :story),
       "electric_shapes" => group(entries, :electric_shape),
       "pubsub_topics" => group(entries, :pubsub_topic),
-      "locales" => group(entries, :locale)
+      "locales" => group(entries, :locale),
+      "commands" => group(entries, :command),
+      "sessions" => group(entries, :session),
+      "enums" => group(entries, :enum),
+      "typespecs" => group(entries, :typespec)
     }
   end
 
