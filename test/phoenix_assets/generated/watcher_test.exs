@@ -146,4 +146,49 @@ defmodule PhoenixAssets.Generated.WatcherTest do
 
     assert log =~ "generation failed"
   end
+
+  test "an expired canceled debounce message cannot trigger generation" do
+    parent = self()
+
+    s = %{
+      state()
+      | timer: make_ref(),
+        reload_fun: fn _ ->
+          send(parent, :reloaded)
+          :ok
+        end
+    }
+
+    assert {:noreply, ^s} = Watcher.handle_info({:timeout, make_ref(), :regenerate}, s)
+    refute_received :reloaded
+    assert {:noreply, %{timer: nil}} = Watcher.handle_info({:timeout, s.timer, :regenerate}, s)
+    assert_received :reloaded
+  end
+
+  test "a reload error leaves the previous contracts untouched and allows a later retry" do
+    root = tmp_dir()
+
+    ctx =
+      Context.new(Config.load!(otp_app: :my_app, asset_root: root), plugins: [{WritePlugin, []}])
+
+    s = %{state() | ctx: ctx, reload_fun: fn _ -> {:error, "compile failed"} end}
+
+    log =
+      capture_log(fn ->
+        assert {:noreply, %{timer: nil}} = Watcher.handle_info(:regenerate, s)
+      end)
+
+    assert log =~ "code reload failed"
+    refute File.exists?(Path.join(root, "phoenix/probe.ts"))
+    assert {:noreply, _} = Watcher.handle_info(:regenerate, %{s | reload_fun: fn _ -> :ok end})
+    assert File.exists?(Path.join(root, "phoenix/probe.ts"))
+  end
+
+  test "a reload exception is reported without terminating the watcher" do
+    s = %{state() | reload_fun: fn _ -> raise "reload broke" end}
+
+    assert capture_log(fn ->
+             assert {:noreply, %{timer: nil}} = Watcher.handle_info(:regenerate, s)
+           end) =~ "reload broke"
+  end
 end

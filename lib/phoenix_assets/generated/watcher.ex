@@ -70,9 +70,33 @@ defmodule PhoenixAssets.Generated.Watcher do
     {:noreply, state}
   end
 
-  def handle_info(:regenerate, %{ctx: ctx, reload_fun: reload_fun} = state) do
-    _ = reload_fun.(ctx)
+  def handle_info({:timeout, timer, :regenerate}, %{timer: timer} = state) do
+    handle_info(:regenerate, state)
+  end
 
+  def handle_info({:timeout, _, :regenerate}, state), do: {:noreply, state}
+
+  def handle_info(:regenerate, state) do
+    regenerate(state)
+    {:noreply, %{state | timer: nil}}
+  end
+
+  def handle_info(message, state) do
+    Logger.debug("phoenix_assets watcher: ignoring unexpected message #{inspect(message)}")
+    {:noreply, state}
+  end
+
+  defp regenerate(%{ctx: ctx, reload_fun: reload_fun}) do
+    case reload_fun.(ctx) do
+      :ok -> generate(ctx)
+      {:error, reason} -> Logger.warning("phoenix_assets code reload failed: #{inspect(reason)}")
+    end
+  rescue
+    exception ->
+      Logger.warning("phoenix_assets regeneration failed: #{Exception.message(exception)}")
+  end
+
+  defp generate(ctx) do
     case Generated.generate(ctx) do
       {:ok, %{written: [_ | _] = written}} ->
         Logger.debug("phoenix_assets regenerated: #{Enum.join(written, ", ")}")
@@ -83,18 +107,11 @@ defmodule PhoenixAssets.Generated.Watcher do
       {:error, reason} ->
         Logger.warning("phoenix_assets generation failed: #{inspect(reason)}")
     end
-
-    {:noreply, %{state | timer: nil}}
-  end
-
-  def handle_info(message, state) do
-    Logger.debug("phoenix_assets watcher: ignoring unexpected message #{inspect(message)}")
-    {:noreply, state}
   end
 
   defp schedule(%{timer: timer, debounce: debounce} = state) do
     _ = if is_reference(timer), do: Process.cancel_timer(timer)
-    %{state | timer: Process.send_after(self(), :regenerate, debounce)}
+    %{state | timer: :erlang.start_timer(debounce, self(), :regenerate)}
   end
 
   defp start_file_system([]), do: :none
@@ -124,19 +141,17 @@ defmodule PhoenixAssets.Generated.Watcher do
   available, or the endpoint's reloader is not running (e.g. `code_reloader:
   false`) -- regeneration then proceeds against the currently loaded code.
   """
-  @spec reload_code(Context.t()) :: :ok
+  @spec reload_code(Context.t()) :: :ok | {:error, term()}
   def reload_code(%Context{endpoint: endpoint}) when not is_nil(endpoint) do
-    _ =
-      if Code.ensure_loaded?(Phoenix.CodeReloader) and Code.ensure_loaded?(endpoint) and
-           function_exported?(endpoint, :config, 1) do
-        Phoenix.CodeReloader.reload(endpoint)
-      end
-
-    :ok
+    if Code.ensure_loaded?(Phoenix.CodeReloader) and Code.ensure_loaded?(endpoint) and
+         function_exported?(endpoint, :config, 1) and endpoint.config(:code_reloader) and
+         Process.whereis(Phoenix.CodeReloader.Server) do
+      Phoenix.CodeReloader.reload(endpoint)
+    else
+      :ok
+    end
   catch
-    # The endpoint (or its code-reloader child) may not be running; stale-code
-    # generation is still better than crashing the watcher.
-    _, _ -> :ok
+    :exit, reason -> {:error, reason}
   end
 
   def reload_code(_), do: :ok
