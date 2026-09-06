@@ -5,7 +5,7 @@ defmodule PhoenixAssets.Types do
   Reads the type declarations from the module passed as `types:` (see
   `PhoenixAssets.Types.Schema`), runs them through `PhoenixAssets.Types.Walker`,
   and emits `types.ts`. Generation is skipped (with a doctor warning) when Ash is
-  not loaded, so the stack package stays usable without it.
+  not loaded, so the library stays usable without it.
 
   ## The field-policy safety net
 

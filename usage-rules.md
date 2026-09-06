@@ -145,8 +145,9 @@ Rules to rely on:
   `{ ok: true, data }` or `{ ok: false, error, status }`; a network failure and
   an error code this build does not know both degrade to `"unknown_error"`
   rather than escaping as an untyped string or a rejected promise.
-- **Sensitive and non-public Ash fields are excluded** from generated row types
-  automatically (`sensitive?: true` and `public?: false` never reach the client).
+- **Sensitive and non-public Ash fields are excluded by default** from generated
+  row types. `only: :all` includes private fields and `expose:` can explicitly
+  include private or sensitive fields; review these overrides before publishing.
   A doctor check warns when an exposed field is also field-policy-gated.
 - Run `mix phoenix_assets.doctor` (add `--production` in CI) to validate config,
   routes, manifest presence, and freshness.
@@ -156,7 +157,7 @@ Rules to rely on:
 - `@phoenix-assets/vite` — the Vite plugin (`phoenixAssets`), `$phoenix/*` virtual
   modules, HMR bridge, PO loader, graph emitter. Add it to `vite.config.js`.
 - `@phoenix-assets/svelte` — typed runtime helpers: `createShapeStore`,
-  `authHeaders`/`createShapeUrl` (used by the generated `$phoenix/electric`
+  `createShapeFetch`/`createShapeUrl` (used by the generated `$phoenix/electric`
   client), `runCommand` (used by the generated `$phoenix/commands` client), the
   event modifiers (`debounce`, `throttle`, `once`, `stopPropagation`,
   `preventDefault`, `self`), `matchEvent`, `resolveLocale`, and `configureShapeAuth` to point the
@@ -221,3 +222,22 @@ want — see "Tuning the stack without a preset" above.
   them and import from `$phoenix/*`.
 - Don't put secrets in `config :phoenix_assets, :env, expose: [...]` — only listed
   keys are emitted, but treat the allow-list as public.
+
+## Upgrading the audited dependency baseline
+
+Ash 3.33 requires an explicit string-length policy in the **host application's**
+configuration. Set this before compiling dependencies:
+
+```elixir
+config :ash, default_string_length_count: :codepoints
+```
+
+Update the Hex and npm companion packages together, then regenerate contracts.
+Generated Electric clients use `createShapeFetch` to refresh credentials on each
+request. Configure process-wide auth only with application-wide defaults; SSR
+request-specific tokens belong in per-request configuration.
+
+Generated file paths must stay below `asset_root` and cannot traverse symlinks
+inside it. The configured root itself may be a symlink. Failed generation now
+raises from `Generated.stale?/1`; use `Generated.generate(ctx, check: true)` to
+handle tagged errors explicitly.

@@ -2,8 +2,7 @@ defmodule PhoenixAssets.Generators.TS do
   @moduledoc """
   Shared helpers for rendering generated TypeScript.
 
-  Every generator (routes, env, and -- in the stack package -- types, electric,
-  pubsub, locales) emits TypeScript through these helpers so the output style is
+  Every generator (routes, env, types, electric, pubsub, and locales) emits TypeScript through these helpers so the output style is
   uniform: the same do-not-edit header, the same camelCase/PascalCase casing, and
   the same string-literal union rendering.
 
