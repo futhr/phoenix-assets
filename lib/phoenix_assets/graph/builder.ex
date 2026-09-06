@@ -91,12 +91,8 @@ defmodule PhoenixAssets.Graph.Builder do
         manifest
         |> Enum.filter(fn {_, chunk} -> chunk["isEntry"] end)
         |> Map.new(fn {key, _} ->
-          {key,
-           %{
-             "file" => Manifest.file(manifest, key),
-             "css" => Manifest.css(manifest, key),
-             "imports" => Manifest.imports(manifest, key)
-           }}
+          resolved = Manifest.resolve!(manifest, key)
+          {key, %{"file" => resolved.file, "css" => resolved.css, "imports" => resolved.imports}}
         end)
 
       :absent ->

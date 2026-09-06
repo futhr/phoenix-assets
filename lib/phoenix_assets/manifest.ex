@@ -54,6 +54,25 @@ defmodule PhoenixAssets.Manifest do
 
   defp valid_chunk?(_), do: false
 
+  @doc "Resolves an entry's file, stylesheets, imports, and integrity in one graph traversal."
+  @spec resolve!(t(), String.t()) :: %{
+          file: String.t(),
+          css: [String.t()],
+          imports: [String.t()],
+          integrity: %{String.t() => String.t()}
+        }
+  def resolve!(manifest, key) do
+    own = manifest |> entry!(key) |> Map.fetch!("file")
+    {files, css, integrity} = collect(manifest, key)
+
+    %{
+      file: prefix(own),
+      css: css |> Enum.uniq() |> Enum.map(&prefix/1),
+      imports: files |> List.delete(own) |> Enum.uniq() |> Enum.map(&prefix/1),
+      integrity: integrity
+    }
+  end
+
   @doc """
   Fetches the raw chunk for `key`, raising `KeyError` if it is absent.
 

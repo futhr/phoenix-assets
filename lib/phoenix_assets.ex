@@ -113,12 +113,7 @@ defmodule PhoenixAssets do
         raise "phoenix_assets: Vite manifest unavailable (#{inspect(reason)}). Run `mix assets.build`."
 
       manifest ->
-        apply_asset_url(%{
-          file: Manifest.file(manifest, key),
-          css: Manifest.css(manifest, key),
-          imports: Manifest.imports(manifest, key),
-          integrity: Manifest.subresource_integrity(manifest, key)
-        })
+        manifest |> Manifest.resolve!(key) |> apply_asset_url()
     end
   end
 

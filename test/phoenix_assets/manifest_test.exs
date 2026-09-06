@@ -137,6 +137,27 @@ defmodule PhoenixAssets.ManifestTest do
     assert Manifest.file(manifest, "https") == "https://cdn.example/app.js"
   end
 
+  test "resolve! preserves ordering, deduplicates cycles, and carries CDN integrity" do
+    manifest = %{
+      "app" => %{"file" => "assets/app.js", "css" => ["a.css"], "imports" => ["vendor", "vendor"]},
+      "vendor" => %{
+        "file" => "https://cdn.example/vendor.js",
+        "css" => ["a.css", "b.css"],
+        "imports" => ["app", "missing"],
+        "integrity" => "sha384-vendor"
+      }
+    }
+
+    assert Manifest.resolve!(manifest, "app") == %{
+             file: "/assets/app.js",
+             css: ["/a.css", "/b.css"],
+             imports: ["https://cdn.example/vendor.js"],
+             integrity: %{"https://cdn.example/vendor.js" => "sha384-vendor"}
+           }
+
+    assert_raise KeyError, fn -> Manifest.resolve!(manifest, "absent") end
+  end
+
   test "rejects malformed chunks and relationship fields at the file boundary" do
     path =
       Path.join(
