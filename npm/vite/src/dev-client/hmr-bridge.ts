@@ -15,6 +15,7 @@ import type { PhoenixAssetsOptions, ResolvedOptions } from "../types"
  */
 export function devClientPlugin(opts: PhoenixAssetsOptions): Plugin {
   let options: ResolvedOptions
+  let cleanup: (() => void) | undefined
 
   return {
     name: "phoenix-assets:dev-client",
@@ -29,9 +30,11 @@ export function devClientPlugin(opts: PhoenixAssetsOptions): Plugin {
       const filter = createFilter(`${generated}/**`)
 
       // Backing file (absolute) -> virtual-module name, so a change touches one module.
-      const fileToName = new Map<string, string>()
+      cleanup?.()
+      const fileToNames = new Map<string, string[]>()
       for (const [name, entry] of Object.entries(GENERATED)) {
-        fileToName.set(path.resolve(generated, entry.file), name)
+        const file = path.resolve(generated, entry.file)
+        fileToNames.set(file, [...(fileToNames.get(file) ?? []), name])
       }
 
       const pending = new Set<string>()
@@ -44,8 +47,7 @@ export function devClientPlugin(opts: PhoenixAssetsOptions): Plugin {
         if (files.length === 0) return
 
         for (const file of files) {
-          const name = fileToName.get(file)
-          if (name) {
+          for (const name of fileToNames.get(file) ?? []) {
             const virtual = server.moduleGraph.getModuleById(RESOLVED_PREFIX + name)
             if (virtual) server.moduleGraph.invalidateModule(virtual)
           }
@@ -66,6 +68,17 @@ export function devClientPlugin(opts: PhoenixAssetsOptions): Plugin {
       server.watcher.on("change", handle)
       server.watcher.on("add", handle)
       server.watcher.on("unlink", handle)
+      cleanup = () => {
+        if (timer) clearTimeout(timer)
+        pending.clear()
+        server.watcher.off("change", handle)
+        server.watcher.off("add", handle)
+        server.watcher.off("unlink", handle)
+        cleanup = undefined
+      }
+    },
+    closeBundle() {
+      cleanup?.()
     },
   }
 }

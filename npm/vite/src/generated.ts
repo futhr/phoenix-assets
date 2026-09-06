@@ -14,6 +14,14 @@ interface GeneratedModule {
 
 /** Virtual-module name -> generated file and its fallback stub, kept in sync by type. */
 export const GENERATED = {
+  commands: {
+    file: "commands.ts",
+    stub: "export const commands = {} as Record<string, never>\n",
+  },
+  session: {
+    file: "session.ts",
+    stub: "export interface Session {}\nexport const sessionFields = [] as const\nexport const sessionRoute = null\n",
+  },
   routes: {
     file: "routes.ts",
     stub: "export const routes = {} as Record<string, never>\nexport type RouteName = never\n",

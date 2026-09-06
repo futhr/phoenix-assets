@@ -40,3 +40,13 @@ describe("virtual modules", () => {
     expect(hook(setup().load).call({}, "some-other-module")).toBeNull()
   })
 })
+
+it.each(["commands", "session"])("resolves and supplies a first-boot stub for %s", (name) => {
+  const plugin = setup()
+  const resolved = hook(plugin.resolveId).call({}, `$phoenix/${name}`)
+  expect(resolved).toBe(`\0phoenix-assets:${name}`)
+  const output = hook(plugin.load).call({ addWatchFile: () => {}, warn: () => {} }, resolved)
+  expect(output).toContain(
+    name === "session" ? "export interface Session" : "export const commands",
+  )
+})
