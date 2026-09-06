@@ -23,17 +23,17 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      # Two legs on merge, one on pull request. Floor = the oldest supported
-      # toolchain compiles warning-free and passes ExUnit; full = the whole
-      # quality gate (Elixir + frontend) plus coverage upload. A change that
-      # passes `full` almost never breaks the floor on its own, and the floor
-      # leg is a complete compile + ExUnit run, so PRs skip it and merges to
-      # main still prove it.
+      # Exercise both supported ends before merging dependency or source changes.
+      # Floor = warnings-as-errors compilation + ExUnit; full = the whole
+      # quality gate (Elixir + frontend) plus coverage upload.
       matrix:
-        include: >-
-          ${{ github.event_name == 'pull_request'
-          && fromJson('[{"elixir":"1.20","otp":"29","check":"full"}]')
-          || fromJson('[{"elixir":"1.18","otp":"27","check":"elixir"},{"elixir":"1.20","otp":"29","check":"full"}]') }}
+        include:
+          - elixir: "1.18"
+            otp: "27"
+            check: elixir
+          - elixir: "1.20"
+            otp: "29"
+            check: full
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
