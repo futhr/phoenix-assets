@@ -110,4 +110,42 @@ defmodule PhoenixAssets.GeneratedTest do
     ctx = Context.new(config, plugins: [{SamePathPlugin, []}, {DuplicatePlugin, []}])
     assert {:error, {:duplicate_generated_file, "same.ts"}} = Generated.generate(ctx)
   end
+
+  defmodule PathsPlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+    def init(opts, _), do: {:ok, opts}
+
+    def generated_files(_, opts),
+      do: Enum.map(opts[:paths], &GeneratedFile.new(path: &1, contents: "generated"))
+  end
+
+  test "validates all destinations before writing any file", %{ctx: ctx, tmp: tmp} do
+    ctx = %{ctx | plugins: [{PathsPlugin, paths: ["a.ts", "z/../../escape.ts"]}]}
+    assert_raise ArgumentError, fn -> Generated.generate(ctx) end
+    refute File.exists?(Path.join(tmp, "a.ts"))
+  end
+
+  test "rejects normalized duplicate destinations before writing", %{ctx: ctx, tmp: tmp} do
+    ctx = %{ctx | plugins: [{PathsPlugin, paths: ["a.ts", "nested/../a.ts"]}]}
+    assert {:error, {:duplicate_generated_file, _}} = Generated.generate(ctx)
+    refute File.exists?(Path.join(tmp, "a.ts"))
+  end
+
+  test "generation, status, and cleanup cannot follow symlinks", %{ctx: ctx, tmp: tmp} do
+    outside = tmp <> "_outside"
+    File.mkdir_p!(outside)
+    on_exit(fn -> File.rm_rf!(outside) end)
+    target = Path.join(outside, "contract.ts")
+    File.write!(target, "generated")
+    File.ln_s!(outside, Path.join(tmp, "linked"))
+    ctx = %{ctx | plugins: [{PathsPlugin, paths: ["linked/contract.ts"]}]}
+
+    for operation <- [&Generated.generate/1, &Generated.status/1, &Generated.clean/1] do
+      assert_raise ArgumentError, ~r/symlink/, fn -> operation.(ctx) end
+    end
+
+    assert File.read!(target) == "generated"
+  end
+
 end

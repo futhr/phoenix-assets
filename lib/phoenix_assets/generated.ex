@@ -75,14 +75,18 @@ defmodule PhoenixAssets.Generated do
         |> filter_only(only)
         |> Enum.sort_by(& &1.path)
 
-      ensure_unique_paths(files)
+      ensure_unique_paths(files, ctx)
     end
   end
 
-  defp ensure_unique_paths(files) do
-    case Enum.chunk_by(files, & &1.path) |> Enum.find(&(length(&1) > 1)) do
+  defp ensure_unique_paths(files, ctx) do
+    # Validate every destination before any write or removal, including aliases
+    # such as `a/../same.ts` that resolve to the same file.
+    grouped = Enum.group_by(files, &abs_path!(&1, ctx))
+
+    case grouped |> Enum.sort() |> Enum.find(fn {_, group} -> length(group) > 1 end) do
       nil -> {:ok, files}
-      [%GeneratedFile{path: path} | _] -> {:error, {:duplicate_generated_file, path}}
+      {_, [%GeneratedFile{path: path} | _]} -> {:error, {:duplicate_generated_file, path}}
     end
   end
 
@@ -180,12 +184,31 @@ defmodule PhoenixAssets.Generated do
     root = Path.expand(asset_root)
     abs = Path.expand(Path.join(root, rel))
 
-    if abs == root or String.starts_with?(abs, root <> "/") do
+    if Path.type(rel) == :relative and abs != root and String.starts_with?(abs, root <> "/") do
+      reject_symlinks!(root, Path.relative_to(abs, root))
       abs
     else
       raise ArgumentError,
             "phoenix_assets: generated file path #{inspect(rel)} escapes the asset root #{inspect(root)}"
     end
+  end
+
+  # Generated destinations below the configured root may not traverse symlinks.
+  # The root itself may be a host-managed symlink. This is a preflight guard,
+  # not protection against another process concurrently replacing directories.
+  defp reject_symlinks!(root, relative) do
+    Enum.reduce(Path.split(relative), root, fn segment, parent ->
+      path = Path.join(parent, segment)
+
+      case File.lstat(path) do
+        {:ok, %{type: :symlink}} ->
+          raise ArgumentError,
+                "phoenix_assets: generated file path traverses symlink #{inspect(path)}"
+
+        _ ->
+          path
+      end
+    end)
   end
 
   defp telemetry_metadata({:ok, %{written: written, unchanged: unchanged}}),
