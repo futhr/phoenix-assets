@@ -60,7 +60,7 @@ defmodule PhoenixAssets.MixProject do
       {:muontrap, ">= 1.8.0 and < 3.0.0"},
       {:nimble_options, "~> 1.1"},
       {:phoenix_live_view, "~> 1.1", optional: true},
-      {:ash, "~> 3.0", optional: true},
+      {:ash, "~> 3.33", optional: true},
       # ash_typescript and phoenix_sync are version-constraint-only: nothing in
       # lib/ references them. They exist so hosts that pull in these libs resolve
       # a version this package was built against. Keep them — hosts rely on the pin.

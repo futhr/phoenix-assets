@@ -1,5 +1,9 @@
 import Config
 
+# Ash 3.33 requires an explicit string-length policy. This config belongs to
+# this repository; consuming applications choose their own policy.
+config :ash, default_string_length_count: :codepoints
+
 # Silence phoenix_sync's startup warnings during this package's own test/dev
 # runs. Consumers configure phoenix_sync in their own application.
 config :phoenix_sync,
