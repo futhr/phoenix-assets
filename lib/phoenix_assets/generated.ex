@@ -48,9 +48,20 @@ defmodule PhoenixAssets.Generated do
     end)
   end
 
-  @doc "Returns `true` if the on-disk contracts differ from freshly generated output."
+  @doc "Returns whether generated contracts differ from disk. Raises if generation fails."
   @spec stale?(Context.t()) :: boolean()
-  def stale?(%Context{} = ctx), do: match?({:error, {:stale, _}}, generate(ctx, check: true))
+  def stale?(%Context{} = ctx) do
+    case generate(ctx, check: true) do
+      :ok ->
+        false
+
+      {:error, {:stale, _}} ->
+        true
+
+      {:error, reason} ->
+        raise "phoenix_assets: cannot determine generated freshness: #{inspect(reason)}"
+    end
+  end
 
   @doc "Returns which generated files are fresh and which are stale, by relative path."
   @spec status(Context.t()) :: %{fresh: [Path.t()], stale: [Path.t()]} | {:error, term()}

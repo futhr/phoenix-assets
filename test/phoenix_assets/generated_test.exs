@@ -148,4 +148,17 @@ defmodule PhoenixAssets.GeneratedTest do
     assert File.read!(target) == "generated"
   end
 
+  defmodule FailedPlugin do
+    @moduledoc false
+    use PhoenixAssets.Plugin
+    def init(_, _), do: {:error, :unavailable}
+  end
+
+  test "stale? cannot report fresh contracts when plugin initialization fails", %{ctx: ctx} do
+    ctx = %{ctx | plugins: [{FailedPlugin, []}]}
+
+    assert_raise RuntimeError, ~r/cannot determine generated freshness/, fn ->
+      Generated.stale?(ctx)
+    end
+  end
 end

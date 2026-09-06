@@ -210,4 +210,13 @@ defmodule PhoenixAssets.DoctorTest do
     {_, results} = Doctor.run(Context.new(allowed, env: :test), production: true)
     assert result_for(results, :source_maps).status == :ok
   end
+
+  test "plugin failures fail ordinary diagnostics and never claim fresh contracts" do
+    context = ctx([{FailPlugin, []}])
+    assert {:error, results} = Doctor.run(context)
+    assert result_for(results, :plugin_init).message =~ "FailPlugin"
+    assert {:error, results} = Doctor.run(context, production: true)
+    assert result_for(results, :generated_fresh).status == :error
+  end
+
 end

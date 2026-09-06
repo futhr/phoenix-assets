@@ -53,8 +53,19 @@ defmodule PhoenixAssets.Doctor do
 
   defp plugin_checks(ctx) do
     case Engine.init_plugins(ctx) do
-      {:ok, initialized} -> Engine.collect(ctx, initialized, :doctor_checks)
-      {:error, _} -> []
+      {:ok, initialized} ->
+        Engine.collect(ctx, initialized, :doctor_checks)
+
+      {:error, {module, reason}} ->
+        [
+          Check.new(
+            id: :plugin_init,
+            group: :plugins,
+            run: fn _ ->
+              Check.error("plugin #{inspect(module)} failed to initialise: #{inspect(reason)}")
+            end
+          )
+        ]
     end
   end
 
@@ -121,10 +132,15 @@ defmodule PhoenixAssets.Doctor do
   end
 
   defp generated_check(ctx) do
-    if Generated.stale?(ctx) do
-      Check.error("generated contracts are stale", "run mix phoenix_assets.gen")
-    else
-      Check.ok("generated contracts are up to date")
+    case Generated.generate(ctx, check: true) do
+      :ok ->
+        Check.ok("generated contracts are up to date")
+
+      {:error, {:stale, _}} ->
+        Check.error("generated contracts are stale", "run mix phoenix_assets.gen")
+
+      {:error, reason} ->
+        Check.error("generated contracts could not be checked: #{inspect(reason)}")
     end
   end
 
