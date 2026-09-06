@@ -29,4 +29,21 @@ defmodule PhoenixAssets.Generators.TypespecTest do
     assert :ok = Typespec.write(TypespecFixture, output, root_name: "Event")
     assert File.read!(output) =~ "export type Event"
   end
+
+  test "renders opaque types, optional map fields, booleans, and arrays of unions" do
+    assert {:ok, output} = Typespec.render(TypespecFixture.EdgeCases, [])
+    assert output =~ "export type OpaqueId = string"
+    assert output =~ "label?: string"
+    assert output =~ "enabled: true"
+    assert output =~ "disabled: false"
+    assert output =~ "values: Array<string | null>"
+    assert output =~ "nested: { note?: string }"
+    refute output =~ ~s([key: "label"])
+  end
+
+  test "a missing configured root reports the source and missing type" do
+    assert_raise ArgumentError, ~r/typespec root :absent is not declared/, fn ->
+      Typespec.render(TypespecFixture, root: :absent)
+    end
+  end
 end

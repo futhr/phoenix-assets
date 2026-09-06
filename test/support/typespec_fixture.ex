@@ -14,3 +14,16 @@ defmodule PhoenixAssets.Test.TypespecFixture.Untyped do
   @doc false
   def noop, do: :ok
 end
+
+defmodule PhoenixAssets.Test.TypespecFixture.EdgeCases do
+  @moduledoc false
+  @opaque opaque_id :: String.t()
+  @type item :: %{
+          optional(:label) => String.t(),
+          required(:enabled) => true,
+          required(:disabled) => false,
+          required(:values) => [String.t() | nil],
+          required(:nested) => %{optional(:note) => String.t()}
+        }
+  @type t :: item() | opaque_id()
+end

@@ -20,7 +20,7 @@ defmodule PhoenixAssets.Generators.Typespec do
   @spec render(module(), [option()]) :: {:ok, String.t()} | :error
   def render(source_module, opts) when is_atom(source_module) and is_list(opts) do
     with {:ok, types} <- Typespec.fetch_types(source_module) do
-      type_map = Map.new(types, fn {:type, {name, body, _}} -> {name, body} end)
+      type_map = Map.new(types, fn {_, {name, body, _}} -> {name, body} end)
       {:ok, render_map(type_map, source_module, opts)}
     end
   end
@@ -36,6 +36,12 @@ defmodule PhoenixAssets.Generators.Typespec do
 
   defp render_map(type_map, source_module, opts) do
     root = Keyword.get(opts, :root, :t)
+
+    unless Map.has_key?(type_map, root) do
+      raise ArgumentError,
+            "typespec root #{inspect(root)} is not declared by #{inspect(source_module)}"
+    end
+
     names = Keyword.get(opts, :types, type_map |> Map.keys() |> Enum.sort())
     root_name = Keyword.get(opts, :root_name, TS.type_name(root))
     discriminator_name = Keyword.get(opts, :discriminator_name)
@@ -103,11 +109,7 @@ defmodule PhoenixAssets.Generators.Typespec do
   defp render_type(name, {:type, _, :map, fields}, type_map) when is_list(fields) do
     lines =
       Enum.map_join(fields, "\n", fn
-        {:type, _, :map_field_exact, [{:atom, _, key}, value]} ->
-          "  #{TS.camelize(key)}: #{to_ts_type(value, type_map)}"
-
-        {:type, _, :map_field_assoc, [key, value]} ->
-          "  [key: #{to_ts_type(key, type_map)}]: #{to_ts_type(value, type_map)}"
+        field -> "  " <> map_field(field, type_map)
       end)
 
     "export interface #{TS.type_name(name)} {\n#{lines}\n}"
@@ -118,6 +120,7 @@ defmodule PhoenixAssets.Generators.Typespec do
   end
 
   defp to_ts_type({:atom, _, nil}, _), do: "null"
+  defp to_ts_type({:atom, _, value}, _) when is_boolean(value), do: to_string(value)
   defp to_ts_type({:atom, _, literal}, _) when is_atom(literal), do: TS.string_union([literal])
 
   defp to_ts_type({:type, _, :union, variants}, type_map) do
@@ -130,6 +133,9 @@ defmodule PhoenixAssets.Generators.Typespec do
        when module in [String, Date, DateTime, NaiveDateTime],
        do: TS.primitive(:string)
 
+  defp to_ts_type({:type, _, :list, [{:type, _, :union, _} = element]}, type_map),
+    do: "Array<#{to_ts_type(element, type_map)}>"
+
   defp to_ts_type({:type, _, :list, [element]}, type_map),
     do: "#{to_ts_type(element, type_map)}[]"
 
@@ -137,14 +143,7 @@ defmodule PhoenixAssets.Generators.Typespec do
 
   defp to_ts_type({:type, _, :map, fields}, type_map) when is_list(fields) do
     fields
-    |> Enum.map_join("; ", fn
-      {:type, _, kind, [{:atom, _, key}, value]}
-      when kind in [:map_field_exact, :map_field_assoc] ->
-        "#{TS.camelize(key)}: #{to_ts_type(value, type_map)}"
-
-      {:type, _, _, [key, value]} ->
-        "[key: #{to_ts_type(key, type_map)}]: #{to_ts_type(value, type_map)}"
-    end)
+    |> Enum.map_join("; ", &map_field(&1, type_map))
     |> then(&"{ #{&1} }")
   end
 
@@ -159,4 +158,13 @@ defmodule PhoenixAssets.Generators.Typespec do
   end
 
   defp to_ts_type(_, _), do: "unknown"
+
+  defp map_field({:type, _, kind, [{:atom, _, key}, value]}, type_map) do
+    optional = if kind == :map_field_assoc, do: "?", else: ""
+    "#{key |> TS.camelize() |> TS.object_key()}#{optional}: #{to_ts_type(value, type_map)}"
+  end
+
+  defp map_field({:type, _, _, [key, value]}, type_map) do
+    "[key: #{to_ts_type(key, type_map)}]: #{to_ts_type(value, type_map)}"
+  end
 end
