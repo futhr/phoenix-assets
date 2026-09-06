@@ -11,6 +11,7 @@
     {:credo, command: "mix credo --strict"},
     {:doctor, command: "mix doctor"},
     {:mix_audit, command: "mix deps.audit"},
+    {:hex_audit, command: "mix hex.audit"},
     {:dialyzer, true},
 
     ## ExUnit with coverage: enforces minimum_coverage (coveralls.json) and
@@ -23,6 +24,7 @@
     ## --- Frontend (pnpm): install, then lint / typecheck / test+coverage,
     ## dead-code detection (knip), and package-export correctness (publint + attw) ---
     {:pnpm_install, command: "pnpm install --frozen-lockfile"},
+    {:npm_audit, command: "pnpm audit --prod", deps: [:pnpm_install]},
     {:biome, command: "pnpm lint", deps: [:pnpm_install]},
     {:typecheck, command: "pnpm typecheck", deps: [:pnpm_install]},
     {:vitest, command: "pnpm test", deps: [:pnpm_install]},

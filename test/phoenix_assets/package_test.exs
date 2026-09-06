@@ -13,4 +13,11 @@ defmodule PhoenixAssets.PackageTest do
 
     assert {:ok, "ab"} = Ash.Type.String.apply_constraints("ab", max_length: 2)
   end
+
+  test "the required quality gate includes registry security audits" do
+    {config, []} = Code.eval_file(".check.exs")
+    assert config[:tools][:hex_audit][:command] == "mix hex.audit"
+    assert config[:tools][:npm_audit][:command] == "pnpm audit --prod"
+  end
+
 end

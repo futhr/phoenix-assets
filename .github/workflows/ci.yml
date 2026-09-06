@@ -118,11 +118,6 @@ jobs:
       - run: mix check
         if: matrix.check == 'full'
 
-      - name: Audit JS dependencies (advisory)
-        if: matrix.check == 'full'
-        run: pnpm audit --prod
-        continue-on-error: true
-
       # One upload per language, so each lcov file is tagged with only its own
       # flag. A single combined upload with `flags: elixir,vite,svelte` tags
       # every file with all three flags, cross-contaminating the per-flag
