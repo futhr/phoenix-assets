@@ -165,4 +165,12 @@ defmodule PhoenixAssets.GraphTest do
     end
   end
 
+  test "runtime graph loading rejects non-object JSON" do
+    path =
+      Path.join(System.tmp_dir!(), "graph_invalid_#{System.unique_integer([:positive])}.json")
+
+    on_exit(fn -> File.rm!(path) end)
+    File.write!(path, "[]")
+    assert {:error, {:invalid_graph, []}} = Graph.load(ctx(build: [asset_graph: path]))
+  end
 end

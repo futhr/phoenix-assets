@@ -136,4 +136,29 @@ defmodule PhoenixAssets.ManifestTest do
     assert Manifest.file(manifest, "http") == "http://cdn.example/app.js"
     assert Manifest.file(manifest, "https") == "https://cdn.example/app.js"
   end
+
+  test "rejects malformed chunks and relationship fields at the file boundary" do
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "manifest_validation_#{System.unique_integer([:positive])}.json"
+      )
+
+    on_exit(fn -> File.rm!(path) end)
+
+    for chunk <- [
+          nil,
+          [],
+          %{},
+          %{"file" => 1},
+          %{"file" => ""},
+          %{"file" => "app.js", "css" => "app.css"},
+          %{"file" => "app.js", "imports" => [nil]},
+          %{"file" => "app.js", "integrity" => 1},
+          %{"file" => "app.js", "isEntry" => "true"}
+        ] do
+      File.write!(path, JSON.encode!(%{"app" => chunk}))
+      assert {:error, {:invalid_manifest_entry, "app"}} = Manifest.load(path)
+    end
+  end
 end

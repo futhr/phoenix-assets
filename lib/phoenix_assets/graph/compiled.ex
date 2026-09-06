@@ -58,8 +58,12 @@ defmodule PhoenixAssets.Graph.Compiled do
     case File.read(path) do
       {:ok, raw} ->
         case JSON.decode(raw) do
-          {:ok, graph} ->
+          {:ok, graph} when is_map(graph) ->
             graph
+
+          {:ok, _} ->
+            raise CompileError,
+              description: "PhoenixAssets.Graph.Compiled: #{path} must contain a JSON object"
 
           {:error, reason} ->
             raise CompileError,

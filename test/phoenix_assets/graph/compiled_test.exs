@@ -53,4 +53,19 @@ defmodule PhoenixAssets.Graph.CompiledTest do
       """)
     end
   end
+
+  test "rejects a JSON scalar at compile time" do
+    path = Path.join(System.tmp_dir!(), "graph_scalar_#{System.unique_integer([:positive])}.json")
+    on_exit(fn -> File.rm!(path) end)
+    File.write!(path, "null")
+
+    assert_raise CompileError, ~r/must contain a JSON object/, fn ->
+      Code.compile_string("""
+      defmodule PhoenixAssets.Graph.CompiledScalar do
+        @moduledoc false
+        use PhoenixAssets.Graph.Compiled, graph: #{inspect(path)}
+      end
+      """)
+    end
+  end
 end

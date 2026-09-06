@@ -55,8 +55,9 @@ defmodule PhoenixAssets.Graph do
   @doc "Loads the asset graph from its JSON file."
   @spec load(Context.t()) :: {:ok, map()} | {:error, term()}
   def load(%Context{} = ctx) do
-    with {:ok, raw} <- File.read(graph_path(ctx)) do
-      JSON.decode(raw)
+    with {:ok, raw} <- File.read(graph_path(ctx)),
+         {:ok, graph} <- JSON.decode(raw) do
+      if is_map(graph), do: {:ok, graph}, else: {:error, {:invalid_graph, graph}}
     end
   end
 

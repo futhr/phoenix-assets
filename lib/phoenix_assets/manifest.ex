@@ -26,7 +26,8 @@ defmodule PhoenixAssets.Manifest do
   @spec load(Path.t()) :: {:ok, t()} | {:error, term()}
   def load(path) do
     with {:ok, raw} <- File.read(path),
-         {:ok, manifest} when is_map(manifest) <- JSON.decode(raw) do
+         {:ok, manifest} when is_map(manifest) <- JSON.decode(raw),
+         :ok <- validate(manifest) do
       Telemetry.execute([:manifest, :load], %{entries: map_size(manifest)}, %{path: path})
       {:ok, manifest}
     else
@@ -34,6 +35,24 @@ defmodule PhoenixAssets.Manifest do
       error -> error
     end
   end
+
+  defp validate(manifest) do
+    case Enum.find(manifest, fn {_, chunk} -> not valid_chunk?(chunk) end) do
+      nil -> :ok
+      {key, _} -> {:error, {:invalid_manifest_entry, key}}
+    end
+  end
+
+  defp valid_chunk?(%{"file" => file} = chunk) when is_binary(file) and file != "" do
+    Enum.all?(~w(css imports dynamicImports assets), fn key ->
+      value = Map.get(chunk, key, [])
+      is_list(value) and Enum.all?(value, &is_binary/1)
+    end) and
+      Enum.all?(~w(isEntry isDynamicEntry), &is_boolean(Map.get(chunk, &1, false))) and
+      Enum.all?(~w(integrity src name), &is_binary(Map.get(chunk, &1, "")))
+  end
+
+  defp valid_chunk?(_), do: false
 
   @doc """
   Fetches the raw chunk for `key`, raising `KeyError` if it is absent.

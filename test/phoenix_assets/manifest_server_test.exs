@@ -78,4 +78,16 @@ defmodule PhoenixAssets.ManifestServerTest do
     start_supervised!({ManifestServer, path: path})
     assert ManifestServer.manifest() == {:error, :missing}
   end
+
+  test "reload retains the good manifest when valid JSON contains an invalid chunk" do
+    path =
+      Path.join(System.tmp_dir!(), "manifest_reload_#{System.unique_integer([:positive])}.json")
+
+    on_exit(fn -> File.rm!(path) end)
+    File.write!(path, JSON.encode!(@manifest))
+    start_supervised!({ManifestServer, path: path})
+    File.write!(path, ~s({"src/app.ts":null}))
+    assert :ok = ManifestServer.reload()
+    assert ManifestServer.manifest() == @manifest
+  end
 end
