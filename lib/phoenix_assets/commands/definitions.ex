@@ -115,11 +115,18 @@ defmodule PhoenixAssets.Commands.Definitions do
   def methods, do: @methods
 
   defp ensure_unique_names!(env, commands) do
-    names = Enum.map(commands, fn {name, _} -> name end)
+    duplicate =
+      commands
+      |> Enum.group_by(fn {name, _} -> TS.camelize(name) end)
+      |> Enum.sort()
+      |> Enum.find(fn {_, declarations} -> length(declarations) > 1 end)
 
-    case names -- Enum.uniq(names) do
-      [] -> :ok
-      [dup | _] -> compile_error!(env, dup, "declared more than once")
+    case duplicate do
+      nil ->
+        :ok
+
+      {_, [{name, _} | _]} ->
+        compile_error!(env, name, "declared more than once after TypeScript name normalization")
     end
   end
 

@@ -427,4 +427,22 @@ defmodule PhoenixAssets.DSLValidationTest do
       )
     end
   end
+
+  test "declarations with distinct names cannot generate duplicate TypeScript names" do
+    for {module, body} <- [
+          {"CommandCollision",
+           "use PhoenixAssets.Commands.Definitions\ncommand :get_item, route: \"/a\"\ncommand :getItem, route: \"/b\""},
+          {"ShapeCollision",
+           "use PhoenixAssets.Electric.Shapes\nshape :get_item, route: \"/a\", type: \"Item\"\nshape :getItem, route: \"/b\", type: \"Item\""},
+          {"TopicCollision",
+           "use PhoenixAssets.PubSub.Topics\ntopic :get_item, pattern: \"a\"\ntopic :getItem, pattern: \"b\""},
+          {"TypeCollision",
+           "use PhoenixAssets.Types.Schema\ntype :item, resource: Item\ntype \"Item\", resource: Item"}
+        ] do
+      assert_compile_error(
+        "defmodule DSLV.#{module} do\n#{body}\nend",
+        ~r/TypeScript name normalization/
+      )
+    end
+  end
 end

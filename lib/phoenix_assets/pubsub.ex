@@ -86,7 +86,7 @@ defmodule PhoenixAssets.PubSub do
         "  #{fname}: () => #{JSON.encode!(pattern)},\n"
 
       params ->
-        args = Enum.map_join(params, ", ", &"#{TS.arg_name(&1)}: string | number")
+        args = Enum.map_join(TS.arg_names(params), ", ", &"#{&1}: string | number")
         "  #{fname}: (#{args}) => `#{placeholder_template(pattern)}`,\n"
     end
   end
@@ -121,6 +121,9 @@ defmodule PhoenixAssets.PubSub do
   end
 
   defp placeholder_template(pattern) do
-    Regex.replace(@placeholder, pattern, fn _, param -> "${#{TS.arg_name(param)}}" end)
+    params = placeholder_params(pattern)
+    names = Map.new(Enum.zip(params, TS.arg_names(params)))
+    pattern = String.replace(pattern, "\\", "\\\\")
+    Regex.replace(@placeholder, pattern, fn _, param -> "${#{Map.fetch!(names, param)}}" end)
   end
 end

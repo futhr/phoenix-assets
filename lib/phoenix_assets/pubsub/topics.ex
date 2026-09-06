@@ -91,11 +91,18 @@ defmodule PhoenixAssets.PubSub.Topics do
   end
 
   defp ensure_unique_names!(env, topics) do
-    names = Enum.map(topics, fn {name, _} -> name end)
+    duplicate =
+      topics
+      |> Enum.group_by(fn {name, _} -> TS.camelize(name) end)
+      |> Enum.sort()
+      |> Enum.find(fn {_, declarations} -> length(declarations) > 1 end)
 
-    case names -- Enum.uniq(names) do
-      [] -> :ok
-      [dup | _] -> compile_error!(env, dup, "declared more than once")
+    case duplicate do
+      nil ->
+        :ok
+
+      {_, [{name, _} | _]} ->
+        compile_error!(env, name, "declared more than once after TypeScript name normalization")
     end
   end
 

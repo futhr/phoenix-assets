@@ -70,4 +70,34 @@ defmodule PhoenixAssets.PubSubTest do
     assert out =~ "room: (id: string | number) => `room:${id}:${id}`"
     refute out =~ "id: string | number, id: string | number"
   end
+
+  defmodule CollidingParams do
+    @moduledoc false
+    use PhoenixAssets.PubSub.Topics
+    topic(:room, pattern: "room:{user_id}:{userId}", events: [])
+  end
+
+  defmodule EscapedTopics do
+    @moduledoc false
+    use PhoenixAssets.PubSub.Topics
+    topic(:path, pattern: ~S(path\name:{id}), events: [])
+  end
+
+  test "backslashes remain literal in generated topic templates" do
+    ctx = Context.new(Config.load!(otp_app: :my_app))
+    {:ok, state} = PubSub.init([topics: EscapedTopics], ctx)
+    [file] = PubSub.generated_files(ctx, state)
+
+    assert IO.iodata_to_binary(file.contents) =~
+             ~S"path: (id: string | number) => `path\\name:${id}`"
+  end
+
+  test "distinct placeholders retain distinct values after camelization" do
+    ctx = Context.new(Config.load!(otp_app: :my_app))
+    {:ok, state} = PubSub.init([topics: CollidingParams], ctx)
+    [file] = PubSub.generated_files(ctx, state)
+
+    assert IO.iodata_to_binary(file.contents) =~
+             "room: (userId: string | number, userId2: string | number) => `room:${userId}:${userId2}`"
+  end
 end

@@ -78,14 +78,18 @@ defmodule PhoenixAssets.Types.Schema do
   end
 
   defp ensure_unique_names!(env, types) do
-    names = Enum.map(types, fn {name, _} -> name end)
+    duplicate =
+      types
+      |> Enum.group_by(fn {name, _} -> TS.type_name(name) end)
+      |> Enum.sort()
+      |> Enum.find(fn {_, declarations} -> length(declarations) > 1 end)
 
-    case names -- Enum.uniq(names) do
-      [] ->
+    case duplicate do
+      nil ->
         :ok
 
-      [dup | _] ->
-        compile_error!(env, dup, "declared more than once")
+      {_, [{name, _} | _]} ->
+        compile_error!(env, name, "declared more than once after TypeScript name normalization")
     end
   end
 
