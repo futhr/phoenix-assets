@@ -200,8 +200,8 @@ defmodule PhoenixAssets.Doctor do
   # Source maps under the served static root expose original sources publicly.
   # Hosts that serve them deliberately opt out with
   # `config :phoenix_assets, :build, allow_source_maps: true`; the recommended
-  # production setup is Vite's `build.sourcemap: "hidden"` plus upload to the
-  # error tracker.
+  # production setup uploads maps to the error tracker and removes them from
+  # the served output. Vite's `hidden` only removes the sourceMappingURL comment.
   defp source_maps_check(ctx) do
     cond do
       Keyword.get(ctx.config.build, :allow_source_maps, false) ->
@@ -213,7 +213,7 @@ defmodule PhoenixAssets.Doctor do
       true ->
         Check.warn(
           "source maps found under #{ctx.static_root} and will be publicly served",
-          "use build.sourcemap: \"hidden\" (upload to your error tracker) or set " <>
+          "upload source maps to your error tracker and remove them from the served output, or set " <>
             "build: [allow_source_maps: true] to silence"
         )
     end

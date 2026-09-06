@@ -219,4 +219,10 @@ defmodule PhoenixAssets.DoctorTest do
     assert result_for(results, :generated_fresh).status == :error
   end
 
+  test "source map remediation requires removing files from served output" do
+    context = ctx()
+    File.write!(Path.join(context.static_root, "app.js.map"), "{}")
+    {_, results} = Doctor.run(context, production: true)
+    assert result_for(results, :source_maps).hint =~ "remove them from the served output"
+  end
 end
