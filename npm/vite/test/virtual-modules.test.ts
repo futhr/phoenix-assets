@@ -50,3 +50,7 @@ it.each(["commands", "session"])("resolves and supplies a first-boot stub for %s
     name === "session" ? "export interface Session" : "export const commands",
   )
 })
+
+it("does not load inherited registry entries", () => {
+  expect(hook(setup().load).call({}, "\0phoenix-assets:constructor")).toBeNull()
+})

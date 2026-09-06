@@ -83,7 +83,7 @@ describe("poLoaderPlugin", () => {
 
   it("loads a PO file as an ES module before Vite parses it", () => {
     expect(load(`${fixture}?import`)).toEqual({
-      code: 'export const messages = {"hello":"Hello"}',
+      code: `export const messages = JSON.parse(${JSON.stringify(JSON.stringify({ hello: "Hello" }))})`,
       map: null,
     })
   })
@@ -91,4 +91,13 @@ describe("poLoaderPlugin", () => {
   it("ignores non-PO modules", () => {
     expect(load(`${fixture}.ts`)).toBeNull()
   })
+})
+
+it("preserves prototype-like catalog keys as own properties", () => {
+  const messages = parsePo(
+    'msgid "__proto__"\nmsgstr "Prototype"\n\nmsgid "constructor"\nmsgstr "Constructor"',
+  )
+  expect(Object.hasOwn(messages, "__proto__")).toBe(true)
+  expect(messages.__proto__).toBe("Prototype")
+  expect(messages.constructor).toBe("Constructor")
 })

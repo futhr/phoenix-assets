@@ -31,3 +31,8 @@ describe("code highlighting", () => {
     expect(await highlight("hello", "cobol")).toBeNull()
   })
 })
+
+it("treats inherited object keys as unsupported languages", () => {
+  for (const language of ["constructor", "__proto__", "toString"])
+    expect(resolveLanguage(language)).toBeNull()
+})

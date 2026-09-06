@@ -14,7 +14,10 @@ export function poLoaderPlugin(): Plugin {
       const file = poFile(id)
       if (!file) return null
       const code = readFileSync(file, "utf8")
-      return { code: `export const messages = ${JSON.stringify(parsePo(code))}`, map: null }
+      return {
+        code: `export const messages = JSON.parse(${JSON.stringify(JSON.stringify(parsePo(code)))})`,
+        map: null,
+      }
     },
   }
 }
@@ -33,7 +36,7 @@ function poFile(id: string): string | null {
  * their bare `msgid`.
  */
 export function parsePo(content: string): Record<string, string> {
-  const messages: Record<string, string> = {}
+  const messages: Record<string, string> = Object.create(null)
   let id: string | null = null
   let str: string | null = null
   let mode: "id" | "str" | null = null

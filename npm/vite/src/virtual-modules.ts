@@ -28,6 +28,7 @@ export function virtualModulesPlugin(opts: PhoenixAssetsOptions): Plugin {
     load(id) {
       if (!id.startsWith(RESOLVED_PREFIX)) return null
       const name = id.slice(RESOLVED_PREFIX.length)
+      if (!Object.hasOwn(GENERATED, name)) return null
       const entry = GENERATED[name as keyof typeof GENERATED]
       if (!entry) return null
 

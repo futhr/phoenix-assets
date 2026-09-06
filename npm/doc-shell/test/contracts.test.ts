@@ -79,3 +79,17 @@ describe("DocShell contract helpers", () => {
     expect(schemaFrom()).toBeUndefined()
   })
 })
+
+it("groups prototype-like OpenAPI tags and preserves declaration order", () => {
+  const entries = flattenOperations({
+    paths: {
+      "/a": { get: { tags: ["__proto__"], operationId: "a" } },
+      "/b": { get: { tags: ["constructor"], operationId: "b" } },
+      "/c": { get: { tags: ["__proto__"], operationId: "c" } },
+    },
+  })
+  const groups = groupOperations(entries)
+  expect(Object.keys(groups)).toEqual(["__proto__", "constructor"])
+  expect(groups.__proto__?.map((entry) => entry.id)).toEqual(["a", "c"])
+  expect(groups.constructor).toEqual([entries[1]])
+})

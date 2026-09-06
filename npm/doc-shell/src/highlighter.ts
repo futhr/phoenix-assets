@@ -47,8 +47,8 @@ export const supportedLanguages: readonly string[] = [
 /** Resolves a fence language to a loadable grammar, or `null` if we skip it. */
 export function resolveLanguage(language: string): keyof typeof grammars | null {
   const name = language.toLowerCase()
-  if (name in grammars) return name as keyof typeof grammars
-  return aliases[name] ?? null
+  if (Object.hasOwn(grammars, name)) return name as keyof typeof grammars
+  return Object.hasOwn(aliases, name) ? (aliases[name] ?? null) : null
 }
 
 // One highlighter per module, created on first use and shared by every

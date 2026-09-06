@@ -16,6 +16,7 @@ export function matchEvent<E extends { type: string }>(
   event: E,
   handlers: Partial<{ [K in E["type"]]: (event: Extract<E, { type: K }>) => void }>,
 ): void {
+  if (!Object.hasOwn(handlers, event.type)) return
   const handler = (handlers as Record<string, ((event: E) => void) | undefined>)[event.type]
   if (handler) handler(event)
 }

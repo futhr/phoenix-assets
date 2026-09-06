@@ -20,10 +20,11 @@ export const flattenOperations = (spec: OpenApiDocument): OperationEntry[] =>
   )
 
 export const groupOperations = (operations: OperationEntry[]): Record<string, OperationEntry[]> => {
-  const groups: Record<string, OperationEntry[]> = {}
+  const groups: Record<string, OperationEntry[]> = Object.create(null)
   for (const entry of operations) {
     const tag = entry.tags[0] ?? "default"
-    groups[tag] = [...(groups[tag] ?? []), entry]
+    const group = (groups[tag] ??= [])
+    group.push(entry)
   }
   return groups
 }
