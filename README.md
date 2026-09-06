@@ -6,7 +6,7 @@
 [![Docs](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/phoenix_assets)
 [![CI](https://github.com/futhr/phoenix-assets/actions/workflows/ci.yml/badge.svg)](https://github.com/futhr/phoenix-assets/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/futhr/phoenix-assets/branch/main/graph/badge.svg)](https://codecov.io/gh/futhr/phoenix-assets)
-[![License](https://img.shields.io/github/license/futhr/phoenix-assets.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/futhr/phoenix-assets.svg)](https://github.com/futhr/phoenix-assets/blob/main/LICENSE)
 
 ---
 

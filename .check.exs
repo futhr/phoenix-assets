@@ -10,6 +10,7 @@
     {:formatter, command: "mix format --check-formatted"},
     {:credo, command: "mix credo --strict"},
     {:doctor, command: "mix doctor"},
+    {:ex_doc, command: "mix docs --warnings-as-errors"},
     {:mix_audit, command: "mix deps.audit"},
     {:hex_audit, command: "mix hex.audit"},
     {:dialyzer, true},
@@ -40,7 +41,6 @@
     {:boundary, command: "node scripts/check-boundary.mjs"},
 
     ## --- Deliberately off ---
-    {:ex_doc, false},
     {:sobelow, false},
     {:unused_deps, false},
     {:npm_test, false},

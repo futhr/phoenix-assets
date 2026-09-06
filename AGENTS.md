@@ -32,11 +32,14 @@ mix check
 
 `mix check` is the single quality gate for the **whole repo** and must stay green.
 It runs: `compile --warnings-as-errors`, `format --check-formatted`,
-`credo --strict`, `doctor` (doc coverage), `mix_audit`, `dialyzer`, ExUnit **with
+`credo --strict`, `doctor` (doc coverage), `docs --warnings-as-errors`,
+`mix deps.audit`, `mix hex.audit`, `dialyzer`, ExUnit **with
 coverage** (`mix coveralls.lcov`, ≥85%), and the frontend — Biome (strict),
 `tsc --noEmit`, Vitest **with coverage** (≥80%), knip (dead-code detection),
 `check:exports` (publint + arethetypeswrong), and the scope gate
-(`scripts/check-boundary.mjs`, see below). It therefore requires Node + pnpm on
+(`scripts/check-boundary.mjs`, see below). It also requires the npm production
+security audit, release checks, and a minimal consumer of the built Hex tarball
+with no optional dependencies. It therefore requires Node + pnpm on
 PATH. Config lives in `.check.exs`, `.doctor.exs`, `coveralls.json`, `.credo.exs`,
 `biome.json`, `knip.json`.
 
@@ -105,11 +108,11 @@ Two failure modes to watch, because both have happened:
   in `if Code.ensure_loaded?/1` (`components.ex` for `Phoenix.Component`,
   `phoenix_assets.install.ex` for Igniter), or gate at the call site (`types.ex`).
   Don't add hard deps on any of them.
-- **The Ash guard is narrower than it looks.** `walker.ex` calls
-  `Ash.Resource.Info` and `Ash.Type.short_names/0` with no guard of its own; it is
-  safe only because `types.ex`'s `ash_available?/0` is its sole entry point. Both
-  files compile with no Ash present, but giving `walker.ex` a second caller
-  without a guard would break that.
+- **Optional dependency isolation.** `types.ex` gates Ash generation and
+  `walker.ex` guards its public entry points. Narrow compiler annotations cover
+  references to optional modules only when those modules are absent. The
+  `hex_consumer` check compiles the packaged library without any optional
+  dependencies and verifies that this produces no Elixir compiler warnings.
 - **Coverage floors:** Elixir 85% (`coveralls.json`; thin `gen.*` delegates
   skipped), frontend 80%. `npm/svelte/src/electric/shape-collection.ts`
   is excluded from coverage (TanStack svelte-db only resolves under browser/svelte
