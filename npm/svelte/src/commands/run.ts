@@ -48,14 +48,13 @@ export async function runCommand<TData, TError extends string>(
   request: CommandRequest,
   knownErrors: readonly TError[] = [],
 ): Promise<CommandResult<TData, TError>> {
+  let status = 0
   try {
     const { path, method, params = {}, body, headers = {}, signal } = request
     const fetchFn = request.fetch ?? fetch
-    const requestHeaders: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...headers,
-    }
+    const requestHeaders = new Headers({ "Content-Type": "application/json" })
+    for (const source of [authHeaders(), headers])
+      for (const [name, value] of Object.entries(source ?? {})) requestHeaders.set(name, value)
 
     const response = await fetchFn(createShapeUrl(path, params), {
       method,
@@ -63,6 +62,7 @@ export async function runCommand<TData, TError extends string>(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       ...(signal ? { signal } : {}),
     })
+    status = response.status
     const payload = await readJson(response)
 
     if (response.ok) return { ok: true, data: payload as TData }
@@ -73,19 +73,14 @@ export async function runCommand<TData, TError extends string>(
       status: response.status,
     }
   } catch {
-    return { ok: false, error: UNKNOWN_COMMAND_ERROR, status: 0 }
+    return { ok: false, error: UNKNOWN_COMMAND_ERROR, status }
   }
 }
 
 /** Reads a JSON body, tolerating an empty one (204, or a bodiless error). */
 async function readJson(response: Response): Promise<unknown> {
-  if (response.status === 204) return null
-
-  try {
-    return await response.json()
-  } catch {
-    return null
-  }
+  if (response.status === 204 || response.status === 205) return null
+  return response.json()
 }
 
 /** Narrows the server's `error` field to a declared code, or `unknown_error`. */

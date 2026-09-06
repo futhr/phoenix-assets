@@ -49,7 +49,7 @@ describe("runCommand", () => {
     expect(url).toBe("/api/pages/a%20b/layout")
     expect(init.method).toBe("PUT")
     expect(init.body).toBe(JSON.stringify({ layout_ir: { root: {} } }))
-    expect(init.headers["Content-Type"]).toBe("application/json")
+    expect(new Headers(init.headers).get("content-type")).toBe("application/json")
   })
 
   it("omits the body entirely when none is given", async () => {
@@ -186,7 +186,7 @@ describe("runCommand", () => {
 
     await runCommand({ path: "/api/pages", method: "POST", fetch: fetchFn }, ERRORS)
 
-    expect(fetchFn.mock.calls[0][1].headers.Authorization).toBe("Bearer t-1")
+    expect(new Headers(fetchFn.mock.calls[0][1].headers).get("authorization")).toBe("Bearer t-1")
   })
 
   it("lets caller headers win over the defaults", async () => {
@@ -202,7 +202,9 @@ describe("runCommand", () => {
       ERRORS,
     )
 
-    expect(fetchFn.mock.calls[0][1].headers["Content-Type"]).toBe("application/vnd.api+json")
+    expect(new Headers(fetchFn.mock.calls[0][1].headers).get("content-type")).toBe(
+      "application/vnd.api+json",
+    )
   })
 
   it("forwards an abort signal", async () => {
@@ -226,4 +228,33 @@ describe("runCommand", () => {
       status: 403,
     })
   })
+})
+
+it("rejects malformed success JSON while preserving the HTTP status", async () => {
+  const fetchFn = vi.fn().mockResolvedValue(
+    respond(200, null, {
+      json: async () => {
+        throw new SyntaxError("invalid JSON")
+      },
+    }),
+  )
+  expect(await runCommand({ path: "/api/pages", method: "POST", fetch: fetchFn })).toEqual({
+    ok: false,
+    error: "unknown_error",
+    status: 200,
+  })
+})
+
+it("overrides authorization and content type regardless of header casing", async () => {
+  localStorage.setItem("auth_token", "old")
+  const fetchFn = vi.fn().mockResolvedValue(respond(200, {}))
+  await runCommand({
+    path: "/api/pages",
+    method: "POST",
+    fetch: fetchFn,
+    headers: { authorization: "Bearer new", "content-type": "application/custom+json" },
+  })
+  const headers = new Headers(fetchFn.mock.calls[0][1].headers)
+  expect(headers.get("authorization")).toBe("Bearer new")
+  expect(headers.get("content-type")).toBe("application/custom+json")
 })
