@@ -20,4 +20,24 @@ defmodule PhoenixAssets.PackageTest do
     assert config[:tools][:npm_audit][:command] == "pnpm audit --prod"
   end
 
+
+  test "the Hex package exports the host DSL formatter configuration" do
+    files = Mix.Project.config()[:package][:files]
+    assert ".formatter.exs" in files
+    {formatter, []} = Code.eval_file(".formatter.exs")
+    exported = formatter[:export][:locals_without_parens]
+
+    for declaration <- [
+          command: 2,
+          field: 2,
+          field: 3,
+          integration: 2,
+          shape: 2,
+          topic: 2,
+          type: 2
+        ] do
+      assert declaration in exported
+    end
+  end
+
 end

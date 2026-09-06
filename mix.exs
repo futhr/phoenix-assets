@@ -103,7 +103,8 @@ defmodule PhoenixAssets.MixProject do
       maintainers: ["Tobias Bohwalli <hi@futhr.io>"],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib mix.exs README.md RELEASING.md CHANGELOG.md LICENSE usage-rules.md)
+      files:
+        ~w(lib .formatter.exs mix.exs README.md RELEASING.md CHANGELOG.md LICENSE usage-rules.md)
     ]
   end
 
