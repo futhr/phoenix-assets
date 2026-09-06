@@ -23,7 +23,7 @@ import { createShapeStore, runCommand, resolveLocale } from "@phoenix-assets/sve
 ```
 
 - `createShapeStore` — a reactive store over an Electric shape stream.
-- `configureShapeAuth` / `authHeaders` / `createShapeUrl` — point the shape
+- `configureShapeAuth` / `createShapeFetch` / `authHeaders` / `createShapeUrl` — point the shape
   clients at your app's token key. The generated `$phoenix/electric` client uses
   these, so configuring auth once covers every shape.
 - `runCommand` — what the generated `$phoenix/commands` client calls. Resolves to

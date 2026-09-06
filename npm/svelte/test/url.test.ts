@@ -89,3 +89,16 @@ describe("configureShapeAuth", () => {
     expect(getAuthToken()).toBe("tok2")
   })
 })
+
+it("preserves absolute URLs, query literals, and fragments while substituting path segments", () => {
+  expect(
+    createShapeUrl("https://[::1]:4000/shapes/:id?filter=:active#section", { id: 2, limit: 10 }),
+  ).toBe("https://[::1]:4000/shapes/2?filter=:active&limit=10#section")
+  expect(createShapeUrl("/shapes#section", { limit: 10 })).toBe("/shapes?limit=10#section")
+  expect(createShapeUrl("/shapes?filter=:active#section")).toBe("/shapes?filter=:active#section")
+})
+
+it("does not substitute an inherited object property as a path parameter", () => {
+  expect(() => createShapeUrl("/shapes/:constructor", {})).toThrow(/missing path param/)
+  expect(createShapeUrl("/shapes/:constructor", { constructor: "own" })).toBe("/shapes/own")
+})

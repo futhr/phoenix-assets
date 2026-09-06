@@ -8,7 +8,7 @@ defmodule PhoenixAssets.Electric do
   map whose route placeholders are *required, typed keys* (the rest become
   query params), and is built through `@phoenix-assets/svelte`: the URL via
   `createShapeUrl/2` and, critically, the request's auth headers via
-  `authHeaders/0`. Also contributes graph entries and a doctor check per shape
+  `createShapeFetch/0`. Also contributes graph entries and a doctor check per shape
   that the route exists in the router.
 
   """
@@ -80,7 +80,7 @@ defmodule PhoenixAssets.Electric do
     [
       TS.header(),
       ~s|\nimport { ShapeStream } from "@electric-sql/client"\n|,
-      ~s|import { authHeaders, createShapeUrl } from "@phoenix-assets/svelte"\n|,
+      ~s|import { createShapeFetch, createShapeUrl } from "@phoenix-assets/svelte"\n|,
       TS.type_import(types),
       "\nexport const shapes = {\n",
       Enum.map(sorted, &render_shape/1),
@@ -91,8 +91,8 @@ defmodule PhoenixAssets.Electric do
 
   # One uniform factory shape: a params map feeds `createShapeUrl/2` (which
   # substitutes `:placeholders` and appends the rest as query params), and every
-  # stream carries `authHeaders()` so tenant-scoped shapes are never requested
-  # unauthenticated. Placeholder params are typed as required keys -- under
+  # stream carries `createShapeFetch()` to refresh credentials on each request.
+  # Placeholder params are typed as required keys -- under
   # their route spelling, because `createShapeUrl` substitutes by raw name --
   # so omitting one is a compile error in the frontend, not a malformed URL.
   defp render_shape({name, opts}) do
@@ -102,7 +102,7 @@ defmodule PhoenixAssets.Electric do
 
     "  #{fname}: (#{params_signature(route)}) => " <>
       "new ShapeStream<#{type}>({ url: createShapeUrl(#{JSON.encode!(route)}, params), " <>
-      "headers: authHeaders() }),\n"
+      "fetchClient: createShapeFetch() }),\n"
   end
 
   defp params_signature(route) do

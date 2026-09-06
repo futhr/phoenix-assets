@@ -78,3 +78,34 @@ describe("createShapeStore", () => {
     expect(h.unsubscribe).toHaveBeenCalledTimes(1)
   })
 })
+
+it("gives the stream a fetch adapter that refreshes per-store credentials", async () => {
+  let token = "first"
+  const store = createShapeStore("/shape", {}, { readToken: () => token })
+  const stop = $effect.root(() => {
+    $effect(() => {
+      void store.rows
+    })
+  })
+  const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(new Response("{}"))
+  vi.stubGlobal("fetch", fetchFn)
+  try {
+    flushSync()
+    const options = vi.mocked(ShapeStream).mock.calls[0]?.[0]
+    const fetchClient = options?.fetchClient
+    expect(fetchClient).toBeTypeOf("function")
+    await fetchClient?.("/shape")
+    token = "second"
+    await fetchClient?.("/shape")
+    expect(new Headers(fetchFn.mock.calls[0]?.[1]?.headers).get("authorization")).toBe(
+      "Bearer first",
+    )
+    expect(new Headers(fetchFn.mock.calls[1]?.[1]?.headers).get("authorization")).toBe(
+      "Bearer second",
+    )
+  } finally {
+    stop()
+    flushSync()
+    vi.unstubAllGlobals()
+  }
+})

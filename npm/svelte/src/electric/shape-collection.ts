@@ -1,7 +1,7 @@
 import type { Row } from "@electric-sql/client"
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
 import { createCollection } from "@tanstack/svelte-db"
-import { type AuthConfig, authHeaders, createShapeUrl } from "./url.js"
+import { type AuthConfig, createShapeFetch, createShapeUrl } from "./url.js"
 
 /**
  * A TanStack DB collection backed by an ElectricSQL shape.
@@ -17,7 +17,7 @@ export function createShapeCollection<TRow extends Row<unknown> & { id: string |
 ) {
   return createCollection(
     electricCollectionOptions<TRow>({
-      shapeOptions: { url: createShapeUrl(path, params), headers: authHeaders(config) },
+      shapeOptions: { url: createShapeUrl(path, params), fetchClient: createShapeFetch(config) },
       getKey: (row) => row.id,
     }),
   )

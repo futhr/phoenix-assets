@@ -117,7 +117,7 @@ defmodule PhoenixAssets.Integration.KitchenSinkTest do
                "& Record<string, string | number>)"
 
     assert electric =~ ~s|createShapeUrl("/shapes/users/:user_id/portfolios", params)|
-    assert electric =~ "headers: authHeaders()"
+    assert electric =~ "fetchClient: createShapeFetch()"
 
     pubsub = File.read!(Path.join(gen, "pubsub.ts"))
     assert pubsub =~ "export const topics"

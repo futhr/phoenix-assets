@@ -112,19 +112,40 @@ export function authHeaders(config: AuthConfig = {}): Record<string, string> | u
  */
 export function createShapeUrl(path: string, params: Record<string, string | number> = {}): string {
   const used = new Set<string>()
+  const fragmentAt = path.indexOf("#")
+  const fragment = fragmentAt < 0 ? "" : path.slice(fragmentAt)
+  const beforeFragment = fragmentAt < 0 ? path : path.slice(0, fragmentAt)
+  const queryAt = beforeFragment.indexOf("?")
+  const pathname = queryAt < 0 ? beforeFragment : beforeFragment.slice(0, queryAt)
+  const existingQuery = queryAt < 0 ? "" : beforeFragment.slice(queryAt)
 
-  const url = path.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (_match, key: string) => {
-    used.add(key)
-    const value = params[key]
-    if (value === undefined) {
-      throw new Error(`createShapeUrl: missing path param ":${key}" for "${path}"`)
-    }
-    return encodeURIComponent(String(value))
-  })
+  const url =
+    pathname.replace(/\/:([A-Za-z_][A-Za-z0-9_]*)(?=\/|$)/g, (_match, key: string) => {
+      used.add(key)
+      const value = Object.hasOwn(params, key) ? params[key] : undefined
+      if (value === undefined) {
+        throw new Error(`createShapeUrl: missing path param ":${key}" for "${path}"`)
+      }
+      return `/${encodeURIComponent(String(value))}`
+    }) + existingQuery
 
   const query = Object.entries(params).filter(([key]) => !used.has(key))
-  if (query.length === 0) return url
+  if (query.length === 0) return url + fragment
 
   const search = new URLSearchParams(query.map(([key, value]) => [key, String(value)])).toString()
-  return `${url}${url.includes("?") ? "&" : "?"}${search}`
+  return `${url}${url.includes("?") ? "&" : "?"}${search}${fragment}`
+}
+
+/** Fetch adapter for Electric: re-read credentials and extra headers on every request. */
+export function createShapeFetch(
+  config: AuthConfig = {},
+  fetchFn: typeof fetch = (...args) => fetch(...args),
+): typeof fetch {
+  return async (input, init) => {
+    const headers = new Headers(
+      init?.headers ?? (input instanceof Request ? input.headers : undefined),
+    )
+    for (const [name, value] of Object.entries(authHeaders(config) ?? {})) headers.set(name, value)
+    return fetchFn(input, { ...init, headers })
+  }
 }

@@ -1,6 +1,6 @@
 import { type Row, Shape, ShapeStream } from "@electric-sql/client"
 import { createSubscriber } from "svelte/reactivity"
-import { type AuthConfig, authHeaders, createShapeUrl } from "./url.js"
+import { type AuthConfig, createShapeFetch, createShapeUrl } from "./url.js"
 
 /** Where a shape subscription is in its lifecycle. */
 export type ShapeStatus = "loading" | "ready" | "error"
@@ -75,7 +75,7 @@ export function createShapeStore<T extends Row<unknown>>(
     const controller = new AbortController()
     const stream = new ShapeStream<T>({
       url: createShapeUrl(resolved, params),
-      headers: authHeaders(config),
+      fetchClient: createShapeFetch(config),
       signal: controller.signal,
       // Electric already retries 5xx, network errors, and 429 with backoff; this
       // fires for what it will not retry. Returning nothing stops syncing, which
