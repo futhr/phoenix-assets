@@ -24,6 +24,10 @@ defmodule PhoenixAssets.Types do
   alias PhoenixAssets.GeneratedFile
   alias PhoenixAssets.Types.Walker
 
+  unless Code.ensure_loaded?(Ash.Policy.Info) do
+    @compile {:no_warn_undefined, Ash.Policy.Info}
+  end
+
   @impl PhoenixAssets.Plugin
   def init(opts, ctx), do: {:ok, %{module: opts[:types] || ctx.config.stack[:types]}}
 

@@ -372,21 +372,68 @@ function smokeHexArtifact(sourceRoot, output, manifest) {
   const root = mkdtempSync(join(tmpdir(), "phoenix-assets-hex-smoke-"))
   const outer = join(root, "outer")
   const source = join(root, "source")
+  const consumer = join(root, "consumer")
   mkdirSync(outer)
   mkdirSync(source)
+  mkdirSync(join(consumer, "lib"), { recursive: true })
 
   try {
     run("tar", ["-xf", join(output, artifact.file), "-C", outer])
     run("tar", ["-xzf", join(outer, "contents.tar.gz"), "-C", source])
-    copyFileSync(join(sourceRoot, ".tool-versions"), join(source, ".tool-versions"))
-    run("mix", ["deps.get", "--only", "prod"], {
-      cwd: source,
-      env: { ...process.env, MIX_ENV: "prod" },
-    })
-    run("mix", ["compile", "--warnings-as-errors"], {
-      cwd: source,
-      env: { ...process.env, MIX_ENV: "prod" },
-    })
+    copyFileSync(join(sourceRoot, ".tool-versions"), join(consumer, ".tool-versions"))
+    writeFileSync(
+      join(consumer, "mix.exs"),
+      `
+defmodule Consumer.MixProject do
+  use Mix.Project
+  def project, do: [app: :consumer, version: "0.0.0", deps: [{:phoenix_assets, path: ${JSON.stringify(source)}}]]
+end
+`,
+    )
+    writeFileSync(join(consumer, ".formatter.exs"), "[import_deps: [:phoenix_assets]]\n")
+    writeFileSync(
+      join(consumer, "lib/consumer.ex"),
+      `defmodule Consumer do
+  @moduledoc false
+  use PhoenixAssets.Electric.Shapes
+
+  shape :item, route: "/shapes/items", type: "Item"
+end
+`,
+    )
+    const consumerOptions = { cwd: consumer, env: { ...process.env, MIX_ENV: "prod" } }
+    run("mix", ["deps.get"], consumerOptions)
+    run("mix", ["compile", "--warnings-as-errors"], consumerOptions)
+    run("mix", ["format", "--check-formatted", "lib/consumer.ex"], consumerOptions)
+    run(
+      "mix",
+      [
+        "run",
+        "-e",
+        `
+      for app <- [:ash, :igniter, :phoenix_live_view, :gettext, :phoenix_sync, :tidewave, :ash_typescript] do
+        if Application.spec(app), do: raise("unexpected optional dependency: #{app}")
+      end
+      Code.compiler_options(ignore_module_conflict: true)
+      files = Path.wildcard(Path.join([Mix.Project.deps_paths()[:phoenix_assets], "lib", "**/*.ex"]))
+      case Kernel.ParallelCompiler.compile(files, return_diagnostics: true) do
+        {:ok, _, []} -> :ok
+        {:ok, _, %{compile_warnings: [], runtime_warnings: []}} -> :ok
+        result -> raise("package compilation produced diagnostics: #{inspect(result)}")
+      end
+      unless Code.ensure_loaded?(PhoenixAssets), do: raise("runtime module missing")
+      [_] = Consumer.__phoenix_assets_shapes__()
+      try do
+        PhoenixAssets.Types.Walker.render([])
+        raise "unguarded Ash walker"
+      rescue
+        error in ArgumentError ->
+          unless Exception.message(error) =~ "optional :ash", do: reraise(error, __STACKTRACE__)
+      end
+    `,
+      ],
+      consumerOptions,
+    )
   } finally {
     rmSync(root, { force: true, recursive: true })
   }
@@ -499,11 +546,22 @@ async function main() {
     case "smoke":
       smokeArtifacts(root, output, releaseOptions)
       break
+    case "smoke-hex": {
+      const temporary = mkdtempSync(join(tmpdir(), "phoenix-assets-hex-check-"))
+      try {
+        const file = "phoenix_assets.tar"
+        run("mix", ["hex.build", "--output", join(temporary, file)], { cwd: root })
+        smokeHexArtifact(root, temporary, { artifacts: [{ ecosystem: "hex", file }] })
+      } finally {
+        rmSync(temporary, { force: true, recursive: true })
+      }
+      break
+    }
     case "publish":
       await publishArtifacts(root, output, { ...releaseOptions, dryRun: options.dryRun })
       break
     default:
-      throw new Error("usage: release.mjs <check|build|verify|smoke|publish> [options]")
+      throw new Error("usage: release.mjs <check|build|verify|smoke|smoke-hex|publish> [options]")
   }
 }
 

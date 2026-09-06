@@ -40,6 +40,10 @@ defmodule PhoenixAssets.Enums do
   alias PhoenixAssets.Doctor.Check
   alias PhoenixAssets.{GeneratedFile, Graph}
 
+  unless Code.ensure_loaded?(Gettext) do
+    @compile {:no_warn_undefined, Gettext}
+  end
+
   @output "enums.json"
 
   @impl PhoenixAssets.Plugin

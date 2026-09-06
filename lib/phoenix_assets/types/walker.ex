@@ -31,6 +31,10 @@ defmodule PhoenixAssets.Types.Walker do
   alias Ash.Type.NewType
   alias PhoenixAssets.Generators.TS
 
+  unless Code.ensure_loaded?(Ash.Resource.Info) do
+    @compile {:no_warn_undefined, [Ash.Resource.Info, Ash.Type, Ash.Type.NewType]}
+  end
+
   @scalar %{
     uuid: "string",
     uuid_v7: "string",
@@ -55,6 +59,8 @@ defmodule PhoenixAssets.Types.Walker do
   @doc "Renders the full `types.ts` body from the declared types."
   @spec render([{String.t() | atom(), keyword()}]) :: binary()
   def render(type_decls) do
+    ensure_ash!()
+
     blocks =
       type_decls
       |> Enum.sort_by(fn {name, _} -> TS.type_name(name) end)
@@ -71,6 +77,7 @@ defmodule PhoenixAssets.Types.Walker do
   """
   @spec fields(module(), keyword()) :: [{atom(), String.t()}]
   def fields(resource, opts) do
+    ensure_ash!()
     ancestors = MapSet.new([resource])
 
     base =
@@ -240,5 +247,11 @@ defmodule PhoenixAssets.Types.Walker do
       {short, ^type} -> short
       _ -> nil
     end)
+  end
+
+  defp ensure_ash! do
+    unless Code.ensure_loaded?(Ash.Resource.Info) do
+      raise ArgumentError, "PhoenixAssets.Types.Walker requires the optional :ash dependency"
+    end
   end
 end
