@@ -60,6 +60,8 @@ export function parsePo(content: string): Record<string, string> {
       nextFuzzy = false
       id = unquote(line.slice(6))
       mode = "id"
+    } else if (line.startsWith("msgid_plural ") || line.startsWith("msgctxt ")) {
+      mode = null
     } else if (line.startsWith("msgstr[0]")) {
       str = unquote(line.slice(line.indexOf("]") + 1).trim())
       mode = "str"

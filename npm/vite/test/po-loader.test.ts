@@ -93,6 +93,21 @@ describe("poLoaderPlugin", () => {
   })
 })
 
+it("does not append plural-id or context continuations to the message id or translation", () => {
+  const po = [
+    'msgid "cat"',
+    'msgid_plural ""',
+    '"cats"',
+    'msgstr[0] "Katze"',
+    'msgstr[1] "Katzen"',
+    'msgctxt ""',
+    '"context"',
+    'msgid "dog"',
+    'msgstr "Hund"',
+  ].join("\n")
+  expect(parsePo(po)).toEqual({ cat: "Katze", dog: "Hund" })
+})
+
 it("preserves prototype-like catalog keys as own properties", () => {
   const messages = parsePo(
     'msgid "__proto__"\nmsgstr "Prototype"\n\nmsgid "constructor"\nmsgstr "Constructor"',
