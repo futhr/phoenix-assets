@@ -15,10 +15,7 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       reportsDirectory: "./coverage",
       include: ["src/**/*.ts"],
-      // shape-collection.ts is driven by @tanstack/svelte-db, which only resolves
-      // under svelte/browser export conditions -- not unit-testable in this
-      // runner. It is exercised by the Electric integration, not here.
-      exclude: ["src/index.ts", "src/electric/shape-collection.ts", "**/*.d.ts"],
+      exclude: ["src/index.ts", "**/*.d.ts"],
       thresholds: {
         lines: 80,
         functions: 80,

@@ -47,11 +47,11 @@
     "@shikijs/langs": "^4.4.3",
     "@shikijs/themes": "^4.4.3",
     "fuse.js": "^7.5.0",
-    "mermaid": "^11.16.1",
+    "mermaid": "^11.17.2",
     "shiki": "^4.4.3"
   },
   "devDependencies": {
-    "@storybook/addon-svelte-csf": "^5.1.2",
+    "@storybook/addon-svelte-csf": "^5.1.3",
     "@sveltejs/package": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@vitest/coverage-v8": "catalog:",

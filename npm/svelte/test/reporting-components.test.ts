@@ -167,7 +167,7 @@ describe("portable report components", () => {
     unmount(component)
   })
 
-  it("mounts the shared LayerChart heatmap primitive", () => {
+  it("mounts the shared LayerChart heatmap primitive", async () => {
     const target = document.createElement("div")
     const panel = panelFixture()
     panel.visualization.kind = "heatmap"
@@ -179,6 +179,8 @@ describe("portable report components", () => {
     })
 
     expect(target.querySelector('[data-report-chart="heatmap"]')).not.toBeNull()
+    // LayerChart 2.4 measures its container before constructing chart marks.
+    await tick()
     const fills = [...target.querySelectorAll(".lc-rect")].map((cell) => cell.getAttribute("fill"))
     expect(fills).toHaveLength(2)
     expect(new Set(fills).size).toBe(2)

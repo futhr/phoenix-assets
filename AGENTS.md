@@ -114,9 +114,9 @@ Two failure modes to watch, because both have happened:
   `hex_consumer` check compiles the packaged library without any optional
   dependencies and verifies that this produces no Elixir compiler warnings.
 - **Coverage floors:** Elixir 85% (`coveralls.json`; thin `gen.*` delegates
-  skipped), frontend 80%. `npm/svelte/src/electric/shape-collection.ts`
-  is excluded from coverage (TanStack svelte-db only resolves under browser/svelte
-  conditions, not in a Node test runner).
+  skipped), frontend 80%. The collection regression uses the actual TanStack
+  and Electric packages under the browser conditions in the Svelte test runner,
+  with a controlled fetch transport; the collection helper is included in coverage.
 - **Doc coverage.** `mix doctor` requires 100% moduledoc coverage; keep `@moduledoc`
   on every module and `@moduledoc false` on tests/fixtures.
 - **Determinism.** Generators must emit byte-identical output for identical input

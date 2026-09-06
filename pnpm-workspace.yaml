@@ -10,24 +10,24 @@ overrides:
 # dev-tool versions are catalogued. `pnpm publish` rewrites "catalog:" to the
 # resolved range automatically.
 catalog:
-  "@electric-sql/client": ^1.5.26
+  "@electric-sql/client": ^1.5.27
   "@sveltejs/package": ^2.5.8
   "@sveltejs/vite-plugin-svelte": ^7.3.0
-  "@tanstack/electric-db-collection": ^0.3.18
-  "@tanstack/svelte-db": ^0.2.2
-  "@types/node": ^26.2.0
-  "@vitest/coverage-v8": ^4.1.10
-  happy-dom: ^20.11.2
-  svelte: ^5.56.9
+  "@tanstack/electric-db-collection": ^0.4.7
+  "@tanstack/svelte-db": ^0.3.7
+  "@types/node": ^24.13.3
+  "@vitest/coverage-v8": ^5.0.0
+  happy-dom: ^20.14.0
+  svelte: ^5.57.0
   svelte-check: ^4.7.6
   tailwindcss: ^4.3.3
   tsup: ^8.5.1
-  # tsup's declaration bundler uses compiler APIs removed in TypeScript 7, and
-  # 8.5.1 is still the newest release. Keep the newest compatible TS major and
-  # re-check with `npm view tsup version` before touching this.
+  # svelte-check supports TypeScript 5/6, and tsup's declaration bundler uses
+  # the JavaScript compiler API. Keep the newest compatible major until both
+  # tools support TypeScript 7; an unsupported override would break host tooling.
   typescript: ^6.0.3
-  vite: ^8.2.1
-  vitest: ^4.1.10
+  vite: ^8.2.2
+  vitest: ^5.0.0
 
 # pnpm 10's home for the build-script allowlist (moved out of package.json's
 # "pnpm" field). Only these packages may run install/build scripts.
