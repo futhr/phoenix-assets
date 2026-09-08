@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.0](https://github.com/futhr/phoenix-assets/compare/v1.0.0...v1.1.0) (2026-09-08)
+
+
+
+
+### Features:
+
+* sync: qualify PostgreSQL 18 and current Electric clients by Tobias Bohwalli
+
 ## [v1.0.0](https://github.com/futhr/phoenix-assets/compare/v0.2.0...v1.0.0) (2026-09-07)
 ### Breaking Changes:
 
