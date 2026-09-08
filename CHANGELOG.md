@@ -5,6 +5,55 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.0](https://github.com/futhr/phoenix-assets/compare/v0.2.0...v1.0.0) (2026-09-07)
+### Breaking Changes:
+
+* electric: refresh credentials for every stream request by Tobias Bohwalli
+
+* doctor: report initialization and freshness failures by Tobias Bohwalli
+
+* generated: preflight every destination before mutation by Tobias Bohwalli
+
+* dsl: reject collisions after TypeScript normalization by Tobias Bohwalli
+
+* deps: require the patched Ash string policy by Tobias Bohwalli
+
+
+
+### Bug Fixes:
+
+* docs: require warning-free ExDoc generation by Tobias Bohwalli
+
+* package: verify an optional-dependency-free Hex consumer by Tobias Bohwalli
+
+* doctor: recommend removing publicly served source maps by Tobias Bohwalli
+
+* release: verify artifact identity and complete checksums by Tobias Bohwalli
+
+* locales: reset PO continuation state for ignored directives by Tobias Bohwalli
+
+* frontend: handle prototype-like dictionary keys by Tobias Bohwalli
+
+* commands: reject malformed success responses by Tobias Bohwalli
+
+* vite: complete virtual modules and HMR teardown by Tobias Bohwalli
+
+* watcher: skip stale timers and failed code reloads by Tobias Bohwalli
+
+* manifest: validate JSON structure before caching by Tobias Bohwalli
+
+* graph: retain every built-in contract section by Tobias Bohwalli
+
+* typespec: preserve literals and optional fields by Tobias Bohwalli
+
+* package: ship the exported DSL formatter rules by Tobias Bohwalli
+
+* ci: require both registry security audits by Tobias Bohwalli
+
+### Performance Improvements:
+
+* manifest: resolve entry assets in one traversal by Tobias Bohwalli
+
 ## [v0.2.0](https://github.com/futhr/phoenix-assets/compare/v0.1.0...v0.2.0) (2026-09-01)
 
 
