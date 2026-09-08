@@ -379,6 +379,20 @@ function smokeHexArtifact(sourceRoot, output, manifest) {
 
   try {
     run("tar", ["-xf", join(output, artifact.file), "-C", outer])
+    run("elixir", [
+      "-e",
+      `
+      [path] = System.argv()
+      {:ok, metadata} = :file.consult(String.to_charlist(path))
+      requirements = :proplists.get_value("requirements", metadata, [])
+      for requirement <- requirements do
+        name = :proplists.get_value("name", requirement)
+        if name in ["phoenix_sync", "electric"],
+          do: raise("asset package must not constrain the host sync backend: #{name}")
+      end
+      `,
+      join(outer, "metadata.config"),
+    ])
     run("tar", ["-xzf", join(outer, "contents.tar.gz"), "-C", source])
     copyFileSync(join(sourceRoot, ".tool-versions"), join(consumer, ".tool-versions"))
     writeFileSync(

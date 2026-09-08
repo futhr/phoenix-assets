@@ -50,9 +50,9 @@
     "check:publish": "publint && attw --pack . --profile esm-only --ignore-rules internal-resolution-error -q"
   },
   "peerDependencies": {
-    "@electric-sql/client": "^1.0.0",
-    "@tanstack/electric-db-collection": "^0.3.0 || ^0.4.0",
-    "@tanstack/svelte-db": "^0.1.0 || ^0.2.0 || ^0.3.0",
+    "@electric-sql/client": "^1.5.27",
+    "@tanstack/electric-db-collection": "^0.4.7",
+    "@tanstack/svelte-db": "^0.3.7",
     "phoenix": "^1.7.0",
     "svelte": "^5.7.0"
   },

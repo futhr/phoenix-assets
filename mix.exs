@@ -61,11 +61,13 @@ defmodule PhoenixAssets.MixProject do
       {:nimble_options, "~> 1.1"},
       {:phoenix_live_view, "~> 1.1", optional: true},
       {:ash, "~> 3.33", optional: true},
-      # ash_typescript and phoenix_sync are version-constraint-only: nothing in
-      # lib/ references them. They exist so hosts that pull in these libs resolve
-      # a version this package was built against. Keep them — hosts rely on the pin.
+      # Ash TypeScript remains an optional generator integration. The host owns
+      # its sync backend; qualification must not impose a production backend pin.
       {:ash_typescript, "~> 0.17", optional: true},
-      {:phoenix_sync, "~> 0.6.1", optional: true},
+      {:phoenix_sync,
+       github: "futhr/phoenix_sync",
+       ref: "df5f0a917e670bc68df0a9aba2296e0a1e386a77",
+       only: [:dev, :test]},
       {:gettext, "~> 1.0", optional: true},
       {:tidewave, "~> 0.5", optional: true},
       {:igniter, "~> 0.6", optional: true},
@@ -77,6 +79,7 @@ defmodule PhoenixAssets.MixProject do
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test, runtime: false},
       {:simple_sat, "~> 0.1", only: :test},
+      {:bandit, "~> 1.12.5", only: :test},
       # The install-task test drives igniter's Phoenix generator, which is only
       # compiled when phx_new resolves as a dependency -- a globally installed
       # archive does not satisfy it.

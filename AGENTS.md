@@ -21,8 +21,9 @@ pnpm install
 
 The dev toolchain is pinned in `.tool-versions` (Erlang/OTP 28, Elixir 1.19,
 Node 24); pnpm for the frontend. Consumers only need the `mix.exs` floor —
-Elixir `~> 1.18`. CI proves both ends of that range: a floor leg on Elixir
-1.18/OTP 27 (compile + ExUnit only) and the full gate on 1.20/OTP 29.
+Elixir `~> 1.18`. Local release qualification proves both ends: a floor leg on
+Elixir 1.18/OTP 27 (compile + ExUnit) and the full gate on 1.20/OTP 29. Ordinary
+PRs run one current-runtime lane; broad qualification runs locally.
 
 ## The one command that matters
 
@@ -100,14 +101,18 @@ Two failure modes to watch, because both have happened:
 - **Default preset.** `Config.preset_plugins/1` resolves `PhoenixAssets.Presets.Svelte`
   when `:preset` is unset. Stack plugins read host declaration modules from
   `config :phoenix_assets, :stack, ...`.
-- **Optional deps.** All of `ash`, `ash_typescript`, `phoenix_sync`, `gettext`,
+- **Optional deps.** All of `ash`, `ash_typescript`, `gettext`,
   `tidewave`, `phoenix_live_view`, `igniter` are `optional: true`, but only three
-  have code behind them. `ash_typescript`, `phoenix_sync`, and `tidewave` are pure
+  have code behind them. `ash_typescript` and `tidewave` are pure
   version pins — nothing in `lib/` references them, so there are no guards there to
   maintain. The ones that do carry code use two idioms: wrap the whole `defmodule`
   in `if Code.ensure_loaded?/1` (`components.ex` for `Phoenix.Component`,
   `phoenix_assets.install.ex` for Igniter), or gate at the call site (`types.ex`).
   Don't add hard deps on any of them.
+- **Sync qualification.** Phoenix.Sync is a dev/test dependency at an immutable
+  qualified revision. It must not appear in the published Hex requirements.
+  Hosts select their backend; embedded hosts also own their Electric dependency.
+  The Svelte peers require the qualified Electric/TanStack package floors.
 - **Optional dependency isolation.** `types.ex` gates Ash generation and
   `walker.ex` guards its public entry points. Narrow compiler annotations cover
   references to optional modules only when those modules are absent. The

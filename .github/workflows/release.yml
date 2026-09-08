@@ -1,8 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -21,6 +19,8 @@ permissions:
 jobs:
   quality:
     uses: ./.github/workflows/ci.yml
+    with:
+      full_matrix: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -94,15 +94,13 @@ jobs:
           retention-days: 14
 
   publish:
-    name: Attest and publish exact artifacts
-    if: github.ref_type == 'tag' && (github.event_name == 'push' || !inputs.dry_run)
+    name: Publish exact artifacts
+    if: github.ref_type == 'tag' && !inputs.dry_run
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
     permissions:
-      attestations: write
-      artifact-metadata: write
       contents: write
       id-token: write
     steps:
@@ -129,15 +127,6 @@ jobs:
 
       - name: Verify downloaded bytes and source identity
         run: node scripts/release.mjs verify --tag "$GITHUB_REF_NAME" --artifact-dir dist/release
-
-      - name: Record build provenance before registry mutation
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
-        with:
-          subject-path: |
-            dist/release/*.tar
-            dist/release/*.tgz
-            dist/release/release-manifest.json
-            dist/release/SHA256SUMS
 
       - name: Publish or resume all five registry artifacts
         run: node scripts/release.mjs publish --tag "$GITHUB_REF_NAME" --artifact-dir dist/release

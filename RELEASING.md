@@ -1,115 +1,88 @@
 # Releasing Phoenix Assets
 
-One `vX.Y.Z` tag identifies the Hex package and all four npm packages. The release workflow rejects
-version drift, builds the registry artifacts once, installs and imports those exact tarballs in
-throwaway consumers, records their checksums, and only then enters the protected `release`
-environment.
+One `vX.Y.Z` tag identifies the Hex package and all four npm packages. Build the
+five artifacts once, test those exact tarballs, and publish the verified bytes.
+The release manifest binds every checksum to the source commit and version.
+Its contract remains `phoenix-assets/release/v1`.
 
-## One-time repository and registry setup
+## Local qualification
 
-1. Protect `main`: require the current CI jobs, require the branch to be up to date, disable
-   administrator bypass, and forbid force pushes and deletion.
-2. Protect `v*` with a no-bypass ruleset that restricts tag creation to maintainers and forbids
-   tag update and deletion.
-3. Create a GitHub environment named `release` with administrator bypass disabled, required
-   reviewers, and deployment restricted to tags matching `v*`.
-4. Add `HEX_API_KEY` to that environment. Generate a dedicated Hex key with only `api:write`:
-   `mix hex.user key generate --key-name phoenix-assets-ci --permission api:write`.
-5. Create the `phoenix-assets` npm organization and make the publishing account an owner. Bootstrap
-   the four packages with a short-lived granular `NPM_TOKEN` configured exactly as follows:
-   **Packages and scopes** = **Read and write**, **Only select packages and scopes** =
-   `@phoenix-assets`, **Bypass two-factor authentication** = enabled, and no IP restriction. The
-   separate **Organizations** permission may remain **No access**: npm documents that organization
-   access manages membership and settings but does not grant permission to publish packages. Store
-   the token in the GitHub `release` environment, not as a repository-wide secret.
-6. After the first npm publish, configure each package's npm trusted publisher for
-   `futhr/phoenix-assets`, workflow `release.yml`, environment `release`, and publish permission.
-   Remove `NPM_TOKEN` after all four packages use OIDC.
-7. GitHub artifact attestations for private repositories require GitHub Enterprise Cloud. The
-   publish job deliberately fails before registry mutation when attestations are unavailable;
-   enable the repository feature or make the source repository public before the first production
-   release.
-
-If a tagged run publishes npm artifacts but fails while publishing Hex or HexDocs, repair that
-immutable release from its already-attested artifact and tagged source instead of moving the tag or
-rebuilding bytes:
+Use the pinned toolchain and run the complete local gate before releasing:
 
 ```bash
-gh workflow run recover-hex.yml \
-  --field release_tag=v0.1.0 \
-  --field source_run_id=32740503072
+mise exec -- mix deps.get
+mise exec -- pnpm install --frozen-lockfile
+mise exec -- mix check --no-retry
 ```
 
-After the recovery succeeds, rerun the original release job. Its registry preflight skips artifacts
-whose published bytes match the manifest and finishes the GitHub release record.
+Also run warnings-as-errors compilation and ExUnit on Elixir 1.18 / OTP 27,
+and the complete gate on Elixir 1.20 / OTP 29. Keep each toolchain's build and
+PLT caches separate. The full gate includes both coverage floors, dependency
+audits, docs, Dialyzer, package exports and a consumer of the built Hex tarball.
+The Hex metadata must not constrain `phoenix_sync` or `electric`; each host
+owns its backend. Development tests qualify the immutable Phoenix.Sync fork,
+and the frontend tests use the actual Electric and TanStack packages.
 
-Verify the GitHub controls before every production release:
+All iteration and release qualification run locally. Ordinary pull requests
+run one current-runtime lane. The second runtime, Dialyzer and exact-artifact
+checks remain full local/release gates. Main and tag pushes do not start CI.
+No paid GitHub feature or repository visibility change is required.
+
+## Prepare the shared release
+
+Conventional commits drive the shared version. From the Git root,
+`mix git_ops.release` updates `mix.exs`, all four npm manifests, the changelog
+and the tag. Never change a schema version merely to release the packages.
+
+Build from the clean tagged commit, after local qualification:
 
 ```bash
-gh api repos/futhr/phoenix-assets/environments/release
-gh api repos/futhr/phoenix-assets/environments/release/deployment-branch-policies
-gh api repos/futhr/phoenix-assets/branches/main/protection
-gh api repos/futhr/phoenix-assets/rulesets
+mise exec -- mix git_ops.release
+mise exec -- node scripts/release.mjs check --tag vX.Y.Z --network
+mise exec -- node scripts/release.mjs build --tag vX.Y.Z --artifact-dir dist/release
+mise exec -- node scripts/release.mjs smoke --tag vX.Y.Z --artifact-dir dist/release
+mise exec -- node scripts/release.mjs publish --tag vX.Y.Z --artifact-dir dist/release --dry-run
 ```
 
-No GitHub personal access token is needed. The workflow's short-lived `GITHUB_TOKEN` only reads the
-repository, writes the GitHub release, and records attestations. npm uses OIDC after bootstrap; Hex
-uses its registry-specific, least-privilege key.
+Use the actual tag in place of `vX.Y.Z`. Untagged preparation can use
+`--allow-untagged`; production publication requires the exact tag and a clean
+worktree. Review the five artifacts, `release-manifest.json` and `SHA256SUMS`.
+Retain this directory so interrupted publication can reuse the same bytes.
 
-## Prepare and dry-run
+## Publish the locally verified bytes
 
-Conventional commits drive the shared version. `git_ops` updates `mix.exs`, all four npm manifests,
-the changelog, and the tag in one release commit:
+Use an authorized npm publishing login/token and a dedicated Hex API key with
+`api:write`. Keep credentials in the local credential store or process
+environment; never commit them. npm must grant write access to the
+`@phoenix-assets` packages. Complete any registry-required authentication.
 
 ```bash
-git rm CHANGELOG.md           # first release only: remove the bootstrap placeholder
-mix git_ops.release --initial # GitOps recreates the changelog in the release commit
-# or: mix git_ops.release
-node scripts/release.mjs check --tag "$(git describe --tags --exact-match)" --network
+mise exec -- node scripts/release.mjs verify --tag vX.Y.Z --artifact-dir dist/release
+mise exec -- node scripts/release.mjs publish --tag vX.Y.Z --artifact-dir dist/release
+mise exec -- mix hex.publish docs --yes
+git push origin main
+git push origin vX.Y.Z
 ```
 
-The tracked changelog before the first release is only a bootstrap placeholder used by package and
-documentation checks. Remove it immediately before the initial GitOps release; do not commit the
-deletion separately.
+The publisher preflights every registry before its first write. Existing
+versions with identical checksums are skipped; different bytes abort the run.
+Publish only the artifacts that passed the exact-tarball smokes. Store the tag,
+manifest and checksums with the release record.
 
-Push the release commit without its tag, then dispatch the **Release** workflow on `main` with
-`dry_run` enabled. It runs the complete Elixir 1.18/OTP 27 and Elixir 1.20/OTP 29 matrix, creates all
-five artifacts, verifies package exports, and runs exact-artifact consumer smokes without changing
-a registry.
+## Recovery and optional hosted release
 
-Push only the tag after the dry run is green (`git push` does not push tags unless asked):
+Registry publication is not atomic across npm and Hex. After a transport
+failure, rerun the same local `publish` command with the retained artifact
+directory. Do not rebuild artifacts, move the tag or bump a version to recover
+an interrupted upload. Defective published bytes require a new release.
 
-```bash
-git push origin "vX.Y.Z"
-```
+The manually dispatched Release workflow remains available when explicitly
+needed. It uses the same identity checks and artifact smokes; it is not part of
+normal iteration. Its `release` environment holds `HEX_API_KEY` and, when
+needed, `NPM_TOKEN`. npm trusted publishing may instead use that workflow's
+OIDC identity. Protected branch/tag settings and release reviewers are
+maintainer-managed controls. Artifact checksums and source identity are
+required; GitHub's paid private-repository attestation feature is not.
 
-The tag run repeats the supported matrix from the tagged commit. The protected publish job verifies
-the downloaded artifact checksums, records build provenance, publishes those exact bytes, and
-attaches the artifacts, manifest, and checksums to the GitHub release.
-
-## Partial failure and recovery
-
-Registry publication cannot be atomic across npm and Hex. The orchestrator therefore performs all
-registry reads before its first write. A version already present with the exact local tarball
-checksum is skipped; the same version with different bytes aborts the whole run.
-
-If a network or registry failure interrupts publishing, rerun the same tag job. It resumes at the
-first missing artifact and never rebuilds or overwrites a published artifact. Do not create a new
-tag for a transport failure.
-
-If the bytes themselves are defective, stop instead of rerunning. Within Hex's allowed window,
-`mix hex.publish --revert X.Y.Z` can revert the Hex release; otherwise retire it. Deprecate affected
-npm versions rather than relying on unpublish, fix forward with a new version, and record the
-incident on the GitHub release.
-
-## Local release contract checks
-
-```bash
-pnpm test:release
-pnpm check:release
-node scripts/release.mjs build --allow-untagged --artifact-dir dist/release
-node scripts/release.mjs smoke --allow-untagged --artifact-dir dist/release
-node scripts/release.mjs publish --allow-untagged --artifact-dir dist/release --dry-run
-```
-
-The production workflow never uses `--allow-untagged`.
+The manual Recover Hex workflow can resume an artifact from a prior hosted
+release run. Local releases recover directly from their retained directory.

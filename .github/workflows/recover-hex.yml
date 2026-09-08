@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       source_run_id:
-        description: Release workflow run containing the attested artifact
+        description: Release workflow run containing the verified artifact
         required: true
         type: string
 
@@ -18,12 +18,11 @@ concurrency:
 
 permissions:
   actions: read
-  attestations: read
   contents: read
 
 jobs:
   publish:
-    name: Publish attested Hex artifact
+    name: Publish verified Hex artifact
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: release
@@ -71,7 +70,7 @@ jobs:
             --name "release-$source_sha" \
             --dir artifacts
 
-      - name: Verify source identity, checksums, and attestation
+      - name: Verify source identity and complete checksums
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
@@ -79,8 +78,6 @@ jobs:
           node source/scripts/release.mjs verify \
             --tag "$RELEASE_TAG" \
             --artifact-dir "$GITHUB_WORKSPACE/artifacts"
-          gh attestation verify artifacts/phoenix_assets-*.tar \
-            --repo "$GITHUB_REPOSITORY"
 
       - name: Publish exact Hex artifact
         env:

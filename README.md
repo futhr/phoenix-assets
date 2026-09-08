@@ -140,12 +140,33 @@ The full Svelte stack is the default — there's no preset module to write.
 
 ```elixir
 # mix.exs
-{:phoenix_assets, "~> 0.1.0"}
+{:phoenix_assets, "~> 1.1.0"}
 ```
 
 ```bash
-cd assets && pnpm add -D --save-exact @phoenix-assets/vite@0.1.0 @phoenix-assets/svelte@0.1.0 @phoenix-assets/lint@0.1.0
+cd assets && pnpm add -D --save-exact @phoenix-assets/vite@1.1.0 @phoenix-assets/svelte@1.1.0 @phoenix-assets/lint@1.1.0
 ```
+
+### PostgreSQL 18 and Electric
+
+The frontend is qualified with `@electric-sql/client` 1.5.27,
+`@tanstack/electric-db-collection` 0.4.7 and `@tanstack/svelte-db` 0.3.7.
+Install the TanStack peers when using the `/collection` entry point.
+
+Your application owns the sync backend. For the qualified PostgreSQL 18.6 /
+Electric 1.8.1 embedded stack, declare these host dependencies:
+
+```elixir
+{:phoenix_sync,
+ github: "futhr/phoenix_sync",
+ ref: "df5f0a917e670bc68df0a9aba2296e0a1e386a77"},
+{:electric, "~> 1.8.1", override: true}
+```
+
+HTTP-only hosts can omit the Electric dependency and connect to the qualified
+external server. The Phoenix Assets Hex package does not constrain either
+backend dependency. Keep Phoenix.Sync's sandbox adapter in tests that use
+embedded sync, and configure PostgreSQL logical replication for the server.
 
 ### Configure & supervise
 

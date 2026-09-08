@@ -1,10 +1,13 @@
 name: Continuous Integration
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
   pull_request:
   workflow_call:
+    inputs:
+      full_matrix:
+        type: boolean
+        default: false
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -23,17 +26,9 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      # Exercise both supported ends before merging dependency or source changes.
-      # Floor = warnings-as-errors compilation + ExUnit; full = the whole
-      # quality gate (Elixir + frontend) plus coverage upload.
+      # One automatic PR lane; both supported toolchains remain local/release gates.
       matrix:
-        include:
-          - elixir: "1.18"
-            otp: "27"
-            check: elixir
-          - elixir: "1.20"
-            otp: "29"
-            check: full
+        include: ${{ fromJSON((github.event_name == 'workflow_dispatch' || inputs.full_matrix) && '[{"elixir":"1.18","otp":"27","check":"elixir"},{"elixir":"1.20","otp":"29","check":"full"}]' || '[{"elixir":"1.20","otp":"29","check":"pr"}]') }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -51,9 +46,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install --yes inotify-tools
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
-        if: matrix.check == 'full'
+        if: matrix.check != 'elixir'
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        if: matrix.check == 'full'
+        if: matrix.check != 'elixir'
         with:
           node-version: 24
           cache: pnpm
@@ -88,22 +83,9 @@ jobs:
       - run: mkdir -p priv/plts/core priv/plts/local
         if: matrix.check == 'full'
 
-      # phx_new is a fixed archive, so restoring it beats refetching it on every
-      # leg of every run.
-      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
-        with:
-          path: ~/.mix/archives
-          key: ${{ runner.os }}-mix-archives-${{ matrix.elixir }}-${{ matrix.otp }}
-
       - run: mix deps.get
       - run: pnpm install --frozen-lockfile
-        if: matrix.check == 'full'
-
-      # The phoenix_assets.install test scaffolds a throwaway app via
-      # Igniter's phx_test_project/1, which shells out to the Phoenix
-      # project generator. Install the archive so that test can run, unless the
-      # cache above already restored it.
-      - run: mix archive | grep -q phx_new || mix archive.install hex phx_new --force
+        if: matrix.check != 'elixir'
 
       # Floor leg: compile (warnings as errors) + ExUnit only. Formatting,
       # static analysis, and the frontend run once, on the latest toolchain.
@@ -115,15 +97,19 @@ jobs:
       # One gate: compile (warnings as errors), format, credo, dialyzer,
       # mix_audit, ExUnit+coverage, biome, typecheck, vitest+coverage, knip,
       # and package-export correctness (publint + arethetypeswrong).
-      - run: mix check
+      - run: mix check --no-retry
         if: matrix.check == 'full'
+
+      # Full type analysis and exact tarball qualification run locally before release.
+      - run: mix check --no-retry --except dialyzer --except hex_consumer --except check_exports
+        if: matrix.check == 'pr'
 
       # One upload per language, so each lcov file is tagged with only its own
       # flag. A single combined upload with `flags: elixir,vite,svelte` tags
       # every file with all three flags, cross-contaminating the per-flag
       # coverage on Codecov.
       - name: Upload Elixir coverage to Codecov
-        if: matrix.check == 'full'
+        if: matrix.check != 'elixir'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           files: cover/lcov.info
@@ -133,7 +119,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload Vite coverage to Codecov
-        if: matrix.check == 'full'
+        if: matrix.check != 'elixir'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           files: npm/vite/coverage/lcov.info
@@ -143,7 +129,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload Svelte coverage to Codecov
-        if: matrix.check == 'full'
+        if: matrix.check != 'elixir'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           files: npm/svelte/coverage/lcov.info
