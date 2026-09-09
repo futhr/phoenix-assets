@@ -142,5 +142,10 @@ Two recurring failure modes need review:
 
 ## Definition of done
 
+For DocShell renderer work, read
+`docs/specs/PHA.01-doc-shell-renderers.md` and follow
+`docs/plans/doc-shell-renderers.md` in dependency order. The DocShell artifact
+and site contracts remain upstream-owned.
+
 `mix check` is green end-to-end (Elixir + frontend + both coverage floors), and any
 new public module has a `@moduledoc`.
