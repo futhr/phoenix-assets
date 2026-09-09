@@ -18,6 +18,10 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 * electric: decode PostgreSQL bigint columns as exact JavaScript numbers in generated streams, stores, and collections; reject values outside the safe integer range
 
+* sync: pin the qualified Phoenix Sync transport revision
+
+* release: keep generated artifacts outside source status
+
 ## [v1.0.0](https://github.com/futhr/phoenix-assets/compare/v0.2.0...v1.0.0) (2026-09-07)
 ### Breaking Changes:
 
