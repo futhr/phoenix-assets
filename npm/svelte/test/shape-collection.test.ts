@@ -18,7 +18,11 @@ it("synchronizes an Electric snapshot and releases the stream on cleanup", async
     token = "second"
     return new Response(
       JSON.stringify([
-        { key: "1", value: { id: 1, label: "First" }, headers: { operation: "insert" } },
+        {
+          key: "1",
+          value: { id: "1", label: "First", counts: "{42,NULL,-3}", amount: "12.340" },
+          headers: { operation: "insert" },
+        },
         { headers: { control: "up-to-date" } },
       ]),
       {
@@ -26,20 +30,31 @@ it("synchronizes an Electric snapshot and releases the stream on cleanup", async
           "content-type": "application/json",
           "electric-offset": "0_0",
           "electric-handle": "test-shape",
-          "electric-schema": JSON.stringify({ id: { type: "int4" }, label: { type: "text" } }),
+          "electric-schema": JSON.stringify({
+            id: { type: "int8" },
+            label: { type: "text" },
+            counts: { type: "int8", dims: 1 },
+            amount: { type: "numeric" },
+          }),
         },
       },
     )
   })
   vi.stubGlobal("fetch", fetchFn)
-  const collection = createShapeCollection<{ id: number; label: string }>(
-    "https://example.test/shapes/:id",
-    { id: 7 },
-    { readToken: () => token },
-  )
+  const collection = createShapeCollection<{
+    id: number
+    label: string
+    counts: (number | null)[]
+    amount: string
+  }>("https://example.test/shapes/:id", { id: 7 }, { readToken: () => token })
   try {
     await collection.preload()
-    expect(collection.get(1)).toMatchObject({ id: 1, label: "First" })
+    expect(collection.get(1)).toMatchObject({
+      id: 1,
+      label: "First",
+      counts: [42, null, -3],
+      amount: "12.340",
+    })
     expect(new URL(String(fetchFn.mock.calls[0]?.[0])).pathname).toBe("/shapes/7")
     expect(new Headers(fetchFn.mock.calls[0]?.[1]?.headers).get("authorization")).toBe(
       "Bearer first",

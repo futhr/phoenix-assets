@@ -6,6 +6,7 @@ export {
   runCommand,
   UNKNOWN_COMMAND_ERROR,
 } from "./commands/run.js"
+export { shapeParser } from "./electric/parser.js"
 export {
   createMutableShapeStore,
   createShapeStore,

@@ -8,7 +8,9 @@ defmodule PhoenixAssets.Electric do
   map whose route placeholders are *required, typed keys* (the rest become
   query params), and is built through `@phoenix-assets/svelte`: the URL via
   `createShapeUrl/2` and, critically, the request's auth headers via
-  `createShapeFetch/0`. Also contributes graph entries and a doctor check per shape
+  `createShapeFetch/0`. The shared parser decodes PostgreSQL integers into the
+  generated numeric fields, rejecting values outside JavaScript's exact integer
+  range instead of rounding. Also contributes graph entries and a doctor check per shape
   that the route exists in the router.
 
   """
@@ -80,7 +82,7 @@ defmodule PhoenixAssets.Electric do
     [
       TS.header(),
       ~s|\nimport { ShapeStream } from "@electric-sql/client"\n|,
-      ~s|import { createShapeFetch, createShapeUrl } from "@phoenix-assets/svelte"\n|,
+      ~s|import { createShapeFetch, createShapeUrl, shapeParser } from "@phoenix-assets/svelte"\n|,
       TS.type_import(types),
       "\nexport const shapes = {\n",
       Enum.map(sorted, &render_shape/1),
@@ -102,7 +104,7 @@ defmodule PhoenixAssets.Electric do
 
     "  #{fname}: (#{params_signature(route)}) => " <>
       "new ShapeStream<#{type}>({ url: createShapeUrl(#{JSON.encode!(route)}, params), " <>
-      "fetchClient: createShapeFetch() }),\n"
+      "fetchClient: createShapeFetch(), parser: shapeParser }),\n"
   end
 
   defp params_signature(route) do

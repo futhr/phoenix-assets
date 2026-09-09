@@ -90,3 +90,10 @@ Overriding `messages` is a `Partial`, so a key added in a later release falls
 back to English rather than breaking your build. Assert against
 `REPORTING_MESSAGE_KEYS` in your own test if you would rather find out at build
 time.
+
+Generated Electric factories, shape stores, and collections use `shapeParser` to
+match Ash integer fields to JavaScript numbers. PostgreSQL `int8` values outside
+`Number.MIN_SAFE_INTEGER` through `Number.MAX_SAFE_INTEGER` fail decoding; they
+are never rounded. Decimal columns remain strings, and Electric handles arrays
+and nulls. A host that needs full 64-bit integer values should define a matching
+`bigint` row contract and use the Electric client with its default parser.

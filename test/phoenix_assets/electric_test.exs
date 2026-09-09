@@ -58,7 +58,10 @@ defmodule PhoenixAssets.ElectricTest do
   test "imports the Electric client, the svelte auth/url helpers, and the row types" do
     out = render()
     assert out =~ ~s|import { ShapeStream } from "@electric-sql/client"|
-    assert out =~ ~s|import { createShapeFetch, createShapeUrl } from "@phoenix-assets/svelte"|
+
+    assert out =~
+             ~s|import { createShapeFetch, createShapeUrl, shapeParser } from "@phoenix-assets/svelte"|
+
     assert out =~ ~s|import type { PortfolioRow } from "$phoenix/types"|
   end
 
@@ -72,6 +75,7 @@ defmodule PhoenixAssets.ElectricTest do
     # Every factory must carry auth so a tenant-scoped shape can never be
     # requested anonymously -- the security guarantee of the generated client.
     assert out =~ "fetchClient: createShapeFetch()"
+    assert out =~ "parser: shapeParser"
     refute out =~ ~s|{ url: "/shapes/portfolios" }|
   end
 
