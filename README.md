@@ -159,7 +159,7 @@ Electric 1.8.1 embedded stack, declare these host dependencies:
 ```elixir
 {:phoenix_sync,
  github: "futhr/phoenix_sync",
- ref: "87ada1ffb709460296f9702a7b61fcee5234f197"},
+ ref: "330f0602009b7b8aca7e3140b492b5408ee276ec"},
 {:electric, "~> 1.8.1", override: true}
 ```
 
