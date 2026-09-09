@@ -1,16 +1,16 @@
 # phoenix_assets usage rules
 
-`phoenix_assets` is an opinionated, batteries-included asset runtime for Phoenix:
-SvelteKit + Vite + Tailwind v4 + Storybook + ElectricSQL + Phoenix PubSub +
-localization + Ash→TypeScript types, wired together. It supervises Vite and
-Storybook, generates typed frontend contracts from your backend, links everything
-into one asset graph, and validates the production manifest.
+`phoenix_assets` connects Phoenix to a SvelteKit frontend built with Vite,
+Tailwind v4, Storybook, ElectricSQL, Phoenix PubSub, localization, and generated
+Ash TypeScript types. It supervises the development processes, generates the
+frontend contracts, records them in an asset graph, and validates the production
+manifest.
 
 ## The golden path
 
-- **Do not write a preset module.** The full stack is the default
-  (`PhoenixAssets.Presets.Svelte`). Configure the app and name your declaration
-  modules; that's it:
+- Use the default preset. The full stack uses
+  `PhoenixAssets.Presets.Svelte`. Configure the app and name your declaration
+  modules:
 
   ```elixir
   # config/config.exs
@@ -27,7 +27,7 @@ into one asset graph, and validates the production manifest.
     types: MyApp.Assets.Types
   ```
 
-- **Supervise it.** Add the children to your application tree:
+- Add the children to the application supervision tree:
 
   ```elixir
   children = [...] ++ PhoenixAssets.child_specs()
@@ -37,7 +37,7 @@ into one asset graph, and validates the production manifest.
   `config :phoenix_assets, :dev, enabled: true`) it also supervises Vite,
   Storybook, and the generated-file watcher.
 
-- **Point `svelte-check` at the generated contracts.** The Vite plugin resolves
+- Point `svelte-check` at the generated contracts. The Vite plugin resolves
   `$phoenix/*` at dev and build time, but `svelte-check` and `tsc` do not run
   through Vite, so they need the alias spelled out:
 
@@ -46,13 +46,13 @@ into one asset graph, and validates the production manifest.
   kit: { alias: { $phoenix: "src/lib/generated" } }
   ```
 
-  Match `generated_dir` if you moved it. Without this the app builds and the
-  type-check fails, which is a confusing half-hour the first time.
+  Match `generated_dir` if it has been moved. Without this alias, Vite can build
+  while the separate type check fails.
 
 ## Tuning the stack without a preset
 
-Every knob below is config. Reach for a preset only when you are changing *which*
-integrations run or their order — not to adjust one of them.
+Use configuration to tune an existing integration. Write a preset only when the
+set or order of integrations changes.
 
 ```elixir
 # Storybook off the supervised dev tree (run it on demand via `mix storybook`)
@@ -67,8 +67,8 @@ config :phoenix_assets, :stack,
 
 ## Declaration modules (the backend contract)
 
-Each is a small DSL. The declarations are metadata only — the actual server work
-(Ash queries, policies, tenancy) stays in your controllers.
+Each declaration module is a small DSL for metadata. Ash queries, policies,
+tenancy, and other server behavior stay in the host application.
 
 ```elixir
 defmodule MyApp.Assets.ElectricShapes do
@@ -116,8 +116,8 @@ defmodule MyApp.Assets.Types do
 end
 ```
 
-Types the backend already declares as Elixir typespecs — a streaming protocol,
-a job-status union — need no DSL at all. Point at the module:
+Types already declared as Elixir typespecs need no additional DSL. Point at the
+module directly:
 
 ```elixir
 config :phoenix_assets, :stack,
@@ -129,8 +129,8 @@ config :phoenix_assets, :stack,
 ## Generated contracts
 
 `mix phoenix_assets.gen` writes typed TypeScript into `assets/src/generated/`:
-`routes.ts` (endpoint helpers for `/shapes/*` and `/api/*` — **page routes are
-SvelteKit's, never generated**), `env.ts`, `electric.ts`, `commands.ts`,
+`routes.ts` (endpoint helpers for `/shapes/*` and `/api/*`; page routes remain
+owned by SvelteKit), `env.ts`, `electric.ts`, `commands.ts`,
 `session.ts`, `pubsub.ts`, `locales.ts`, `types.ts`. The frontend imports them through `$phoenix/*` virtual
 modules (`$phoenix/routes`, `$phoenix/electric`, …) provided by the Vite plugin.
 The locale contract is `$phoenix/locales`; `$phoenix/localize` remains an alias
@@ -138,14 +138,14 @@ for older hosts.
 
 Rules to rely on:
 
-- **Generation is deterministic** and content-gated (no write when output is
-  byte-identical). `mix phoenix_assets.gen --check` fails on drift — wire it into
+- Generation is deterministic and content-gated; byte-identical output is not
+  rewritten. `mix phoenix_assets.gen --check` fails on drift. Add it to
   `assets.deploy` as a CI gate.
-- **A command result is a value, never an exception.** `runCommand` resolves to
+- A command result is a value. `runCommand` resolves to
   `{ ok: true, data }` or `{ ok: false, error, status }`; a network failure and
   an error code this build does not know both degrade to `"unknown_error"`
   rather than escaping as an untyped string or a rejected promise.
-- **Sensitive and non-public Ash fields are excluded by default** from generated
+- Sensitive and non-public Ash fields are excluded by default from generated
   row types. `only: :all` includes private fields and `expose:` can explicitly
   include private or sensitive fields; review these overrides before publishing.
   A doctor check warns when an exposed field is also field-policy-gated.
@@ -165,9 +165,9 @@ in tests. The frontend peers require `@electric-sql/client` >=1.5.27 within 1.x,
 
 ## Frontend packages
 
-- `@phoenix-assets/vite` — the Vite plugin (`phoenixAssets`), `$phoenix/*` virtual
+- `@phoenix-assets/vite`: the Vite plugin (`phoenixAssets`), `$phoenix/*` virtual
   modules, HMR bridge, PO loader, graph emitter. Add it to `vite.config.js`.
-- `@phoenix-assets/svelte` — typed runtime helpers: `createShapeStore`,
+- `@phoenix-assets/svelte`: typed runtime helpers including `createShapeStore`,
   `createShapeFetch`/`createShapeUrl` (used by the generated `$phoenix/electric`
   client), `runCommand` (used by the generated `$phoenix/commands` client), the
   event modifiers (`debounce`, `throttle`, `once`, `stopPropagation`,
@@ -175,68 +175,68 @@ in tests. The frontend peers require `@electric-sql/client` >=1.5.27 within 1.x,
   shape clients at your app's token key. `createShapeCollection` (TanStack DB)
   lives behind the `@phoenix-assets/svelte/collection` subpath so the main
   barrel stays free of the optional `@tanstack/*` peers.
-- `@phoenix-assets/svelte/reporting` — strict portable-report decoding, the
+- `@phoenix-assets/svelte/reporting`: strict portable-report decoding, the
   closed LayerChart-backed compiler/components, evidence states, and accessible
   table twins. Pass only the renderer-neutral contract. Product code supplies
   semantic CSS tokens and domain chrome; it does not import LayerChart directly
   or persist renderer option bags.
-- `@phoenix-assets/doc-shell` — the renderer-neutral documentation UI for the
+- `@phoenix-assets/doc-shell`: the renderer-neutral documentation UI for the
   `doc-shell/v1` artifact contract. Only needed if you render docs in-app; theme
   it through the `--doc-*` custom properties rather than app aliases.
 
-## Linting & formatting (host apps)
+## Linting and formatting in host applications
 
-Use **Biome** for the frontend (the same linter `phoenix_assets` uses — no
-ESLint/Prettier). The stack ships the shared config + the Tailwind linter as
+Use Biome for the frontend. Phoenix Assets uses the same linter rather than
+ESLint and Prettier. The shared config and Tailwind linter ship in
 `@phoenix-assets/lint`:
 
 ```bash
 pnpm add -D @phoenix-assets/lint @biomejs/biome tailwindcss svelte
 ```
 
-- **Biome:** `biome.json` → `{ "extends": ["@phoenix-assets/lint/biome.base.json"] }`,
+- Biome: add `{ "extends": ["@phoenix-assets/lint/biome.base.json"] }` to `biome.json`,
   then layer your app-specific excludes/overrides on top. The base sets
   Svelte-aware rules (a `**/*.svelte` override disabling `useConst`,
-  `useImportType`, `noUnusedVariables`, `noUnusedImports` — Biome false-positives
-  on those in Svelte).
-- **Tailwind v4 hygiene:** add a `lint:tw` script running the compiled
+  `useImportType`, `noUnusedVariables`, and `noUnusedImports` because Biome
+  reports false positives on those rules in Svelte files).
+- Tailwind v4: add a `lint:tw` script that runs the compiled
   `phoenix-assets-lint-tailwind` binary the package ships (or invoke it ad hoc with
-  `pnpm exec phoenix-assets-lint-tailwind`) — it flags arbitrary values with a
-  standard equivalent (`w-[180px]` → `w-45`). CSS imports resolve exact and
+  `pnpm exec phoenix-assets-lint-tailwind`). It flags arbitrary values with a
+  standard equivalent (`w-[180px]` becomes `w-45`). CSS imports resolve exact and
   trailing-wildcard `kit.alias` entries plus SvelteKit's implicit `$lib` alias
   (including a custom `kit.files.lib`). Bare packages resolve from the importing
   stylesheet and host project, including under pnpm's strict dependency layout.
-- **Svelte structure:** `phoenix-assets-lint-svelte` parses the selected
+- Svelte structure: `phoenix-assets-lint-svelte` parses the selected
   components. It accepts standard module+instance script composition by default.
   A host may opt into `--single-script` and use repeated `--allow <glob>` values
   when that narrower convention is part of the host's own architecture.
 
 Wire the applicable commands into CI.
 
-## When you genuinely need to deviate
+## Custom presets
 
-A preset changes *which* integrations run and in what order — adding one the
-stack doesn't ship, or dropping one entirely. Write a module with
+A preset changes which integrations run and in what order, either by adding an
+integration the stack does not ship or dropping one entirely. Write a module with
 `use PhoenixAssets.Preset`, list `integration/2` calls, and set it as
 `config :phoenix_assets, preset: MyApp.Assets.Stack`. Start by copying
 `PhoenixAssets.Presets.Svelte`. Ordering is resolved at compile time (a cycle or
 missing hard dependency is a compile error).
 
-If your preset is the default list with one option changed, it is config you
-want — see "Tuning the stack without a preset" above.
+If the default list needs only an option change, use configuration as described
+in "Tuning the stack without a preset".
 
-## Don't
+## Boundaries
 
-- Don't hand-write a preset just to use the standard stack — omit `:preset`.
+- Omit `:preset` when using the standard stack.
   Turning Storybook off or pinning a locale list is config, not a preset.
-- Don't generate page routes or hand-copy contract types — let the generators own
-  them and import from `$phoenix/*`.
-- Don't put secrets in `config :phoenix_assets, :env, expose: [...]` — only listed
+- Keep page routes in SvelteKit and let the generators own contract types.
+  Import generated types from `$phoenix/*`.
+- Do not put secrets in `config :phoenix_assets, :env, expose: [...]`. Only listed
   keys are emitted, but treat the allow-list as public.
 
 ## Upgrading the audited dependency baseline
 
-Ash 3.33 requires an explicit string-length policy in the **host application's**
+Ash 3.33 requires an explicit string-length policy in the host application's
 configuration. Set this before compiling dependencies:
 
 ```elixir

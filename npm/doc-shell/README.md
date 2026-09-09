@@ -1,10 +1,8 @@
 # @phoenix-assets/doc-shell
 
-Renderer-neutral Svelte documentation UI for the versioned `doc-shell/v1`
-artifact contract. It renders whatever produced the artifact and knows nothing
-about the producer — the `doc_shell` Hex package, a host's own projector, or a
-build step that writes the JSON by hand all yield the same
-`DocShellPresentation`.
+Svelte documentation UI for the renderer-neutral `doc-shell/v1` artifact
+contract. The producer can be the `doc_shell` Hex package, a host projector, or
+a build step that writes JSON. Each produces the same `DocShellPresentation`.
 
 ```svelte
 <script lang="ts">
@@ -22,16 +20,16 @@ The package contains no app aliases. Customize its neutral defaults using the
 uses Fuse.js by default and accepts a replacement callback for graph/vector
 search. Navigation is similarly host-controlled through a `navigate` callback.
 
-The recursive AST renderer dispatches all fourteen directives plus Shiki and
+The recursive AST renderer handles all fourteen directives plus Shiki and
 Mermaid code fences. `ApiReference` renders tag-grouped OpenAPI operations,
 recursive schemas and examples, and a collapsible try-it panel with a lazy JSON
 viewer. Dynamic links reject executable and unknown URL schemes. Try-it paths
 cannot replace the configured API origin; a cross-origin `baseUrl` also needs an
-exact `allowedOrigins` entry and an on-screen confirmation before sending. Even
-then browser cookies remain same-origin-only. All assets are bundled; `pnpm
+exact `allowedOrigins` entry and an on-screen confirmation before sending.
+Browser cookies remain same-origin-only. All assets are bundled; `pnpm
 check:offline` rejects CDN references.
 
-Shiki grammars are loaded explicitly rather than through its full bundle — see
+Shiki grammars are loaded explicitly rather than through its full bundle. See
 `supportedLanguages` for the set, which covers a Phoenix + SvelteKit codebase and
 the formats its docs quote. Anything else renders as plain text. Highlighting
 emits both themes as `--shiki-light` / `--shiki-dark` custom properties, so the

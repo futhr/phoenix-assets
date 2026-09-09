@@ -1,9 +1,9 @@
 # @phoenix-assets/vite
 
-The Vite half of [`phoenix_assets`](https://github.com/futhr/phoenix-assets). It
-exposes the contracts Elixir generates as `$phoenix/*` virtual modules, bridges
-HMR so a regenerated contract reloads without a restart, loads gettext `.po`
-files, and emits the asset graph the Phoenix side validates against.
+The Vite package for [`phoenix_assets`](https://github.com/futhr/phoenix-assets).
+It exposes Elixir-generated contracts as `$phoenix/*` virtual modules, reloads
+regenerated contracts through HMR, loads gettext `.po` files, and emits the
+asset graph that Phoenix validates.
 
 ## Install
 
@@ -25,7 +25,7 @@ export default defineConfig({
 })
 ```
 
-That gives you:
+Generated modules are then available through the `$phoenix` alias:
 
 ```ts
 import { routes } from "$phoenix/routes"
@@ -33,8 +33,8 @@ import { shapes } from "$phoenix/electric"
 import type { Article } from "$phoenix/types"
 ```
 
-The virtual modules resolve to whatever `mix phoenix_assets.gen` last wrote, so
-the types cannot drift from the backend that produced them.
+The virtual modules resolve to the output of `mix phoenix_assets.gen`.
+`mix phoenix_assets.gen --check` detects stale checked-in output.
 
 ## Exports
 
@@ -46,12 +46,12 @@ the types cannot drift from the backend that produced them.
 
 ## Notes
 
-Options default to the same paths the Elixir side uses, so an app following the
-conventions passes nothing. Two worth knowing:
+Options use the same default paths as the Elixir package. Two options commonly
+need attention:
 
 - `generatedDir` must agree with `config :phoenix_assets, generated_dir:`. Move
   one without the other and the virtual modules resolve to nothing.
-- `mode` defaults to `"app"`, which is the only mode with the dev HMR bridge and
+- `mode` defaults to `"app"`, the only mode with the dev HMR bridge and
   the build-time graph emitter. Storybook gets `"storybook"` (via
   `createPhoenixViteConfig`) and test runners `"test"`; both keep the virtual
   modules and the PO loader and drop the rest.

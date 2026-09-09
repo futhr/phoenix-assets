@@ -1,9 +1,9 @@
 # @phoenix-assets/svelte
 
 The Svelte 5 runtime for [`phoenix_assets`](https://github.com/futhr/phoenix-assets).
-The contracts Elixir generates are types and route strings; this package is the
-small amount of runtime they call into — the shape client, the command client,
-locale resolution, event modifiers, and the portable-report renderer.
+Elixir generates the types and route strings. This package supplies the runtime
+used by that output: shape and command clients, locale resolution, event
+modifiers, and the portable report renderer.
 
 ## Install
 
@@ -25,24 +25,24 @@ server deployment and Phoenix.Sync dependency.
 import { createShapeStore, runCommand, resolveLocale } from "@phoenix-assets/svelte"
 ```
 
-- `createShapeStore` — a reactive store over an Electric shape stream.
-- `configureShapeAuth` / `createShapeFetch` / `authHeaders` / `createShapeUrl` — point the shape
+- `createShapeStore`: a reactive store over an Electric shape stream.
+- `configureShapeAuth` / `createShapeFetch` / `authHeaders` / `createShapeUrl`: point the shape
   clients at your app's token key. The generated `$phoenix/electric` client uses
   these, so configuring auth once covers every shape.
-- `runCommand` — what the generated `$phoenix/commands` client calls. Resolves to
+- `runCommand`: what the generated `$phoenix/commands` client calls. Resolves to
   `{ ok: true, data }` or `{ ok: false, error, status }`; it never rejects and
-  never throws, so a call site cannot read the payload without handling failure.
+  never throws. A call site must handle failure before reading the payload.
   Both a network failure and an error code this build does not know degrade to
   `UNKNOWN_COMMAND_ERROR`.
-- `matchEvent` — exhaustive matching over a generated PubSub event union.
-- `resolveLocale` — picks a locale from the generated list.
-- Event modifiers — `debounce`, `throttle`, `once`, `stopPropagation`,
+- `matchEvent`: exhaustive matching over a generated PubSub event union.
+- `resolveLocale`: picks a locale from the generated list.
+- Event modifiers: `debounce`, `throttle`, `once`, `stopPropagation`,
   `preventDefault`, `self`. Svelte 5 dropped `on:click|preventDefault`; these are
   the composable replacement.
 
 ### `@phoenix-assets/svelte/collection`
 
-`createShapeCollection` — a TanStack DB collection backed by an Electric shape.
+`createShapeCollection` is a TanStack DB collection backed by an Electric shape.
 Kept out of the main barrel so the optional `@tanstack/*` peers stay optional.
 
 ### `@phoenix-assets/svelte/reporting`
@@ -62,29 +62,28 @@ visualization renders alongside its chart.
 <PortableReport {envelope} />
 ```
 
-The decoder is deliberately strict: it rejects unknown and renderer-specific
+The decoder rejects unknown and renderer-specific
 configuration, validates every field reference, and holds string and object
 callers to the same JSON-only byte and nesting limits. `layerchart` is an
-internal exact dependency of this subpath — pass the contract, not renderer
-options, and supply your own semantic CSS tokens and domain chrome around the
-shared components.
+exact internal dependency of this subpath. Pass the contract across the wire,
+not renderer options, and supply semantic CSS tokens and domain chrome around
+the shared components.
 
-**Two entrypoints, two strictness levels.** Know which one you are using:
+The reporting entrypoints accept data at different trust boundaries:
 
 | | |
 |---|---|
-| `decodeReportEnvelope` / `safeDecodeReportEnvelope` | the **wire boundary**. Untrusted input, every field validated, unknown keys rejected. Anything arriving from a server goes through it. |
-| `PortablePanel` | takes a `PanelDefinition` **value** and renders it, with no runtime validation — by then it is your own data. |
+| `decodeReportEnvelope` / `safeDecodeReportEnvelope` | Wire boundary for untrusted input. Every field is validated and unknown keys are rejected. Use it for server data. |
+| `PortablePanel` | Renders a trusted `PanelDefinition` value without runtime validation. |
 
 `safeDecodeReportEnvelope` returns `{ state: "ready", envelope }` or
 `{ state: "invalid", code, path }` instead of throwing, which is what you want
 behind an error card. A non-contract failure still throws.
 
-For a chart the client composes locally — no wire form, no `query_ref`, because
-you already have the frame — use `composePanel`. It fills the governed defaults,
-including an accessible table twin derived from the encodings. Its output is
-deliberately not wire-valid; if a panel needs to travel, the owning domain issues
-it.
+Use `composePanel` for a chart assembled locally from an existing frame. It adds
+the governed defaults, including an accessible table derived from the
+encodings. Its output is intentionally not wire-valid. A panel that crosses a
+process or network boundary must be issued by the owning domain.
 
 Overriding `messages` is a `Partial`, so a key added in a later release falls
 back to English rather than breaking your build. Assert against

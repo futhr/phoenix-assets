@@ -1,7 +1,8 @@
 # Releasing Phoenix Assets
 
-One `vX.Y.Z` tag identifies the Hex package and all four npm packages. Build the
-five artifacts once, test those exact tarballs, and publish the verified bytes.
+One `vX.Y.Z` tag identifies the Hex package and all four npm packages. The
+release builds five artifacts once, tests those tarballs, and publishes the
+verified bytes.
 The release manifest binds every checksum to the source commit and version.
 Its contract remains `phoenix-assets/release/v1`.
 
@@ -23,7 +24,7 @@ The Hex metadata must not constrain `phoenix_sync` or `electric`; each host
 owns its backend. Development tests qualify the immutable Phoenix.Sync fork,
 and the frontend tests use the actual Electric and TanStack packages.
 
-All iteration and release qualification run locally. Ordinary pull requests
+Iteration and release qualification run locally. Ordinary pull requests
 run one current-runtime lane. The second runtime, Dialyzer and exact-artifact
 checks remain full local/release gates. Main and tag pushes do not start CI.
 No paid GitHub feature or repository visibility change is required.
@@ -64,7 +65,7 @@ git push origin main
 git push origin vX.Y.Z
 ```
 
-The publisher preflights every registry before its first write. Existing
+The publisher checks every registry before its first write. Existing
 versions with identical checksums are skipped; different bytes abort the run.
 Publish only the artifacts that passed the exact-tarball smokes. Store the tag,
 manifest and checksums with the release record.
@@ -76,9 +77,9 @@ failure, rerun the same local `publish` command with the retained artifact
 directory. Do not rebuild artifacts, move the tag or bump a version to recover
 an interrupted upload. Defective published bytes require a new release.
 
-The manually dispatched Release workflow remains available when explicitly
-needed. It uses the same identity checks and artifact smokes; it is not part of
-normal iteration. Its `release` environment holds `HEX_API_KEY` and, when
+The manually dispatched Release workflow uses the same identity checks and
+artifact smokes. It is reserved for releases rather than normal iteration. Its
+`release` environment holds `HEX_API_KEY` and, when
 needed, `NPM_TOKEN`. npm trusted publishing may instead use that workflow's
 OIDC identity. Protected branch/tag settings and release reviewers are
 maintainer-managed controls. Artifact checksums and source identity are
