@@ -66,7 +66,7 @@ defmodule PhoenixAssets.MixProject do
       {:ash_typescript, "~> 0.17", optional: true},
       {:phoenix_sync,
        github: "futhr/phoenix_sync",
-       ref: "df5f0a917e670bc68df0a9aba2296e0a1e386a77",
+       ref: "87ada1ffb709460296f9702a7b61fcee5234f197",
        only: [:dev, :test]},
       {:gettext, "~> 1.0", optional: true},
       {:tidewave, "~> 0.5", optional: true},
