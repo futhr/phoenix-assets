@@ -2,6 +2,8 @@ name: Continuous Integration
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   pull_request:
   workflow_call:
     inputs:
@@ -26,7 +28,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      # One automatic PR lane; both supported toolchains remain local/release gates.
+      # One automatic change lane; both supported toolchains remain local/release gates.
       matrix:
         include: ${{ fromJSON((github.event_name == 'workflow_dispatch' || inputs.full_matrix) && '[{"elixir":"1.18","otp":"27","check":"elixir"},{"elixir":"1.20","otp":"29","check":"full"}]' || '[{"elixir":"1.20","otp":"29","check":"pr"}]') }}
     steps:
