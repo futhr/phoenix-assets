@@ -5,6 +5,11 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.1](https://github.com/futhr/phoenix-assets/compare/v1.1.0...v1.1.1) (2026-09-16)
+
+
+
+
 ## [v1.1.0](https://github.com/futhr/phoenix-assets/compare/v1.0.0...v1.1.0) (2026-09-08)
 
 
