@@ -1,11 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreFiles": ["priv/doc_shell/**"],
   "workspaces": {
     "npm/vite": { "project": "src/**/*.ts" },
     "npm/svelte": { "project": "src/**/*.{ts,svelte}" },
     "npm/doc-shell": {
-      "entry": ["src/**/*.stories.svelte", "test/**/*.ts"],
-      "project": ["src/**/*.{ts,svelte}", "test/**/*.ts", "*.{ts,js}"]
+      "entry": ["src/**/*.stories.ts", "test/**/*.ts"],
+      "project": ["src/**/*.{ts,svelte}", "test/**/*.ts", "*.{ts,js}"],
+      "ignoreDependencies": ["pagefind"]
     },
     "npm/lint": { "project": "*.{ts,svelte,css}" }
   }

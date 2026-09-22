@@ -10,6 +10,7 @@ erl_crash.dump
 
 # JavaScript
 node_modules/
+storybook-static/
 /npm/*/dist/
 /npm/*/coverage/
 /dist/release/

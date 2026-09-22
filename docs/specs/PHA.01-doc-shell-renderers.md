@@ -1,6 +1,6 @@
 # PHA.01: DocShell renderers for Svelte and LiveView
 
-Specification version: 0.1.0. Contract: accepted. Implementation status:
+Specification version: 0.2.0. Contract: accepted. Implementation status:
 partial.
 
 ## Purpose
@@ -15,6 +15,12 @@ validation, search records, and renderer conformance fixtures. Phoenix Assets
 owns HTML, CSS, browser behavior, Svelte components, HEEx components, and the
 adapter code that consumes those contracts. Hosts own routes, authorization,
 branding, documentation taxonomy, source selection, and deployment.
+
+The renderers include only the controls and scoped CSS needed to present the
+upstream documentation contract. Product design systems, application shells,
+domain components and host themes remain host-owned. A renderer exposes slots
+and semantic custom properties; it does not become a general component
+library.
 
 ## Package boundary
 
@@ -57,6 +63,19 @@ The browser subpath must not import Svelte. The Svelte renderer and the
 LiveView asset entry both call the same functions. Each function accepts an
 explicit root element and can be mounted, refreshed, and destroyed without
 global event duplication.
+
+Browser-core controllers remain the default for small progressive
+enhancements. Search, navigation, article content, provenance and ordinary
+links must not depend on an enhancer mounting successfully. A host may wrap a
+renderer subtree in its own client-component boundary, but that protocol and
+component registry are outside Phoenix Assets.
+
+Both renderers return DSH.01's normalized capability value. The static renderer
+declares fallback or enhanced support for `doc-shell/html/v1`, search, theme,
+navigation, copy, tabs, highlighting and Mermaid as implemented. It never
+declares `:connected`. A host owns any connected interaction and authorization
+gate. Unknown essential feature IDs fail before HTML is emitted; optional
+features require their recorded fallback digest.
 
 Phoenix Assets also provides an optional Pagefind search adapter and browser
 binding. It pins the Pagefind build package, runs it only during asset/site
@@ -102,6 +121,12 @@ Public components declare `attr` and `slot` contracts and have typespecs and
 module documentation. They accept `DocShell.Presentation.Site`, `Page`, and
 related structs rather than unvalidated maps. Host chrome enters through named
 slots and semantic token overrides.
+
+Components use the renderer's scoped DocShell classes and semantic custom
+properties. Hosts may override those properties or supply brand and footer
+slots without replacing admitted document content with an HTML string. The
+Svelte and HEEx renderers keep equivalent visible semantics without depending
+on a Phoenix Assets-wide design system.
 
 The shell uses scoped CSS custom properties. It does not require Tailwind,
 DaisyUI, an icon package, web fonts, a reset stylesheet, or a CDN. Default
@@ -235,6 +260,7 @@ documentation sites:
 | PHA-S08 | Ship local, content-hashed browser and CSS assets with explicit bundle budgets and no CDN dependency. |
 | PHA-S09 | Consume DocShell's shared conformance fixtures and report renderer identity and supported capabilities. |
 | PHA-S10 | Keep the Hex package usable without DocShell or LiveView and the browser subpath usable without Svelte. |
+| PHA-S11 | Keep renderer CSS scoped and host-overridable without absorbing an application design system or client-component registry. |
 
 ## Executable vectors
 
@@ -252,6 +278,7 @@ documentation sites:
 | PHA-V10 | Visual snapshots cover home, guide, module reference, OpenAPI, search, mobile navigation, long code/table and 404 pages in both themes. |
 | PHA-V11 | Production assets contain no remote URL, source map, undeclared file, Svelte import in the browser subpath, or file above its declared budget. |
 | PHA-V12 | A fresh static-site consumer renders and opens the generated output without an endpoint, WebSocket, Node runtime, or network access. |
+| PHA-V13 | DocShell assets contain only renderer-scoped styles and behavior; a host override cannot remove article, navigation, search fallback, provenance or ordinary links. |
 
 ## Evidence boundary
 

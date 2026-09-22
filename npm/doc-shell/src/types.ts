@@ -41,9 +41,8 @@ export interface SearchEntry {
   /** Entry class, mirroring `NavigationItem.kind`. StaticGenerator only. */
   kind?: string | null
   /**
-   * Pre-split content tokens. StaticGenerator only, and nothing here reads
-   * them — `search.svelte` indexes `title` and `content` through Fuse. Declared
-   * so the type describes the payload honestly; a producer may omit them.
+   * Pre-split content tokens. StaticGenerator only. The deterministic browser
+   * search does not require them, but consumers may reuse them when present.
    */
   tokens?: string[]
 }
@@ -107,6 +106,7 @@ export interface Operation {
 }
 
 export interface OpenApiDocument {
+  openapi?: string
   info?: { title?: string; version?: string; description?: string }
   paths?: Record<
     string,
@@ -120,4 +120,89 @@ export interface OperationEntry {
   path: string
   tags: string[]
   operation: Operation
+}
+
+export interface SiteLink {
+  title: string
+  path: string
+}
+
+export interface SiteHeading {
+  id: string
+  title: string
+  level: number
+}
+
+export interface CapabilityRequirement {
+  feature_id: string
+  acceptable_states: Array<"fallback" | "enhanced" | "connected">
+  "essential?": boolean
+  fallback_digest?: string | null
+}
+
+export interface SiteSearchEntry {
+  id: string
+  page_id: string
+  route: string
+  title: string
+  section?: string | null
+  text: string
+  locale: string
+  audience?: string | string[] | null
+  kind: string
+  collection: string
+  version: string
+  tags: string[]
+  status?: string | null
+}
+
+export interface SitePage {
+  id: string
+  collection_id: string
+  document_id: string
+  kind: string
+  route: string
+  title: string
+  description?: string | null
+  locale: string
+  audience?: string | string[] | null
+  template: "document" | "splash"
+  content: DocAstNode[]
+  content_digest: string
+  canonical_url?: string | null
+  source_url?: string | null
+  edit_url?: string | null
+  source_revision: string
+  source_path?: string | null
+  package_version: string
+  last_modified?: string | null
+  status?: string | null
+  breadcrumbs: SiteLink[]
+  headings: SiteHeading[]
+  previous?: SiteLink | null
+  next?: SiteLink | null
+  tags: string[]
+  metadata: Record<string, unknown>
+  "navigation?": boolean
+  "search?": boolean
+  banner?: Record<string, unknown> | null
+  hero?: Record<string, unknown> | null
+  requirements: CapabilityRequirement[]
+}
+
+export interface DocShellSite {
+  schema_version: "doc-shell-site/v1"
+  generation_id: string
+  cohort_digest: string
+  profile: string
+  title: string
+  base_path: string
+  default_locale: string
+  locales: string[]
+  pages: Record<string, SitePage>
+  routes: Record<string, string>
+  navigation: NavigationItem[]
+  search: SiteSearchEntry[]
+  redirects: Record<string, string>
+  metadata: Record<string, unknown>
 }

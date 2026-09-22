@@ -2,6 +2,9 @@ import type { JsonSchema, OpenApiDocument, OperationEntry } from "./types.js"
 
 const methods = ["get", "post", "put", "patch", "delete", "options", "head"] as const
 
+export const supportsOpenApi = (version: string | undefined): boolean =>
+  version === undefined || /^3\.[012](?:\.|$)/.test(version)
+
 export const flattenOperations = (spec: OpenApiDocument): OperationEntry[] =>
   Object.entries(spec.paths ?? {}).flatMap(([path, item]) =>
     methods.flatMap((method) => {

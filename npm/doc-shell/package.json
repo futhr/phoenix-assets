@@ -22,6 +22,10 @@
       "svelte": "./dist/index.js",
       "import": "./dist/index.js"
     },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.js"
+    },
     "./theme.css": "./dist/theme.css"
   },
   "module": "./dist/index.js",
@@ -33,7 +37,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "svelte-package -i src -o dist",
+    "build": "svelte-package -i src -o dist && node scripts/build-browser.mjs",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run --coverage",
     "check:offline": "node scripts/check-offline.mjs",
@@ -46,19 +50,20 @@
   "dependencies": {
     "@shikijs/langs": "^4.4.3",
     "@shikijs/themes": "^4.4.3",
-    "fuse.js": "^7.5.0",
     "mermaid": "^11.17.2",
     "shiki": "^4.4.3"
   },
   "devDependencies": {
-    "@storybook/addon-svelte-csf": "^5.1.3",
     "@sveltejs/package": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
+    "@storybook/svelte-vite": "10.6.0",
     "@vitest/coverage-v8": "catalog:",
     "happy-dom": "catalog:",
+    "pagefind": "1.5.2",
     "svelte": "catalog:",
     "svelte-check": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

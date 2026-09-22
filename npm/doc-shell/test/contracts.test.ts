@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  admittedAttributes,
   directiveNames,
   extractText,
   extractToc,
@@ -8,7 +9,10 @@ import {
   headingId,
   isDirective,
   preCodeInfo,
+  projectedHeadingId,
+  safeMediaTarget,
   schemaFrom,
+  supportsOpenApi,
   typeLabel,
 } from "../src/index.js"
 
@@ -32,6 +36,21 @@ describe("DocShell contract helpers", () => {
     ).toEqual([{ id: "nested", level: 3, text: "Nested" }])
   })
 
+  it("uses only projected safe IDs, attributes, and local media", () => {
+    const node = {
+      tag: "h2",
+      attrs: { id: "projected:start", title: "Start", onclick: "alert(1)" },
+      content: ["Start"],
+    }
+    expect(projectedHeadingId(node)).toBe("projected:start")
+    expect(admittedAttributes(node)).toEqual({ id: "projected:start", title: "Start" })
+    expect(projectedHeadingId({ ...node, attrs: { id: "bad id" } })).toBeUndefined()
+    expect(safeMediaTarget("/images/guide.png")).toBe("/images/guide.png")
+    expect(safeMediaTarget("//tracker.example.test/pixel")).toBeUndefined()
+    expect(safeMediaTarget("/images\\pixel")).toBeUndefined()
+    expect(safeMediaTarget(undefined)).toBeUndefined()
+  })
+
   it("publishes the complete directive registry", () => {
     expect(directiveNames).toHaveLength(14)
     expect(isDirective("callout")).toBe(true)
@@ -50,6 +69,15 @@ describe("DocShell contract helpers", () => {
     expect(groupOperations([{ ...operation, tags: [] }])).toEqual({
       default: [{ ...operation, tags: [] }],
     })
+  })
+
+  it("admits OpenAPI 3.0, 3.1, and 3.2 only", () => {
+    expect(supportsOpenApi(undefined)).toBe(true)
+    expect(supportsOpenApi("3.0.4")).toBe(true)
+    expect(supportsOpenApi("3.1.1")).toBe(true)
+    expect(supportsOpenApi("3.2.0")).toBe(true)
+    expect(supportsOpenApi("3.3.0")).toBe(false)
+    expect(supportsOpenApi("2.0")).toBe(false)
   })
 
   it("labels recursive schema variants", () => {

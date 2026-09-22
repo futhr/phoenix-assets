@@ -46,6 +46,12 @@ function capture(command, args, options = {}) {
   return execFileSync(command, args, { encoding: "utf8", ...options }).trim()
 }
 
+function publishedDependenciesEnv() {
+  const env = { ...process.env }
+  delete env.DOC_SHELL_CANDIDATE
+  return env
+}
+
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"))
 }
@@ -214,7 +220,10 @@ function buildArtifacts(root, output, options) {
   run("pnpm", ["-r", "run", "check:publish"], { cwd: root })
 
   const paths = artifactPaths(output, version)
-  run("mix", ["hex.build", "--output", paths.hex], { cwd: root })
+  run("mix", ["hex.build", "--output", paths.hex], {
+    cwd: root,
+    env: publishedDependenciesEnv(),
+  })
   for (const pkg of PACKAGES) {
     run("pnpm", ["--dir", pkg.directory, "pack", "--out", paths.npm[pkg.name]], { cwd: root })
   }
@@ -564,7 +573,10 @@ async function main() {
       const temporary = mkdtempSync(join(tmpdir(), "phoenix-assets-hex-check-"))
       try {
         const file = "phoenix_assets.tar"
-        run("mix", ["hex.build", "--output", join(temporary, file)], { cwd: root })
+        run("mix", ["hex.build", "--output", join(temporary, file)], {
+          cwd: root,
+          env: publishedDependenciesEnv(),
+        })
         smokeHexArtifact(root, temporary, { artifacts: [{ ecosystem: "hex", file }] })
       } finally {
         rmSync(temporary, { force: true, recursive: true })

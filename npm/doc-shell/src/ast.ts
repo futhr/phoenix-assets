@@ -15,6 +15,27 @@ export const headingId = (content?: DocAstNode[] | string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
 
+const SAFE_ID = /^[A-Za-z][A-Za-z0-9_.:-]*$/
+const ATTRIBUTES = new Set(["id", "title", "class", "colspan", "rowspan", "scope", "start"])
+
+export const projectedHeadingId = (node: DocAstElement): string | undefined => {
+  const id = node.attrs?.id
+  return id && SAFE_ID.test(id) ? id : undefined
+}
+
+export const admittedAttributes = (node: DocAstElement): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(node.attrs ?? {}).filter(
+      ([name, value]) =>
+        ATTRIBUTES.has(name) && typeof value === "string" && (name !== "id" || SAFE_ID.test(value)),
+    ),
+  )
+
+export const safeMediaTarget = (value: string | undefined): string | undefined => {
+  const src = value?.trim()
+  return src?.startsWith("/") && !src.startsWith("//") && !src.includes("\\") ? src : undefined
+}
+
 export const preCodeInfo = (
   node: DocAstElement,
 ): { code: string; language: string } | undefined => {
@@ -40,7 +61,7 @@ export const extractToc = (
       if (typeof item === "string") continue
       if (/^h[2-6]$/.test(item.tag))
         result.push({
-          id: headingId(item.content),
+          id: projectedHeadingId(item) ?? headingId(item.content),
           level: Number(item.tag[1]),
           text: extractText(item.content),
         })

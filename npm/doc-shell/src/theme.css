@@ -1,4 +1,20 @@
 :where(.doc-shell) {
+  --pa-semantic-color-canvas: #ffffff;
+  --pa-semantic-color-surface: #f5f7fa;
+  --pa-semantic-color-text: #172033;
+  --pa-semantic-color-muted: #64748b;
+  --pa-semantic-color-border: #dbe2ea;
+  --pa-semantic-color-accent: #2563eb;
+  --pa-semantic-color-accent-text: #ffffff;
+  --pa-semantic-color-focus: #2563eb;
+  --pa-semantic-color-danger: #b42318;
+  --pa-semantic-color-warning: #8a4b08;
+  --pa-semantic-color-success: #087443;
+  --pa-semantic-space-control-x: 0.75rem;
+  --pa-semantic-space-control-y: 0.5rem;
+  --pa-semantic-space-panel: 1rem;
+  --pa-semantic-radius-control: 0.5rem;
+  --pa-semantic-radius-panel: 0.75rem;
   --doc-accent: #2563eb;
   --doc-background: #ffffff;
   --doc-border: #dbe2ea;
@@ -9,6 +25,47 @@
   color: var(--doc-foreground);
   background: var(--doc-background);
   font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+:where(.doc-shell) .pa-button,
+:where(.doc-shell) .pa-field,
+:where(.doc-shell) .pa-select {
+  min-height: 2.75rem;
+  border: 1px solid var(--pa-semantic-color-border);
+  border-radius: var(--pa-semantic-radius-control);
+  background: var(--pa-semantic-color-surface);
+  color: var(--pa-semantic-color-text);
+  font: inherit;
+}
+
+:where(.doc-shell) .pa-button {
+  padding: var(--pa-semantic-space-control-y) var(--pa-semantic-space-control-x);
+  cursor: pointer;
+}
+
+:where(.doc-shell) .pa-field,
+:where(.doc-shell) .pa-select {
+  width: 100%;
+  padding: var(--pa-semantic-space-control-y) var(--pa-semantic-space-control-x);
+}
+
+:where(.doc-shell) .pa-status {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  padding-inline: var(--pa-semantic-space-control-y);
+  border: 1px solid var(--pa-semantic-color-border);
+  border-radius: 999px;
+  background: var(--pa-semantic-color-surface);
+  font-size: 0.875rem;
+}
+
+:where(.doc-shell) .pa-callout,
+:where(.doc-shell) .pa-state {
+  padding: var(--pa-semantic-space-panel);
+  border: 1px solid var(--pa-semantic-color-border);
+  border-radius: var(--pa-semantic-radius-panel);
+  background: var(--pa-semantic-color-surface);
 }
 
 :where(.doc-shell) *,

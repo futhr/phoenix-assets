@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url"
 
 const root = fileURLToPath(new URL("../src", import.meta.url))
 for (const name of await readdir(root)) {
-  if (!name.endsWith(".svelte") || name.endsWith(".stories.svelte")) continue
-  const story = join(dirname(join(root, name)), `${basename(name, ".svelte")}.stories.svelte`)
+  if (!name.endsWith(".svelte")) continue
+  const story = join(dirname(join(root, name)), `${basename(name, ".svelte")}.stories.ts`)
   await access(story).catch(() => {
     throw new Error(`Missing Storybook story for ${name}`)
   })

@@ -2,6 +2,7 @@ packages:
   - "npm/*"
 
 overrides:
+  devalue: 5.9.2
   esbuild: 0.28.2
 
 # One catalog entry per shared tool; packages reference them with "catalog:"

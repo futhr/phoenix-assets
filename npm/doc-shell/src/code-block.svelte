@@ -1,4 +1,5 @@
 <script lang="ts">
+import { copyText } from "./browser/controllers.js"
 import { highlight } from "./highlighter"
 
 interface Props {
@@ -25,7 +26,7 @@ $effect(() => {
 </script>
 
 <div class="code-block" data-language={language}>
-  <button type="button" onclick={() => navigator.clipboard?.writeText(code)}>Copy</button>
+  <button type="button" onclick={() => void copyText(code)}>Copy</button>
   {#if html}<div class="highlighted">{@html html}</div>{:else}<pre><code>{code}</code></pre>{/if}
 </div>
 

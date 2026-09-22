@@ -1,5 +1,5 @@
 <script lang="ts">
-import { headingId, preCodeInfo } from "./ast.js"
+import { admittedAttributes, preCodeInfo, projectedHeadingId, safeMediaTarget } from "./ast.js"
 import AstRenderer from "./ast-renderer.svelte"
 import CodeBlock from "./code-block.svelte"
 import Directive from "./directive.svelte"
@@ -23,12 +23,15 @@ const list = $derived(!nodes ? [] : typeof nodes === "string" ? [nodes] : nodes)
     {const info = $derived(preCodeInfo(node))}
     {#if info?.language === "mermaid"}<MermaidDiagram code={info.code} />{:else if info}<CodeBlock code={info.code} language={info.language} />{:else}<pre><AstRenderer nodes={node.content ?? null} /></pre>{/if}
   {:else if /^h[1-6]$/.test(node.tag)}
-    <svelte:element this={node.tag as "h1"} id={headingId(node.content)}><AstRenderer nodes={node.content ?? null} /></svelte:element>
+    <svelte:element this={node.tag as "h1"} id={projectedHeadingId(node)}><AstRenderer nodes={node.content ?? null} /></svelte:element>
   {:else if ["p", "ul", "ol", "li", "blockquote", "strong", "em", "table", "thead", "tbody", "tr", "th", "td", "code"].includes(node.tag)}
-    <svelte:element this={node.tag as "p"}><AstRenderer nodes={node.content ?? null} /></svelte:element>
+    <svelte:element this={node.tag as "p"} {...admittedAttributes(node)}><AstRenderer nodes={node.content ?? null} /></svelte:element>
   {:else if node.tag === "a"}
     {const link = $derived(safeLinkTarget(node.attrs?.href))}
     {#if link}<a href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined}><AstRenderer nodes={node.content ?? null} /></a>{:else}<span data-unsafe-link><AstRenderer nodes={node.content ?? null} /></span>{/if}
+  {:else if node.tag === "img"}
+    {const src = $derived(safeMediaTarget(node.attrs?.src))}
+    {#if src}<img {src} alt={node.attrs?.alt ?? ""} title={node.attrs?.title} loading="lazy" />{:else}<span data-unsafe-media>{node.attrs?.alt ?? "Image"}</span>{/if}
   {:else if node.tag === "br"}<br />{:else if node.tag === "hr"}<hr />
   {:else}<div data-unknown-tag={node.tag}><AstRenderer nodes={node.content ?? null} /></div>{/if}
 {/each}

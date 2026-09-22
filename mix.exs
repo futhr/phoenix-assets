@@ -60,6 +60,7 @@ defmodule PhoenixAssets.MixProject do
       {:muontrap, ">= 1.8.0 and < 3.0.0"},
       {:nimble_options, "~> 1.1"},
       {:phoenix_live_view, "~> 1.1", optional: true},
+      doc_shell_dependency(),
       {:ash, "~> 3.33", optional: true},
       # Ash TypeScript remains an optional generator integration. The host owns
       # its sync backend; qualification must not impose a production backend pin.
@@ -88,6 +89,16 @@ defmodule PhoenixAssets.MixProject do
     ]
   end
 
+  defp doc_shell_dependency do
+    case System.get_env("DOC_SHELL_CANDIDATE") do
+      path when is_binary(path) and path != "" ->
+        {:doc_shell, path: Path.expand(path), optional: true, override: true}
+
+      _ ->
+        {:doc_shell, "~> 0.4", optional: true}
+    end
+  end
+
   defp dialyzer do
     [
       flags: [:error_handling, :extra_return, :missing_return, :unmatched_returns, :unknown],
@@ -107,7 +118,7 @@ defmodule PhoenixAssets.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
       files:
-        ~w(lib .formatter.exs mix.exs README.md RELEASING.md CHANGELOG.md LICENSE usage-rules.md)
+        ~w(lib priv/doc_shell .formatter.exs mix.exs README.md RELEASING.md CHANGELOG.md LICENSE usage-rules.md)
     ]
   end
 
