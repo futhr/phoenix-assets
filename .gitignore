@@ -21,6 +21,9 @@ storybook-static/
 /.agents/
 /.codex/
 
+# CI source checkouts
+/.candidates/
+
 # SvelteKit (adapter-static) build output -- hashed, never committed; appears
 # when an integration/install test scaffolds an app that builds into priv/static.
 priv/static/_app/immutable/
