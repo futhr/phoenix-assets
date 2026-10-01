@@ -14,18 +14,31 @@ inspect skill descriptions, and load matching skills themselves.
 
 Canonical skills are tracked in `.agents/skills/`. Claude project discovery uses
 ignored individual directory symlinks in `.claude/skills/` pointing to those
-skills, with matching directory names. Preserve unrelated local entries and
-client settings; keep repository-owned links valid and remove obsolete aliases.
+skills, with matching directory names. When using Claude, create missing links
+and repair repository-owned links. Preserve unrelated local entries and client
+settings; remove obsolete repository-owned aliases.
+
+## Working agreements
+
+- Never push branches, tags, commits, or other Git refs to a remote through a
+  CLI, API, or browser. Keep commits local; the user performs every push.
+- Never change repository visibility on a hosting provider. Visibility changes
+  are manual, user-only actions. If a task depends on one, report the blocker
+  and continue work that does not need it.
+- Preserve unrelated changes and existing local client settings. Keep client
+  configuration local; `.claude/` is entirely ignored.
+- Keep repository instructions in this contract and its linked owning guidance;
+  do not create client-specific instruction copies.
 
 ## What this repo is
 
 The repository contains one Elixir Hex package (`:phoenix_assets`, at the root)
-and four npm packages
-in a pnpm workspace (`npm/vite`, `npm/svelte`, `npm/doc-shell`, `npm/lint`). The
-Elixir side is a plugin/preset engine + generators + dev supervision; the npm side
-is the Vite plugin, the Svelte runtime helpers, the documentation shell, and the
-shared frontend lint tooling. Everything lives under the `PhoenixAssets.*`
-namespace.
+and four npm packages in a pnpm workspace (`npm/vite`, `npm/svelte`,
+`npm/doc-shell`, `npm/lint`). The
+Elixir side contains the plugin/preset engine, generators, dev supervision,
+and HEEx documentation renderers. The npm side contains the Vite plugin, Svelte
+runtime helpers, documentation shell, and shared frontend lint tooling. Elixir
+modules live under the `PhoenixAssets.*` namespace.
 
 ## Writing
 
@@ -45,9 +58,10 @@ pnpm install
 
 The dev toolchain is pinned in `.tool-versions` (Erlang/OTP 28, Elixir 1.19,
 Node 24); pnpm for the frontend. Consumers only need the `mix.exs` floor:
-Elixir `~> 1.18`. Local release qualification proves both ends: a floor leg on
-Elixir 1.18/OTP 27 (compile + ExUnit) and the full gate on 1.20/OTP 29. Ordinary
-PRs run one current-runtime lane; broad qualification runs locally.
+Elixir `~> 1.18`. Release qualification requires a floor leg on Elixir 1.18/OTP 27
+(compile + ExUnit) and the full gate on 1.20/OTP 29, as described in
+[`RELEASING.md`](RELEASING.md). Ordinary PRs run one current-runtime lane;
+manual or full-matrix CI runs both legs. Check the workflow for the exact lane.
 
 ## Quality gate
 
@@ -75,8 +89,8 @@ Useful narrower commands: `mix test`, `MIX_ENV=test mix coveralls.html`,
 
 ```
 lib/phoenix_assets/        engine (Plugin/Preset/Resolver/Engine), Config/Context,
-                           generators, Graph, Manifest, Doctor, Dev*, the 11 stack
-                           plugins and their declaration DSLs, Presets.Svelte
+                           generators, Graph, Manifest, Doctor, Dev*, DocShell,
+                           stack plugins and their declaration DSLs, Presets.Svelte
 lib/mix/tasks/             phoenix_assets.install/.gen/.doctor/.clean/.graph, plus
                            eight gen.<contract> delegates that forward to gen --only
 test/                      ExUnit; test/support holds Ash fixtures; the headline
@@ -88,33 +102,35 @@ npm/lint                   shared Biome base config + Tailwind v4 linter for hos
 
 ## What may live here
 
-`phoenix_assets` is a generic, UI-free asset substrate. It may know about
-Phoenix, Vite, Svelte, Tailwind, Electric, and Ash. It may not know about any
-product built on it. A feature belongs here only if it would read as sensible to
-someone who has never seen the apps that consume it.
+`phoenix_assets` is a generic asset substrate. It may know about Phoenix, Vite,
+Svelte, Tailwind, Electric, Ash, and DocShell. It may not know about any product
+built on it. A feature belongs here only if it would make sense to someone who
+has never seen the apps that consume it.
 
-`@phoenix-assets/svelte/reporting` is the one UI exception. It decodes a generic
-versioned envelope into generic charts. Domain semantics and theming come from the host. The moment
-it can name a business concept, it has stopped being renderer-neutral and the
-exception no longer applies. The contract it renders is owned upstream. Changes
-land there first, and this package follows.
+UI is limited to the existing generic reporting and DocShell renderers:
 
-`node scripts/check-boundary.mjs` enforces the mechanical half (no consuming
-platform's name anywhere in `lib/` or `npm/*/src`; no business vocabulary inside
-`reporting/`) and runs as part of `mix check`. The judgement half is yours: when
-a host asks for something, the question is whether the *next* host would want the
-same thing, or whether the seam is just too narrow for them to do it themselves.
+- `@phoenix-assets/svelte/reporting` decodes a generic versioned envelope into
+  charts. Domain semantics and theming come from the host. Business concepts
+  do not belong in this renderer. The contract is owned upstream; changes land
+  there first, and this package follows.
+- `npm/doc-shell` and `PhoenixAssets.DocShell.*` render upstream-owned DocShell
+  artifact and site contracts. Hosts supply identity and theme. Read the
+  renderer specification and plan below when changing this surface.
+
+`node scripts/check-boundary.mjs` checks configured platform names in `lib/`,
+`npm/*/src`, and `npm/lint`, plus configured business terms in `reporting/`.
+It runs as part of `mix check`. A passing text check does not establish that a
+feature is generic. Review the API and ownership: would another host want the
+same capability, or is the existing seam too narrow for hosts to implement it?
 
 Two recurring failure modes need review:
 
 - Absorbing a feature. A host's product code arrives with a generic name.
   The gate catches the obvious version; the subtle version is a config key or a
   contract field that only one host will ever set.
-- Refusing to generalise. A gap in this library gets paid for once per host.
-  Six of them rebuilt the same Electric
-  shape store, four the same auth headers, three the same enum generator. If you
-  find a host working around this library, that is a bug report about this
-  library.
+- Refusing to generalise. Repeated host workarounds can reveal a missing library
+  seam. Assess that gap instead of requiring each host to rebuild the same
+  Electric shape store, auth headers, or enum generation.
 
 ## Conventions
 
@@ -124,14 +140,13 @@ Two recurring failure modes need review:
 - Default preset. `Config.preset_plugins/1` resolves `PhoenixAssets.Presets.Svelte`
   when `:preset` is unset. Stack plugins read host declaration modules from
   `config :phoenix_assets, :stack, ...`.
-- Optional dependencies. All of `ash`, `ash_typescript`, `gettext`,
-  `tidewave`, `phoenix_live_view`, `igniter` are `optional: true`, but only three
-  have code behind them. `ash_typescript` and `tidewave` are pure
-  version pins. Nothing in `lib/` references them, so there are no guards there to
-  maintain. The ones that do carry code use two idioms: wrap the whole `defmodule`
-  in `if Code.ensure_loaded?/1` (`components.ex` for `Phoenix.Component`,
-  `phoenix_assets.install.ex` for Igniter), or gate at the call site (`types.ex`).
-  Don't add hard deps on any of them.
+- Optional dependencies. Keep `ash`, `ash_typescript`, `gettext`, `tidewave`,
+  `phoenix_live_view`, `igniter`, and `doc_shell` optional. `ash_typescript` and
+  `tidewave` are version pins with no direct calls into those dependencies.
+  Gate module definitions with `Code.ensure_loaded?/1` when they depend on
+  optional behaviours or macros (`components.ex`, `phoenix_assets.install.ex`,
+  and the DocShell modules). Gate optional generation and backend calls at the
+  call site (`types.ex`, `walker.ex`, `localize.ex`).
 - Sync qualification. Phoenix.Sync is a dev/test dependency at an immutable
   qualified revision. It must not appear in the published Hex requirements.
   Hosts select their backend; embedded hosts also own their Electric dependency.
@@ -150,17 +165,25 @@ Two recurring failure modes need review:
 - Determinism. Generators must emit byte-identical output for identical input
   (no timestamps, stable ordering). The no-write fast path and `--check` drift gate
   depend on it.
-- Releases. Conventional Commits drive `mix git_ops.release` from the Git root.
-  Mark breaking changes with `!` (`feat!:`), never a `BREAKING CHANGE:` footer.
+- Releases. Follow [`RELEASING.md`](RELEASING.md) for commit conventions,
+  qualification, and the coordinated Hex/npm release process.
 - Package layout. There is no `core/` or `stack/` split. Both
   layers share the `PhoenixAssets.*` namespace in `lib/`.
 
 ## Definition of done
 
-For DocShell renderer work, read
-`docs/specs/PHA.01-doc-shell-renderers.md` and follow
-`docs/plans/doc-shell-renderers.md` in dependency order. The DocShell artifact
-and site contracts remain upstream-owned.
+For DocShell renderer work, read the
+[specification](docs/specs/PHA.01-doc-shell-renderers.md) and follow the
+[plan](docs/plans/doc-shell-renderers.md) in dependency order. The DocShell
+artifact and site contracts remain upstream-owned.
 
-`mix check` is green end-to-end (Elixir + frontend + both coverage floors), and any
-new public module has a `@moduledoc`.
+Code changes require `mix check` green end-to-end (Elixir, frontend, and both
+coverage floors), and any new public module needs a `@moduledoc`.
+
+For guidance-only changes, validate the affected metadata, references, Git
+tracking and ignore boundaries, and discovery links using existing tools. Do
+not install dependencies or run unrelated application suites for those changes.
+
+Report actual review and executed checks separately from configured gates,
+declarations, and planned work. State checks that were not run and material
+limitations; a command in documentation is not a passing result.

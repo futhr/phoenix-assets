@@ -24,16 +24,20 @@ The Hex metadata must not constrain `phoenix_sync` or `electric`; each host
 owns its backend. Development tests qualify the immutable Phoenix.Sync fork,
 and the frontend tests use the actual Electric and TanStack packages.
 
-Iteration and release qualification run locally. Ordinary pull requests
-run one current-runtime lane. The second runtime, Dialyzer and exact-artifact
-checks remain full local/release gates. Main and tag pushes do not start CI.
+Iteration and release qualification run locally. Ordinary pull requests and
+main pushes run one current-runtime lane. Manual or full-matrix CI runs both
+runtime legs. Dialyzer and exact-artifact checks remain full local/release gates.
+Tag pushes do not start CI.
 No paid GitHub feature or repository visibility change is required.
 
 ## Prepare the shared release
 
-Conventional commits drive the shared version. From the Git root,
-`mix git_ops.release` updates `mix.exs`, all four npm manifests, the changelog
-and the tag. Never change a schema version merely to release the packages.
+[Conventional Commits](https://www.conventionalcommits.org) drive the shared
+version (`feat:`, `fix:`, `docs:`, `chore:`). Mark breaking changes with `!`
+(`feat!:`); do not use a `BREAKING CHANGE:` footer because `git_ops` mis-parses it.
+From the Git root, `mix git_ops.release` updates `mix.exs`, all four npm manifests,
+the changelog and the tag. Never change a schema version merely to release the
+packages.
 
 Build from the clean tagged commit, after local qualification:
 
@@ -61,9 +65,10 @@ environment; never commit them. npm must grant write access to the
 mise exec -- node scripts/release.mjs verify --tag vX.Y.Z --artifact-dir dist/release
 mise exec -- node scripts/release.mjs publish --tag vX.Y.Z --artifact-dir dist/release
 mise exec -- mix hex.publish docs --yes
-git push origin main
-git push origin vX.Y.Z
 ```
+
+Maintainers then push `main` and the release tag manually. Agents never push Git
+refs.
 
 The publisher checks every registry before its first write. Existing
 versions with identical checksums are skipped; different bytes abort the run.

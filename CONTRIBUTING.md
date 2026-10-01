@@ -16,7 +16,8 @@ Node 24); you'll also need pnpm. The Elixir requirement for *consumers* is the
 
 ## The quality gate
 
-One command runs the Elixir and frontend gates. It must pass before a PR merges:
+One command runs the Elixir and frontend gates. Run it for code changes before
+merging:
 
 ```bash
 mix check
@@ -34,37 +35,22 @@ and `pnpm -r test` (frontend lcov under `npm/*/coverage/`).
 
 ## Conventions
 
-[`AGENTS.md`](AGENTS.md) describes the full repository contract. The main
-conventions are:
-
-- Public modules need a `@moduledoc`; tests and fixtures use `@moduledoc false`.
-- Unused variables are a bare `_` (credo enforces it); no dynamic atom creation.
-- Generators must emit byte-identical output for identical input (determinism).
-- Keep `ash` and the other stack integrations optional. Code must compile
-  without them.
+Follow [`AGENTS.md`](AGENTS.md) for module documentation, deterministic
+generation, optional dependency isolation, code conventions, and package scope.
 
 ## Commits & releases
 
-Commits follow [Conventional Commits](https://www.conventionalcommits.org)
-(`feat:`, `fix:`, `docs:`, `chore:`). Mark breaking changes with `!`
-(`feat!: ...`). Do not use a `BREAKING CHANGE:` footer because `git_ops`
-mis-parses it.
-Releases are cut from the git root with:
-
-```bash
-git rm CHANGELOG.md           # first release only; do not commit separately
-mix git_ops.release --initial # first release only
-# or: mix git_ops.release
-```
-
-The coordinated Hex/npm workflow, credentials, dry run, and partial-failure
-recovery are documented in [`RELEASING.md`](RELEASING.md).
+Follow [`RELEASING.md`](RELEASING.md) for commit conventions and the coordinated
+Hex/npm workflow, credentials, dry run, and partial-failure recovery. Agents keep
+commits local; maintainers perform Git pushes manually.
 
 ## Pull requests
 
 1. Branch from `main`.
-2. Make the change; run `mix check` until green.
+2. Make the change and validate it as described in `AGENTS.md`.
 3. Open a PR that explains why the change is needed and references any issue
    (`Closes #123`).
-4. CI runs `mix check` on Elixir 1.20/OTP 29, plus a compile-and-test leg on the
-   supported floor (1.18/OTP 27). Both must be green to merge.
+4. Ordinary PR CI runs the current-runtime lane on Elixir 1.20/OTP 29, omitting
+   Dialyzer, the Hex consumer, and package-export checks. Manual or full-matrix
+   CI adds the compile-and-test floor leg (1.18/OTP 27) and the complete gate.
+   Run the full local gate before merging code changes.
