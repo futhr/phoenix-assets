@@ -107,6 +107,14 @@ Svelte, Tailwind, Electric, Ash, and DocShell. It may not know about any product
 built on it. A feature belongs here only if it would make sense to someone who
 has never seen the apps that consume it.
 
+Task-first application composition remains host-owned. This package does not
+define product task archetypes, compact/medium/expanded thresholds, card or
+dashboard policy, application state envelopes, or rules for which evidence,
+authority and recovery controls remain visible. Generated contracts and generic
+runtime helpers may carry typed values needed by a host, but they do not choose
+the host's layout or semantic continuity policy. Storybook examples for product
+tasks belong in the host repository.
+
 UI is limited to the existing generic reporting and DocShell renderers:
 
 - `@phoenix-assets/svelte/reporting` decodes a generic versioned envelope into

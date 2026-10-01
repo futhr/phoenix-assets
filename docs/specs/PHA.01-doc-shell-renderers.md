@@ -1,6 +1,6 @@
 # PHA.01: DocShell renderers for Svelte and LiveView
 
-Specification version: 0.2.0. Contract: accepted. Implementation status:
+Specification version: 0.2.1. Contract: accepted. Implementation status:
 partial.
 
 ## Purpose
@@ -21,6 +21,14 @@ upstream documentation contract. Product design systems, application shells,
 domain components and host themes remain host-owned. A renderer exposes slots
 and semantic custom properties; it does not become a general component
 library.
+
+DocShell is an editorial reading surface. Search, navigation, reading progress
+and source provenance do not define an authenticated product task, application
+state envelope or authority model. A host that mounts documentation beside an
+application keeps the routes, chrome, authorization and adaptive task
+composition separate. Phoenix Assets does not add product archetypes,
+application container thresholds, card/dashboard policy or workflow state to
+the DocShell contract.
 
 ## Package boundary
 
@@ -260,7 +268,7 @@ documentation sites:
 | PHA-S08 | Ship local, content-hashed browser and CSS assets with explicit bundle budgets and no CDN dependency. |
 | PHA-S09 | Consume DocShell's shared conformance fixtures and report renderer identity and supported capabilities. |
 | PHA-S10 | Keep the Hex package usable without DocShell or LiveView and the browser subpath usable without Svelte. |
-| PHA-S11 | Keep renderer CSS scoped and host-overridable without absorbing an application design system or client-component registry. |
+| PHA-S11 | Keep renderer CSS scoped and host-overridable without absorbing an application design system, task-composition policy, application state envelope or client-component registry. |
 
 ## Executable vectors
 
@@ -278,7 +286,7 @@ documentation sites:
 | PHA-V10 | Visual snapshots cover home, guide, module reference, OpenAPI, search, mobile navigation, long code/table and 404 pages in both themes. |
 | PHA-V11 | Production assets contain no remote URL, source map, undeclared file, Svelte import in the browser subpath, or file above its declared budget. |
 | PHA-V12 | A fresh static-site consumer renders and opens the generated output without an endpoint, WebSocket, Node runtime, or network access. |
-| PHA-V13 | DocShell assets contain only renderer-scoped styles and behavior; a host override cannot remove article, navigation, search fallback, provenance or ordinary links. |
+| PHA-V13 | DocShell assets contain only renderer-scoped editorial styles and behavior, with no product archetype, application profile threshold or workflow-state contract; a host override cannot remove article, navigation, search fallback, provenance or ordinary links. |
 
 ## Evidence boundary
 

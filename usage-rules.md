@@ -184,6 +184,29 @@ in tests. The frontend peers require `@electric-sql/client` >=1.5.27 within 1.x,
   `doc-shell/v1` artifact contract. Only needed if you render docs in-app; theme
   it through the `--doc-*` custom properties rather than app aliases.
 
+## Host-owned application composition
+
+Phoenix Assets supplies generated types, commands, session context, runtime
+helpers and development tooling. The host still owns its product design system
+and task composition. Define task briefs, inspect/compare/act/monitor/compose
+surfaces, content-container profiles, state continuity, disclosure rules,
+card/dashboard use and accessibility evidence in the host repository. Keep
+required risk, evidence, authority, error and recovery state in the host's
+semantic view model; a generated contract does not decide where or whether the
+host renders it.
+
+Do not add a Phoenix Assets preset, config key, generated field or Svelte helper
+whose only purpose is to enforce one application's breakpoints or page shell.
+Reusable transport or typed-state gaps can belong here when they remain useful
+to the next unrelated host. Product Storybook fixtures and boundary screenshots
+stay with the product that owns the task.
+
+`@phoenix-assets/doc-shell` is an editorial documentation renderer, not the
+host application's authenticated work shell. Its reading, navigation, search
+and provenance behavior follows the upstream DocShell contract. Mounting it in
+an application does not import DocShell layout or authorization semantics into
+product routes.
+
 ## Linting and formatting in host applications
 
 Use Biome for the frontend. Phoenix Assets uses the same linter rather than
