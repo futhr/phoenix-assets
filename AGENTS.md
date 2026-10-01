@@ -1,7 +1,21 @@
 # AGENTS.md
 
-Guidance for coding agents working on `phoenix_assets`. For using the
-library in a host app, see [`usage-rules.md`](usage-rules.md).
+This is the canonical repository contract for coding agents working on
+`phoenix_assets`. For using the library in a host app, see
+[`usage-rules.md`](usage-rules.md).
+
+## Skills and discovery
+
+The AI selects and reads matching `.agents/skills/*/SKILL.md` files from their
+descriptions when the task, changed mechanism, or delivery stage calls for them.
+Users do not need to invoke skills or choose slash commands. Keep implicit
+invocation enabled. Clients without native discovery must read this contract,
+inspect skill descriptions, and load matching skills themselves.
+
+Canonical skills are tracked in `.agents/skills/`. Claude project discovery uses
+ignored individual directory symlinks in `.claude/skills/` pointing to those
+skills, with matching directory names. Preserve unrelated local entries and
+client settings; keep repository-owned links valid and remove obsolete aliases.
 
 ## What this repo is
 
@@ -15,11 +29,12 @@ namespace.
 
 ## Writing
 
-Apply `.claude/skills/unslop/SKILL.md` to persisted prose and
-`.claude/skills/phoenix-assets-evidence-voice/SKILL.md` to public documentation,
-audits, release notes, and summaries. Preserve code, version numbers, measured
-results, and contract language while making the surrounding prose direct and
-human.
+Use the [technical-writing skill](.agents/skills/technical-writing/SKILL.md) when
+drafting or changing technical prose or preparing a delivery summary.
+Preserve code, identifiers, commands, version numbers, dependency constraints,
+source revisions, measured results, checksums, and contract language. Describe
+compatibility, security, performance, publication, and operational use only as
+far as the named contract or observed evidence supports.
 
 ## Setup
 

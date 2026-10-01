@@ -1,0 +1,48 @@
+---
+name: technical-writing
+description: Review technical prose when drafting or changing README files, HexDocs, module docs, npm package docs, usage rules, release notes, comments, commit messages, or delivery summaries. Tie claims to implementation and validation evidence while removing filler. Apply during the writing stage; code-only edits do not need a prose pass.
+user-invocable: false
+---
+
+# Technical writing
+
+Input: the requested draft or changed prose, its audience, and the relevant
+implementation, contracts, or validation results.
+
+Output: revised prose in the requested destination, with technical meaning
+intact and claims supported by the available evidence.
+
+## Establish the facts
+
+Use the [repository contract](../../../AGENTS.md) for project boundaries and
+conventions. Load supporting files only for the claims the prose makes:
+
+- For behavior or API claims, read the owning implementation and relevant tests.
+- For compatibility claims, read the [Hex requirements](../../../mix.exs) or
+  the applicable manifest in [the npm workspace](../../../npm/) and compare
+  them with the runtime or integration actually tested.
+- For release claims, read the [release process](../../../RELEASING.md) and the
+  relevant package or registry evidence. A local build or tag does not establish
+  publication.
+- For DocShell renderer claims, read the linked specification and plan in
+  AGENTS.md, then compare the claim with the implementation and observed checks.
+  A planned item is not evidence of completed work.
+
+Name the package or module that provides the behavior. Distinguish Elixir runtime
+behavior from npm behavior, dev supervision from production asset serving, and
+generated metadata from host-owned authorization. Frontend qualification does
+not establish compatibility for a host's PostgreSQL, Electric, or Phoenix.Sync
+deployment.
+
+## Edit and check
+
+Lead with the concrete behavior or outcome. Prefer plain verbs and short examples
+that explain installation or ownership. Remove filler, marketing claims, vague
+authority, stacked hedges, forced contrasts, and confidence without evidence.
+Replace inflated constructions such as "serves as" with "is" when the meaning
+is the same. Use formatting to help readers scan.
+
+Compare the revised prose with the input and its evidence. Keep warnings,
+failure behavior, compatibility bounds, and ownership explicit. Qualify or
+remove unsupported claims instead of widening them. Return unresolved factual
+gaps in chat without creating an extra document.
